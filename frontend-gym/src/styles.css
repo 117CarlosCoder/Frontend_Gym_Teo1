@@ -1,1 +1,11 @@
 /* You can add global styles to this file, and also import other style files */
+
+:root {
+    --app-color-primario: #101D42;
+    --app-color-secundario: #6E6A6F;
+    --app-color-acento: #035E7B;
+    --app-color-fondo: #FFF;
+    --app-color-texto: #000;
+
+    --app-fuente-texto: Arial;
+}
