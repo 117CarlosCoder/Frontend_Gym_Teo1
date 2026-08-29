@@ -1,0 +1,24 @@
+<h1 class="panel__titulo">{{ saludo() }}</h1>
+<p class="panel__subtitulo">
+  Este es el panel de control del gimnasio. Los datos mostrados son de ejemplo hasta conectar la API
+  de Spring Boot.
+</p>
+
+<section class="indicadores" aria-label="Indicadores del gimnasio">
+  @for (indicador of indicadores; track indicador.etiqueta) {
+    <article class="indicador">
+      <p class="indicador__etiqueta">{{ indicador.etiqueta }}</p>
+      <p class="indicador__valor">{{ indicador.valor }}</p>
+      <p class="indicador__detalle">{{ indicador.detalle }}</p>
+    </article>
+  }
+</section>
+
+<section class="card pendientes">
+  <h2 class="pendientes__titulo">Siguientes entregas del backlog</h2>
+  <ul class="pendientes__lista">
+    @for (pendiente of pendientes; track pendiente) {
+      <li>{{ pendiente }}</li>
+    }
+  </ul>
+</section>

@@ -1,0 +1,70 @@
+/* ==========================================================================
+   Design tokens — Paleta oficial (Ficha de arranque, Sprint 0)
+   Primario  #101D42 · Secundario #6E6A6F · Acento #035E7B
+   Fondo     #FFFFFF · Texto      #000000 · Tipografía Arial
+   ========================================================================== */
+:root {
+  /* --- Paleta base de la ficha --- */
+  --color-primary: #101d42;
+  --color-secondary: #6e6a6f;
+  --color-accent: #035e7b;
+  --color-bg: #ffffff;
+  --color-text: #000000;
+
+  /* --- Variantes derivadas (para hover, gradientes y superficies) --- */
+  --color-primary-dark: #0a1330;
+  --color-primary-light: #1c2f66;
+  --color-accent-dark: #024a61;
+  --color-accent-light: #0a7fa3;
+  --color-secondary-light: #9a969b;
+
+  --color-surface: #f5f7fa;
+  --color-surface-alt: #eef1f6;
+  --color-border: #e2e6ee;
+  --color-text-muted: #4a4a4a;
+  --color-on-dark: #ffffff;
+  --color-on-dark-muted: #c4c9d8;
+
+  /* --- Estados --- */
+  --color-success: #1e7d55;
+  --color-warning: #b7791f;
+  --color-danger: #b3261e;
+  --color-danger-bg: #fdecea;
+
+  /* --- Tipografía --- */
+  --font-base: Arial, Helvetica, sans-serif;
+  --fs-xs: 0.75rem;
+  --fs-sm: 0.875rem;
+  --fs-md: 1rem;
+  --fs-lg: 1.125rem;
+  --fs-xl: 1.5rem;
+  --fs-2xl: 2rem;
+  --fs-3xl: 2.75rem;
+  --fs-hero: clamp(2.25rem, 5vw, 3.75rem);
+
+  /* --- Espaciado --- */
+  --sp-1: 0.25rem;
+  --sp-2: 0.5rem;
+  --sp-3: 0.75rem;
+  --sp-4: 1rem;
+  --sp-5: 1.5rem;
+  --sp-6: 2rem;
+  --sp-7: 3rem;
+  --sp-8: 4rem;
+  --sp-9: 6rem;
+
+  /* --- Radios y sombras --- */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-pill: 999px;
+
+  --shadow-sm: 0 1px 3px rgba(16, 29, 66, 0.08);
+  --shadow-md: 0 6px 18px rgba(16, 29, 66, 0.1);
+  --shadow-lg: 0 18px 40px rgba(16, 29, 66, 0.16);
+
+  /* --- Layout --- */
+  --container-max: 1180px;
+  --header-height: 72px;
+  --transition: 0.22s ease;
+}

@@ -1,0 +1,126 @@
+<div class="login">
+  <!-- Panel de marca -->
+  <aside class="login__marca">
+    <a class="login__volver" routerLink="/">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true">
+        <path d="M20 11H7.8l5.6-5.6L12 4l-8 8 8 8 1.4-1.4L7.8 13H20z" />
+      </svg>
+      Volver al inicio
+    </a>
+
+    <div class="login__marca-cuerpo">
+      <p class="login__logo">CLAUDE LOVERS <span>GYM</span></p>
+      <h1 class="login__titulo">Bienvenido de nuevo</h1>
+      <ul class="login__lista">
+        <li>Consulta el estado de tu membresía</li>
+        <li>Reserva tu cupo en las clases dirigidas</li>
+        <li>Revisa tu asistencia y tu progreso</li>
+      </ul>
+    </div>
+
+    <p class="login__pie">Grupo 1 · Teoría de Sistemas 1 · CUNOC</p>
+  </aside>
+
+  <!-- Formulario -->
+  <main class="login__panel">
+    <div class="login__caja">
+      <h2 class="login__encabezado">Iniciar sesión</h2>
+      <p class="login__ayuda">Ingresa con la cuenta que te dio el gimnasio.</p>
+
+      @if (errorServidor()) {
+        <p class="alert alert--danger" role="alert">{{ errorServidor() }}</p>
+      }
+
+      <form [formGroup]="formulario" (ngSubmit)="enviar()" novalidate>
+        <div class="field">
+          <label class="field__label" for="correo">Correo electrónico</label>
+          <input
+            id="correo"
+            type="email"
+            class="field__control"
+            [class.is-invalid]="correo.touched && correo.invalid"
+            formControlName="correo"
+            placeholder="tucorreo@ejemplo.com"
+            autocomplete="email"
+          />
+
+          @if (correo.touched && correo.hasError('required')) {
+            <small class="field__error">El correo es obligatorio.</small>
+          } @else if (correo.touched && correo.hasError('email')) {
+            <small class="field__error">Escribe un correo válido.</small>
+          }
+        </div>
+
+        <div class="field">
+          <label class="field__label" for="password">Contraseña</label>
+          <div class="campo-password">
+            <input
+              id="password"
+              [type]="mostrarPassword() ? 'text' : 'password'"
+              class="field__control"
+              [class.is-invalid]="password.touched && password.invalid"
+              formControlName="password"
+              placeholder="••••••••"
+              autocomplete="current-password"
+            />
+            <button
+              type="button"
+              class="campo-password__ojo"
+              (click)="alternarPassword()"
+              [attr.aria-label]="mostrarPassword() ? 'Ocultar contraseña' : 'Mostrar contraseña'"
+            >
+              @if (mostrarPassword()) {
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                  <path
+                    d="M12 7c2.8 0 5 2.2 5 5 0 .6-.1 1.2-.3 1.7l2.9 2.9c1.5-1.3 2.7-2.9 3.4-4.6-1.7-4.1-5.6-7-10-7-1.3 0-2.5.2-3.6.6l2.1 2.1c.5-.5 1-.7 1.5-.7zM2.7 3.4L1.4 4.7l2.5 2.5C2.3 8.5 1 10.1.3 12c1.7 4.1 5.6 7 10 7 1.4 0 2.7-.3 3.9-.7l3.1 3.1 1.3-1.3L2.7 3.4zM12 17c-2.8 0-5-2.2-5-5 0-.8.2-1.5.5-2.1l1.5 1.5c0 .2-.1.4-.1.6 0 1.7 1.4 3 3 3 .2 0 .4 0 .6-.1l1.5 1.5c-.6.4-1.3.6-2 .6z"
+                  />
+                </svg>
+              } @else {
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                  <path
+                    d="M12 5C7.6 5 3.7 7.9 2 12c1.7 4.1 5.6 7 10 7s8.3-2.9 10-7c-1.7-4.1-5.6-7-10-7zm0 12c-2.8 0-5-2.2-5-5s2.2-5 5-5 5 2.2 5 5-2.2 5-5 5zm0-8a3 3 0 100 6 3 3 0 000-6z"
+                  />
+                </svg>
+              }
+            </button>
+          </div>
+
+          @if (password.touched && password.hasError('required')) {
+            <small class="field__error">La contraseña es obligatoria.</small>
+          } @else if (password.touched && password.hasError('minlength')) {
+            <small class="field__error">Debe tener al menos 6 caracteres.</small>
+          }
+        </div>
+
+        <button type="submit" class="btn btn--primary btn--block btn--lg" [disabled]="cargando()">
+          {{ cargando() ? 'Verificando…' : 'Entrar' }}
+        </button>
+      </form>
+
+      @if (modoDemo) {
+        <section class="demo">
+          <p class="demo__titulo">Cuentas de prueba (backend aún no conectado)</p>
+          <ul class="demo__lista">
+            @for (usuario of usuariosDemo; track usuario.correo) {
+              <li>
+                <button
+                  type="button"
+                  class="demo__boton"
+                  (click)="usarDemo(usuario.correo, usuario.password)"
+                >
+                  <strong>{{ usuario.rol }}</strong>
+                  <span>{{ usuario.correo }} · {{ usuario.password }}</span>
+                </button>
+              </li>
+            }
+          </ul>
+        </section>
+      }
+
+      <p class="login__nota">
+        ¿Todavía no eres socio?
+        <a routerLink="/" fragment="planes">Conoce nuestros planes</a>
+      </p>
+    </div>
+  </main>
+</div>

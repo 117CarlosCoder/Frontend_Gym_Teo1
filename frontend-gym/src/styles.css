@@ -1,1 +1,7 @@
-/* You can add global styles to this file, and also import other style files */
+/* ==========================================================================
+   Estilos globales — Claude Lovers Gym
+   Los tokens de color y tipografía salen de la Ficha de arranque (Sprint 0).
+   ========================================================================== */
+@import './styles/tokens.css';
+@import './styles/base.css';
+@import './styles/utilities.css';

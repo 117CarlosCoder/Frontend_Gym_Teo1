@@ -1,0 +1,56 @@
+<header class="navbar">
+  <div class="container navbar__inner">
+    <a
+      class="brand"
+      routerLink="/"
+      (click)="cerrarMenu()"
+      aria-label="Claude Lovers Gym, ir al inicio"
+    >
+      <span class="brand__mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
+          <path d="M4 8h2v8H4zM7 6h2v12H7zM15 6h2v12h-2zM18 8h2v8h-2zM10 11h4v2h-4z" />
+        </svg>
+      </span>
+      <span class="brand__text">
+        <strong>CLAUDE LOVERS</strong>
+        <small>GYM</small>
+      </span>
+    </a>
+
+    <button
+      type="button"
+      class="navbar__toggle"
+      [attr.aria-expanded]="menuAbierto()"
+      aria-controls="menu-principal"
+      (click)="alternarMenu()"
+    >
+      <span class="sr-only">Abrir menú</span>
+      <span class="navbar__burger" [class.is-open]="menuAbierto()" aria-hidden="true"></span>
+    </button>
+
+    <nav
+      id="menu-principal"
+      class="navbar__nav"
+      [class.is-open]="menuAbierto()"
+      aria-label="Navegación principal"
+    >
+      <ul class="navbar__links">
+        @for (enlace of enlaces; track enlace.ancla) {
+          <li>
+            <a class="navbar__link" [href]="'#' + enlace.ancla" (click)="cerrarMenu()">
+              {{ enlace.etiqueta }}
+            </a>
+          </li>
+        }
+      </ul>
+
+      <div class="navbar__acciones">
+        @if (auth.estaAutenticado()) {
+          <a class="btn btn--accent" routerLink="/dashboard" (click)="cerrarMenu()"> Mi panel </a>
+        } @else {
+          <a class="btn btn--accent" routerLink="/login" (click)="cerrarMenu()"> Iniciar sesión </a>
+        }
+      </div>
+    </nav>
+  </div>
+</header>

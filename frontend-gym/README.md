@@ -1,59 +1,83 @@
-# FrontendGym
+# Claude Lovers Gym — Frontend
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 21.2.21.
+Front-end del sistema de gestión de gimnasio.
+Proyecto de laboratorio de **Teoría de Sistemas 1**, Grupo 1 · CUNOC · USAC · Segundo semestre 2026.
 
-## Development server
+- **Framework:** Angular 21 (standalone + signals, sin Zone.js)
+- **Backend:** Spring Boot 4 (repositorio aparte)
+- **Base de datos:** MariaDB
+- **Dominio:** claudelovers.solairy.app
 
-To start a local development server, run:
-
-```bash
-ng serve
-```
-
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
-
-## Code scaffolding
-
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+## Puesta en marcha
 
 ```bash
-ng generate component component-name
+npm install
+npm start            # servidor de desarrollo en http://localhost:4200/
+npm run build        # compilación de producción a dist/
+npm test             # pruebas unitarias con Vitest
 ```
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+## Credenciales de prueba
 
-```bash
-ng generate --help
+Mientras el backend no esté conectado (`environment.useMockAuth = true`), el login
+acepta estos usuarios simulados:
+
+| Rol           | Correo                     | Contraseña     |
+| ------------- | -------------------------- | -------------- |
+| Administrador | admin@claudelovers.com     | `admin123`     |
+| Recepción     | recepcion@claudelovers.com | `recepcion123` |
+| Socio         | socio@claudelovers.com     | `socio123`     |
+
+Para apuntar al backend real, poner `useMockAuth: false` en
+`src/environments/environment.ts` y levantar la API en `http://localhost:8080/api/v1`.
+
+## Estructura del proyecto
+
+```
+src/
+├── environments/            # apiUrl y banderas por entorno (dev / prod)
+├── styles/                  # tokens.css, base.css, utilities.css
+├── styles.css               # punto de entrada de estilos globales
+└── app/
+    ├── core/                # lo que se usa en toda la app (una sola instancia)
+    │   ├── constants/       # rutas de la API y de la SPA
+    │   ├── guards/          # authGuard, guestGuard, rolGuard
+    │   ├── interceptors/    # token JWT y manejo de errores HTTP
+    │   ├── models/          # interfaces del dominio (basadas en el ER)
+    │   └── services/        # AuthService, StorageService
+    ├── shared/              # piezas reutilizables (navbar, footer, utilidades)
+    ├── layouts/             # public-layout (sitio) y dashboard-layout (panel)
+    └── features/            # una carpeta por funcionalidad
+        ├── home/            # landing page + su contenido
+        ├── auth/            # login
+        └── dashboard/       # área privada
 ```
 
-## Building
+Convención: cada feature nueva se crea como `features/<nombre>/pages/<pagina>/`
+y se registra con carga diferida en `src/app/app.routes.ts`.
 
-To build the project run:
+## Rutas
 
-```bash
-ng build
-```
+| Ruta         | Acceso                   | Descripción               |
+| ------------ | ------------------------ | ------------------------- |
+| `/`          | Público                  | Landing page del gimnasio |
+| `/login`     | Solo sin sesión          | Inicio de sesión          |
+| `/dashboard` | Requiere sesión iniciada | Panel de control          |
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
+## Paleta de colores (Ficha de arranque, Sprint 0)
 
-## Running unit tests
+| Uso        | HEX       | Variable CSS        |
+| ---------- | --------- | ------------------- |
+| Primario   | `#101D42` | `--color-primary`   |
+| Secundario | `#6E6A6F` | `--color-secondary` |
+| Acento     | `#035E7B` | `--color-accent`    |
+| Fondo      | `#FFFFFF` | `--color-bg`        |
+| Texto      | `#000000` | `--color-text`      |
 
-To execute unit tests with the [Vitest](https://vitest.dev/) test runner, use the following command:
+Tipografía principal: **Arial** (`--font-base`).
+Todos los tokens están en [`src/styles/tokens.css`](src/styles/tokens.css); no se
+deben escribir colores en HEX dentro de los componentes.
 
-```bash
-ng test
-```
+## Documentación
 
-## Running end-to-end tests
-
-For end-to-end (e2e) testing, run:
-
-```bash
-ng e2e
-```
-
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
-
-## Additional Resources
-
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+- [docs/estructura.md](docs/estructura.md) — guía de carpetas y convenciones del equipo.
