@@ -9,7 +9,20 @@
   "projects": {
     "frontend-gym": {
       "projectType": "application",
-      "schematics": {},
+      "schematics": {
+        "@schematics/angular:component": {
+          "type": "component"
+        },
+        "@schematics/angular:service": {
+          "type": "service"
+        },
+        "@schematics/angular:directive": {
+          "type": "directive"
+        },
+        "@schematics/angular:interface": {
+          "type": "model"
+        }
+      },
       "root": "",
       "sourceRoot": "src",
       "prefix": "app",
