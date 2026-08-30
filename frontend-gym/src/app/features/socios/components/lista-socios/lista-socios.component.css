@@ -1,0 +1,24 @@
+.text-mini {
+    font-size: 0.78rem;
+}
+
+.text-mini b {
+    font-weight: 600;
+}
+
+.fs-7 {
+    font-size: 0.85rem;
+}
+
+.fs-8 {
+    font-size: 0.72rem;
+}
+
+.italic {
+    font-style: italic;
+}
+
+thead th {
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}

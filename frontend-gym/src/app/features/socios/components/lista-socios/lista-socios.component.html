@@ -1,1 +1,121 @@
-<p>lista-socios works!</p>
+<div class="container mt-4">
+    <!-- Encabezado -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="text-dark fw-bold m-0">Gestión de Socios</h2>
+            <p class="text-muted small">Listado general de usuarios inscritos en el gimnasio</p>
+        </div>
+    </div>
+    <!-- ESTADO 1: Error Crítico en la Petición -->
+    @if (errorCarga) {
+    <div class="alert alert-danger d-flex align-items-center shadow-sm" role="alert">
+        <div class="fw-semibold">Hubo un problema al conectar con el servidor. Por favor, intenta de nuevo.</div>
+    </div>
+    }
+    <!-- ESTADO 2: Cargando (El Signal aún es undefined debido al delay) -->
+    @else if (sociosSignal() === undefined) {
+    <div class="d-flex justify-content-center align-items-center my-5 py-5">
+        <div class="spinner-border text-primary" role="status">
+        </div>
+        <span class="ms-3 text-muted fw-semibold">Cargando registros...</span>
+    </div>
+    }
+    <!-- ESTADO 3: Datos Listos para Renderizar -->
+    @else {
+    <div class="card shadow-sm border-0 overflow-hidden">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light text-uppercase fs-7 text-muted">
+                    <tr>
+                        <th class="ps-4">Socio / Contacto</th>
+                        <th>Membresía</th>
+                        <th>Asignaciones</th>
+                        <th>Última Medición</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Extraemos el valor del Signal ejecutándolo como función: sociosSignal() -->
+                    @for (socio of sociosSignal(); track socio.id_socio) {
+                    <tr>
+                        <!-- Bloque de datos del socio -->
+                        <td class="ps-4 py-3">
+                            <div class="d-flex align-items-center">
+                                <div class="avatar bg-primary text-white rounded-circle d-flex align-items-center justify-content-center fw-bold me-3"
+                                    style="width: 42px; height: 42px;">
+                                    {{ socio.usuario.nombres.charAt(0) }}{{ socio.usuario.apellidos.charAt(0) }}
+                                </div>
+                                <div>
+                                    <div class="fw-bold text-dark">{{ socio.usuario.nombres }} {{
+                                        socio.usuario.apellidos }}</div>
+                                    <div class="text-muted small mb-1">{{ socio.usuario.correo }}</div>
+                                    <span class="badge bg-light text-secondary border fs-8">ID: {{ socio.id_socio
+                                        }}</span>
+                                </div>
+                            </div>
+                        </td>
+
+                        <!-- Bloque de Membresía -->
+                        <td>
+                            <div>
+                                <span class="badge rounded-pill mb-1"
+                                    [ngClass]="obtenerEstiloBadge(socio.estadoMembresia)">
+                                    {{ socio.estadoMembresia }}
+                                </span>
+                                <div class="fw-semibold text-secondary small">{{ socio.tipoPlan }}</div>
+                                <div class="text-muted text-mini">Desde: {{ socio.socioInfo.fecha_registro |
+                                    date:'dd/MM/yyyy' }}</div>
+                            </div>
+                        </td>
+
+                        <!-- Bloque de Asignaciones -->
+                        <td>
+                            <div class="mb-1">
+                                <strong class="text-mini text-muted">Coach:</strong>
+                                @for (coach of socio.entrenadoresAsignados; track coach.id_entrenador) {
+                                <span class="d-block small text-dark">• {{ coach.nombres }} {{ coach.apellidos }}</span>
+                                } @empty {
+                                <span class="d-block small text-muted italic">Sin coach asignado</span>
+                                }
+                            </div>
+                            <div>
+                                <strong class="text-mini text-muted">Clase:</strong>
+                                @for (clase of socio.clasesAsignadas; track clase.id_clase) {
+                                <span class="d-block small text-dark">• {{ clase.nombre_clase }}</span>
+                                } @empty {
+                                <span class="d-block small text-muted italic">Sin clases inscritas</span>
+                                }
+                            </div>
+                        </td>
+
+                        <!-- Bloque de Mediciones Físicas -->
+                        <td>
+                            @if (socio.ultimaMedicion) {
+                            <div class="row g-1 text-mini" style="max-width: 200px;">
+                                <div class="col-6"><b class="text-muted">Peso:</b> {{ socio.ultimaMedicion.peso }} kg
+                                </div>
+                                <div class="col-6"><b class="text-muted">Alt:</b> {{ socio.ultimaMedicion.estatura }} m
+                                </div>
+                                <div class="col-6"><b class="text-muted">Grasa:</b> {{
+                                    socio.ultimaMedicion.porcentaje_grasa }}%</div>
+                                <div class="col-6"><b class="text-muted">Músc:</b> {{ socio.ultimaMedicion.masa_muscular
+                                    }}%</div>
+                            </div>
+                            } @else {
+                            <span class="text-muted small italic">Sin registros físicos</span>
+                            }
+                        </td>
+                    </tr>
+                    } @empty {
+                    <!-- Caso en que el arreglo devuelto esté vacío -->
+                    <tr>
+                        <td colspan="5" class="text-center py-5 text-muted">
+                            <p class="m-0 fw-semibold">No se encontraron socios registrados en el sistema.</p>
+                        </td>
+                    </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+    }
+</div>
