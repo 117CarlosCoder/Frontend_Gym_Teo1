@@ -1,8 +1,8 @@
-import { MedicionFisica } from "../../../shared/models/medicion-fisica";
-import { Socio } from "../../../shared/models/socio";
-import { Usuario } from "../../../shared/models/usuario";
-import { ClaseInscrita } from "./clase-inscrita";
-import { EntrenadorAsignado } from "./entrenador-asignado";
+import { MedicionFisica } from "../../../shared/models/medicion-fisica.model";
+import { Socio } from "../../../shared/models/socio.model";
+import { Usuario } from "../../../shared/models/usuario.model";
+import { ClaseInscrita } from "./clase-inscrita.model";
+import { EntrenadorAsignado } from "./entrenador-asignado.model";
 
 export interface SocioTablaDTO {
     id_socio: number;
