@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { SociosService } from '../../services/socios.service';
 import { DatePipe, NgClass } from '@angular/common';
 import { toSignal } from '@angular/core/rxjs-interop';
@@ -16,8 +16,12 @@ export class ListaSocios {
   // Variables de estado de la tabla de socios
   public errorCarga: boolean = false;
 
+  // Signal que almacena el término de búsqueda actual.
+  public query = signal<string>('');
+
   private sociosService = inject(SociosService);
 
+  // // Lista base que viene del servicio (Mock o HTTPS)
   public sociosSignal = toSignal(
     this.sociosService.getSocios().pipe(
       catchError((error) => {
@@ -28,12 +32,36 @@ export class ListaSocios {
     )
   );
 
+  // Se recalcula automáticamente si 'query' o 'sociosSignal' cambian.
+  public sociosFiltrados = computed(() => {
+    const listaOriginal = this.sociosSignal() || [];
+    const textoBusqueda = this.query().toLowerCase().trim();
+
+    // Si no hay texto de búsqueda, devolvemos la lista completa
+    if (!textoBusqueda) {
+      return listaOriginal;
+    }
+
+    // Filtramos por nombres, apellidos o correo electrónico
+    return listaOriginal.filter(socio =>
+      socio.usuario.nombres.toLowerCase().includes(textoBusqueda) ||
+      socio.usuario.apellidos.toLowerCase().includes(textoBusqueda) ||
+      socio.usuario.correo.toLowerCase().includes(textoBusqueda)
+    );
+  });
+
   // Helper para asignar colores dinámicos a los badges de Bootstrap
   public obtenerEstiloBadge(estado: string): string {
     const normalizado = estado.toLowerCase().trim();
     if (normalizado.includes('activo')) return 'bg-success';
     if (normalizado.includes('pendiente')) return 'bg-warning text-dark';
     return 'bg-danger';
+  }
+
+  // Método para actualizar el valor del buscador.
+  public alBuscar(evento: Event): void {
+    const elemento = evento.target as HTMLInputElement;
+    this.query.set(elemento.value); // Modifica el valor del signal
   }
 
 }
