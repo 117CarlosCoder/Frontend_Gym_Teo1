@@ -1,0 +1,20 @@
+<header class="panel-header">
+  <div class="container panel-header__inner">
+    <a class="panel-header__brand" routerLink="/"> CLAUDE LOVERS <span>GYM</span> </a>
+
+    <div class="panel-header__usuario">
+      <span class="panel-header__avatar" aria-hidden="true">{{ iniciales() }}</span>
+      <span class="panel-header__datos">
+        <strong>{{ nombreCompleto() }}</strong>
+        <small>{{ etiquetaRol() }}</small>
+      </span>
+      <button type="button" class="btn btn--outline btn--sm" (click)="cerrarSesion()">
+        Cerrar sesión
+      </button>
+    </div>
+  </div>
+</header>
+
+<main class="container panel-contenido">
+  <router-outlet />
+</main>
