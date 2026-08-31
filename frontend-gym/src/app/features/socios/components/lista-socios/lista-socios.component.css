@@ -1,0 +1,71 @@
+/* Aplicación de la Fuente Global */
+.container,
+input,
+button,
+table {
+    font-family: var(--app-fuente-texto), sans-serif;
+    color: var(--app-color-texto);
+}
+
+/* Títulos y Encabezados */
+.text-primary-app {
+    color: var(--app-color-primario);
+}
+
+.text-secondary-app {
+    color: var(--app-color-secundario);
+}
+
+/* Barra de Búsqueda */
+.search-group {
+    border: 1px solid var(--app-color-secundario);
+}
+
+.search-input:focus {
+    border-color: var(--app-color-acento);
+    box-shadow: 0 0 0 0.25rem rgba(3, 94, 123, 0.15);
+}
+
+/* Avatar del Socio (Color de Acento) */
+.avatar-app {
+    background-color: var(--app-color-acento);
+    color: var(--app-color-fondo);
+    width: 42px;
+    height: 42px;
+}
+
+/* Tabla Personalizada */
+.table-app thead th {
+    background-color: #f8f9fa;
+    color: var(--app-color-primario);
+    font-weight: 700;
+    border-bottom: 2px solid var(--app-color-primario);
+    letter-spacing: 0.5px;
+}
+
+/* Clases de utilidad para densidades de texto */
+.text-mini {
+    font-size: 0.78rem;
+}
+
+.text-mini b {
+    color: var(--app-color-primario);
+    font-weight: 600;
+}
+
+.fs-7 {
+    font-size: 0.85rem;
+}
+
+.fs-8 {
+    font-size: 0.72rem;
+}
+
+.italic {
+    font-style: italic;
+}
+
+thead th {
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}

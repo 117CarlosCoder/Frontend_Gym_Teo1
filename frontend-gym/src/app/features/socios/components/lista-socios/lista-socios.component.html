@@ -1,0 +1,152 @@
+<div class="container mt-4">
+    <!-- Encabezado -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="text-primary-app fw-bold m-0">Gestión de Socios</h2>
+            <p class="text-secondary-app small">Listado general de usuarios inscritos en el gimnasio</p>
+        </div>
+    </div>
+    <!-- ESTADO 1: Error Crítico en la Petición -->
+    @if (errorCarga) {
+    <div class="alert alert-danger d-flex align-items-center shadow-sm" role="alert">
+        <div class="fw-semibold">Hubo un problema al conectar con el servidor. Por favor, intenta de nuevo.</div>
+    </div>
+    }
+    <!-- ESTADO 2: Cargando (Esperando los datos iniciales) -->
+    @else if (sociosSignal() === undefined) {
+    <div class="d-flex justify-content-center align-items-center my-5 py-5">
+        <div class="spinner-border" style="color: var(--app-color-primario);" role="status">
+        </div>
+        <span class="ms-3 text-secondary-app fw-semibold">Cargando registros...</span>
+    </div>
+    }
+    <!-- ESTADO 3: Datos Listos (Incluye Buscador y Tabla) -->
+    @else {
+    <!-- BARRA DE BÚSQUEDA -->
+    <div class="row mb-3">
+        <div class="col-md-5 col-lg-4">
+            <div class="input-group input-group-sm shadow-sm rounded search-group">
+                <span class="input-group-text bg-white border-end-0 text-muted">
+                    🔍
+                </span>
+                <!-- Escuchamos el evento (input) para reaccionar en tiempo real -->
+                <input type="text" class="form-control border-0 ps-1 py-2 fs-7 search-input"
+                    placeholder="Buscar por nombre, apellido o correo..." [value]="query()"
+                    (input)="alBuscar($event)" />
+            </div>
+        </div>
+        <!-- Indicador dinámico de resultados -->
+        <div class="col-md-7 col-lg-8 d-flex align-items-center justify-content-md-end mt-2 mt-md-0">
+            <span class="text-secondary-app small">
+                Mostrando <b class="text-primary-app">{{ sociosFiltrados().length }}</b> de {{ sociosSignal()?.length }}
+                registros
+            </span>
+        </div>
+    </div>
+
+    <!-- TABLA DE REGISTROS -->
+    <div class="card shadow-sm border-0 overflow-hidden">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0 table-app">
+                <thead class="text-uppercase fs-7 ">
+                    <tr>
+                        <th class="ps-4">Socio / Contacto</th>
+                        <th>Membresía</th>
+                        <th>Asignaciones</th>
+                        <th>Última Medición</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Iteramos sobre el computed signal: sociosFiltrados() -->
+                    @for (socio of sociosFiltrados(); track socio.id_socio) {
+                    <tr>
+                        <!-- Bloque de datos del socio -->
+                        <td class="ps-4 py-3">
+                            <div class="d-flex align-items-center">
+                                <div
+                                    class="avatar-app rounded-circle d-flex align-items-center justify-content-center fw-bold me-3">
+                                    {{ socio.usuario.nombres.charAt(0) }}{{ socio.usuario.apellidos.charAt(0) }}
+                                </div>
+                                <div>
+                                    <div class="fw-bold text-primary-app">{{ socio.usuario.nombres }} {{
+                                        socio.usuario.apellidos }}</div>
+                                    <div class="text-secondary-app small mb-1">{{ socio.usuario.correo }}</div>
+                                    <span class="badge bg-light text-secondary border fs-8">ID: {{ socio.id_socio
+                                        }}</span>
+                                </div>
+                            </div>
+                        </td>
+
+                        <!-- Bloque de Membresía -->
+                        <td>
+                            <div>
+                                <span class="badge rounded-pill mb-1"
+                                    [ngClass]="obtenerEstiloBadge(socio.estadoMembresia)">
+                                    {{ socio.estadoMembresia }}
+                                </span>
+                                <div class="fw-semibold text-secondary-app small">{{ socio.tipoPlan }}</div>
+                                <div class="text-secondary-app text-mini">Desde: {{ socio.socioInfo.fecha_registro |
+                                    date:'dd/MM/yyyy' }}</div>
+                            </div>
+                        </td>
+
+                        <!-- Bloque de Asignaciones -->
+                        <td>
+                            <div class="mb-1">
+                                <strong class="text-mini text-secondary-app">Coach:</strong>
+                                @for (coach of socio.entrenadoresAsignados; track coach.id_entrenador) {
+                                <span class="d-block small">• {{ coach.nombres }} {{ coach.apellidos
+                                    }}</span>
+                                } @empty {
+                                <span class="d-block small text-secondary-app italic">Sin coach asignado</span>
+                                }
+                            </div>
+                            <div>
+                                <strong class="text-mini text-secondary-app">Clase:</strong>
+                                @for (clase of socio.clasesAsignadas; track clase.id_clase) {
+                                <span class="d-block small">• {{ clase.nombre_clase }}</span>
+                                } @empty {
+                                <span class="d-block small text-secondary-app italic">Sin clases inscritas</span>
+                                }
+                            </div>
+                        </td>
+
+                        <!-- Bloque de Mediciones Físicas -->
+                        <td>
+                            @if (socio.ultimaMedicion) {
+                            <div class="row g-1 text-mini" style="max-width: 200px;">
+                                <div class="col-6"><b>Peso:</b> {{ socio.ultimaMedicion.peso }}
+                                    kg
+                                </div>
+                                <div class="col-6"><b>Alt:</b> {{ socio.ultimaMedicion.estatura
+                                    }} m
+                                </div>
+                                <div class="col-6"><b>Grasa:</b> {{
+                                    socio.ultimaMedicion.porcentaje_grasa }}%</div>
+                                <div class="col-6"><b>Músc:</b> {{
+                                    socio.ultimaMedicion.masa_muscular
+                                    }}%</div>
+                            </div>
+                            } @else {
+                            <span class="text-secondary-app small italic">Sin registros físicos</span>
+                            }
+                        </td>
+                    </tr>
+                    } @empty {
+                    <!-- Este bloque @empty se ejecuta si el filtro no coincide con ningún socio -->
+                    <tr>
+                        <td colspan="5" class="text-center py-5">
+                            <p class="m-0 fw-semibold" style="color: var(--app-color-primario);">No se encontraron
+                                socios que coincidan con "{{
+                                query() }}".</p>
+                            <p class="text-secondary-app text-mini m-0">Intenta modificando los criterios de búsqueda.
+                            </p>
+                        </td>
+                    </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+    }
+</div>
