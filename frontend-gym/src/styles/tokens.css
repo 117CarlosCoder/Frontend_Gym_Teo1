@@ -1,8 +1,4 @@
-/* ==========================================================================
-   Design tokens — Paleta oficial (Ficha de arranque, Sprint 0)
-   Primario  #101D42 · Secundario #6E6A6F · Acento #035E7B
-   Fondo     #FFFFFF · Texto      #000000 · Tipografía Arial
-   ========================================================================== */
+
 :root {
   /* --- Paleta base de la ficha --- */
   --color-primary: #101d42;
@@ -11,7 +7,6 @@
   --color-bg: #ffffff;
   --color-text: #000000;
 
-  /* --- Variantes derivadas (para hover, gradientes y superficies) --- */
   --color-primary-dark: #0a1330;
   --color-primary-light: #1c2f66;
   --color-accent-dark: #024a61;
