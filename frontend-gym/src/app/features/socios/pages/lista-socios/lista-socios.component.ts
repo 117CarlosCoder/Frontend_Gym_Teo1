@@ -14,15 +14,15 @@ import { of } from 'rxjs';
 export class ListaSocios {
 
   // Variables de estado de la tabla de socios
-  public errorCarga: boolean = false;
+  protected errorCarga: boolean = false;
 
   // Signal que almacena el término de búsqueda actual.
-  public query = signal<string>('');
+  protected query = signal<string>('');
 
   private sociosService = inject(SociosService);
 
   // // Lista base que viene del servicio (Mock o HTTPS)
-  public sociosSignal = toSignal(
+  protected sociosSignal = toSignal(
     this.sociosService.getSocios().pipe(
       catchError((error) => {
         console.error('Error en la carga de socios:', error);
@@ -33,7 +33,7 @@ export class ListaSocios {
   );
 
   // Se recalcula automáticamente si 'query' o 'sociosSignal' cambian.
-  public sociosFiltrados = computed(() => {
+  protected sociosFiltrados = computed(() => {
     const listaOriginal = this.sociosSignal() || [];
     const textoBusqueda = this.query().toLowerCase().trim();
 
@@ -51,15 +51,15 @@ export class ListaSocios {
   });
 
   // Helper para asignar colores dinámicos a los badges de Bootstrap
-  public obtenerEstiloBadge(estado: string): string {
+  protected obtenerEstiloBadge(estado: string): string {
     const normalizado = estado.toLowerCase().trim();
-    if (normalizado.includes('activo')) return 'bg-success';
-    if (normalizado.includes('pendiente')) return 'bg-warning text-dark';
-    return 'bg-danger';
+    if (normalizado.includes('activo')) return 'socios-lista__badge--activo';
+    if (normalizado.includes('pendiente')) return 'socios-lista__badge--pendiente';
+    return 'socios-lista__badge--inactivo';
   }
 
   // Método para actualizar el valor del buscador.
-  public alBuscar(evento: Event): void {
+  protected alBuscar(evento: Event): void {
     const elemento = evento.target as HTMLInputElement;
     this.query.set(elemento.value); // Modifica el valor del signal
   }

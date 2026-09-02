@@ -40,6 +40,9 @@
             ],
             "styles": [
               "src/styles.css",
+              "src/styles/base.css",
+              "src/styles/tokens.css",
+              "src/styles/utilities.css",
               "node_modules/bootstrap/dist/css/bootstrap.min.css"
             ],
             "scripts": [

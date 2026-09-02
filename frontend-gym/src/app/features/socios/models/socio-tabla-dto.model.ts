@@ -1,6 +1,6 @@
-import { MedicionFisica } from "../../../shared/models/medicion-fisica.model";
-import { Socio } from "../../../shared/models/socio.model";
-import { Usuario } from "../../../shared/models/usuario.model";
+import { MedicionFisica } from "./medicion-fisica.model";
+import { Socio } from "./socio.model";
+import { Usuario } from "./usuario.model";
 import { ClaseInscrita } from "./clase-inscrita.model";
 import { EntrenadorAsignado } from "./entrenador-asignado.model";
 

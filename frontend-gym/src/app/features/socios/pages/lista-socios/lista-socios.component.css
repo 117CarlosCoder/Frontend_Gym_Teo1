@@ -1,0 +1,93 @@
+/* Títulos y Encabezados */
+.socios-lista__text-primary {
+    color: var(--color-primary);
+}
+
+.socios-lista__text-secondary {
+    color: var(--color-secondary);
+}
+
+/* Barra de Busqueda */
+.socios-lista__search-group {
+    border: 1px solid var(--color-secondary-light);
+    transition: border-color var(--transition), box-shadow var(--transition);
+}
+
+.socios-lista__search-group:focus-within {
+    border-color: var(--color-accent);
+    box-shadow: 0 0 0 0.25rem rgba(3, 94, 123, 0.15);
+}
+
+.socios-lista__search-icon {
+    color: var(--color-secondary-light);
+}
+
+.socios-lista__search-input:focus {
+    border-color: var(--color-accent);
+    box-shadow: 0 0 0 0.25rem rgba(3, 94, 123, 0.15);
+}
+
+/* Avatar del Socio (Color de Acento) */
+.socios-lista__avatar {
+    width: 42px;
+    height: 42px;
+    background-color: var(--color-accent);
+    color: var(--color-bg);
+    font-size: var(--fs-md);
+    flex-shrink: 0;
+}
+
+/* Spinner personalizado */
+.socios-lista__spinner {
+    color: var(--color-accent);
+}
+
+/* Tabla Personalizada */
+.socios-lista__table thead th {
+    background-color: var(--color-surface);
+    color: var(--color-primary);
+    font-weight: 700;
+    border-bottom: 2px solid var(--color-primary);
+    letter-spacing: 0.5px;
+}
+
+.socios-lista__table tbody tr:hover {
+    background-color: var(--color-surface);
+}
+
+/* Badges de membresía (base + modificadores) */
+.socios-lista__badge {
+    background-color: var(--color-secondary-light);
+    color: var(--color-on-dark);
+}
+
+.socios-lista__badge--activo {
+    background-color: var(--color-success);
+}
+
+.socios-lista__badge--pendiente {
+    background-color: var(--color-warning);
+    color: var(--color-text);
+}
+
+.socios-lista__badge--inactivo,
+.socios-lista__badge--danger {
+    background-color: var(--color-danger);
+}
+
+/* Clases de utilidad para densidades de texto */
+.text-mini {
+    font-size: var(--fs-xs);
+}
+
+.fs-7 {
+    font-size: 0.85rem;
+}
+
+.fs-8 {
+    font-size: 0.72rem;
+}
+
+.italic {
+    font-style: italic;
+}
