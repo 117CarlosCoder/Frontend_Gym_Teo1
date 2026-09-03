@@ -24,7 +24,7 @@ export const MOCK_SOCIOS_TABLA: SocioTablaDTO[] = [
             { idEntrenador: 101, nombre: 'Carlos', apellido: 'Mendoza', especialidad: 'Entrenamiento Funcional' }
         ],
         clasesAsignadas: [
-            { idClase: 50, idEntrenador: 101, nombre: 'Crossfit Avanzado', horario: '2026-08-30T07:00:00' }
+            { idClase: 50, idEntrenador: 101, nombreEntrenador: 'Carlos Mendoza', nombre: 'Crossfit Avanzado', horario: '2026-08-30T07:00:00' }
         ],
         ultimaMedicion: {
             id_medicion: 1,
@@ -39,7 +39,7 @@ export const MOCK_SOCIOS_TABLA: SocioTablaDTO[] = [
             pierna: 55.00,
             observaciones: 'Progreso excelente en masa muscular.'
         },
-        estadoMembresia: 'Activo',
+        estadoMembresia: 'Activa',
         tipoPlan: 'Premium'
     },
     {
@@ -65,7 +65,7 @@ export const MOCK_SOCIOS_TABLA: SocioTablaDTO[] = [
             { idEntrenador: 102, nombre: 'Ana', apellido: 'Martínez', especialidad: 'Yoga' }
         ],
         clasesAsignadas: [
-            { idClase: 51, idEntrenador: 102, nombre: 'Spinning Matutino', horario: '2026-08-30T08:00:00' }
+            { idClase: 51, idEntrenador: 102, nombreEntrenador: 'Ana Martínez', nombre: 'Spinning Matutino', horario: '2026-08-30T08:00:00' }
         ],
         ultimaMedicion: {
             id_medicion: 2,

@@ -1,0 +1,183 @@
+<div class="container py-4">
+    @if (cargando()) {
+    <div class="text-center py-5">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Cargando...</span>
+        </div>
+        <p class="mt-2">Cargando información del socio...</p>
+    </div>
+    } @else if (error()) {
+    <div class="alert alert-danger" role="alert">
+        {{ error() }}
+        <button class="btn btn--outline btn--sm portal__retry-btn" (click)="cargarDatos()">Reintentar</button>
+    </div>
+    } @else if (datosSocio(); as datos) {
+    <header class="mb-4">
+        <h1 class="display-5">Portal del Socio</h1>
+        <p class="text-muted">Bienvenido, {{ datos.usuario.nombre }} {{ datos.usuario.apellido }}</p>
+    </header>
+
+    <div class="row g-4">
+        <!-- Columna izquierda: Información personal -->
+        <div class="col-lg-6">
+            <div class="card portal__card h-100">
+                <div class="card-header portal__card-header">
+                    <h5 class="mb-0"><i class="bi bi-person-badge me-2"></i>Información Personal</h5>
+                </div>
+                <div class="card-body">
+                    <dl class="row mb-0">
+                        <dt class="col-sm-4">DPI:</dt>
+                        <dd class="col-sm-8">{{ datos.usuario.dpi }}</dd>
+
+                        <dt class="col-sm-4">Nombres:</dt>
+                        <dd class="col-sm-8">{{ datos.usuario.nombre }}</dd>
+
+                        <dt class="col-sm-4">Apellidos:</dt>
+                        <dd class="col-sm-8">{{ datos.usuario.apellido }}</dd>
+
+                        <dt class="col-sm-4">Correo:</dt>
+                        <dd class="col-sm-8">{{ datos.usuario.correo }}</dd>
+
+                        <dt class="col-sm-4">Teléfono:</dt>
+                        <dd class="col-sm-8">{{ datos.usuario.telefono }}</dd>
+
+                        <dt class="col-sm-4">Username:</dt>
+                        <dd class="col-sm-8">{{ datos.usuario.username }}</dd>
+                    </dl>
+
+                    <hr>
+
+                    <!-- Entrenadores asignados -->
+                    <h6 class="portal__section-title">Entrenadores Asignados</h6>
+                    <ul class="portal__list">
+                        @for (entrenador of datos.entrenadoresAsignados; track entrenador.idEntrenador) {
+                        <li class="portal__list-item">
+                            <i class="bi bi-person-check text-success me-2"></i>
+                            {{ entrenador.nombre }} {{ entrenador.apellido }} ({{ entrenador.especialidad }})
+                        </li>
+                        }
+                    </ul>
+
+                    <!-- Clases asignadas -->
+                    <h6 class="portal__section-title mt-3">Clases Asignadas</h6>
+                    <ul class="portal__list">
+                        @for (clase of datos.clasesAsignadas; track clase.idClase) {
+                        <li class="portal__list-item">
+                            <i class="bi bi-calendar-event text-info me-2"></i>
+                            {{ clase.nombre }} - {{ clase.horario }} (Prof. {{ clase.nombreEntrenador }})
+                        </li>
+                        }
+                    </ul>
+
+                    <!-- Medición física actual -->
+                    <h6 class="portal__section-title mt-3">Última Medición Física</h6>
+                    <p class="mb-1"><small class="text-muted">Fecha: {{ datos.medicion.fecha }}</small>
+                    </p>
+                    <div class="row">
+                        <div class="col-6 col-md-3 mb-2">
+                            <span class="d-block text-muted">Peso</span>
+                            <strong>{{ datos.medicion.peso }} kg</strong>
+                        </div>
+                        <div class="col-6 col-md-3 mb-2">
+                            <span class="d-block text-muted">Estatura</span>
+                            <strong>{{ datos.medicion.estatura }} m</strong>
+                        </div>
+                        <div class="col-6 col-md-3 mb-2">
+                            <span class="d-block text-muted">% Grasa</span>
+                            <strong>{{ datos.medicion.porcentaje_grasa }}%</strong>
+                        </div>
+                        <div class="col-6 col-md-3 mb-2">
+                            <span class="d-block text-muted">Masa Muscular</span>
+                            <strong>{{ datos.medicion.masa_muscular }} kg</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Columna derecha: Membresía -->
+        <div class="col-lg-6">
+            <div class="card portal__card h-100">
+                <div class="card-header portal__card-header portal__card-header--success">
+                    <h5 class="mb-0"><i class="bi bi-credit-card me-2"></i>Detalles de Membresía</h5>
+                </div>
+                <div class="card-body">
+                    <dl class="row mb-0">
+                        <dt class="col-sm-4">Fecha de inicio:</dt>
+                        <dd class="col-sm-8">{{ datos.membresia.fechaInicio }}</dd>
+
+                        <dt class="col-sm-4">Fecha de vencimiento:</dt>
+                        <dd class="col-sm-8">{{ datos.membresia.fechaVencimiento }}</dd>
+
+                        <dt class="col-sm-4">Estado:</dt>
+                        <dd class="col-sm-8">
+                            <span class="badge portal__badge">{{ datos.membresia.estado }}</span>
+                            <small class="text-muted d-block">{{ datos.membresia.descripcionEstado }}</small>
+                        </dd>
+
+                        <dt class="col-sm-4">Plan:</dt>
+                        <dd class="col-sm-8">{{ datos.membresia.tipo }}</dd>
+
+                        <dt class="col-sm-4">Duración:</dt>
+                        <dd class="col-sm-8">{{ datos.membresia.duracionDias }} días</dd>
+
+                        <dt class="col-sm-4">Precio:</dt>
+                        <dd class="col-sm-8">Q {{ datos.membresia.precio.toFixed(2) }}</dd>
+
+                        <dt class="col-sm-4">Descripción:</dt>
+                        <dd class="col-sm-8">{{ datos.membresia.descripcion }}</dd>
+
+                        <dt class="col-sm-4">Beneficios:</dt>
+                        <dd class="col-sm-8">{{ datos.membresia.beneficios?.join(' - ') }}</dd>
+                    </dl>
+
+                    <div class="alert portal__alert alert-warning mt-3 mb-0" role="alert">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        Su membresía vence el <strong>{{ datos.membresia.fechaVencimiento }}</strong>. ¡Renueve a
+                        tiempo!
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Historial de asistencias (ancho completo) -->
+        <div class="col-12">
+            <div class="card portal__card">
+                <div class="card-header portal__card-header portal__card-header--info">
+                    <h5 class="mb-0"><i class="bi bi-clock-history me-2"></i>Historial de Asistencias al Gimnasio</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover portal__table">
+                            <thead>
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th>Hora Entrada</th>
+                                    <th>Hora Salida</th>
+                                    <th>Duración</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @for (asistencia of datos.asistencias; track $index) {
+                                <tr>
+                                    <td>{{ asistencia.fecha }}</td>
+                                    <td>{{ asistencia.horaEntrada }}</td>
+                                    <td>{{ asistencia.horaSalida || 'Aún dentro' }}</td>
+                                    <td>
+                                        @if (asistencia.horaSalida) {
+                                        {{ calcularDuracion(asistencia.horaEntrada, asistencia.horaSalida) }}
+                                        } @else {
+                                        <span class="badge bg-warning text-dark">En curso</span>
+                                        }
+                                    </td>
+                                </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    }
+</div>

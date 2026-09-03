@@ -17,6 +17,7 @@ export interface MembresiaSocio {
   precio: number;
   duracionDias: number;
   descripcion?: string;
+  beneficios?: string[];
 }
 
 export interface Inscripcion {
@@ -38,6 +39,7 @@ export interface Entrenador {
 export interface Clase {
   idClase: number;
   idEntrenador: number;
+  nombreEntrenador: string;
   nombre: string;
   horario: string;
   cupoMaximo?: number;

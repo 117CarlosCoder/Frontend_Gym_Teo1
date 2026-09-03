@@ -53,7 +53,7 @@ export class ListaSocios {
   // Helper para asignar colores dinámicos a los badges de Bootstrap
   protected obtenerEstiloBadge(estado: string): string {
     const normalizado = estado.toLowerCase().trim();
-    if (normalizado.includes('activo')) return 'socios-lista__badge--activo';
+    if (normalizado.includes('activa')) return 'socios-lista__badge--activo';
     if (normalizado.includes('vencida')) return 'socios-lista__badge--vencida';
     return 'socios-lista__badge--inactivo';
   }

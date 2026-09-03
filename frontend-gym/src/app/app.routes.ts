@@ -41,6 +41,14 @@ export const routes: Routes = [
           ),
         title: 'Panel | Claude Lovers Gym',
       },
+      {
+        path: 'portal-socio',
+        loadComponent: () =>
+          import('./features/socios/pages/portal-socio/portal-socio.component').then(
+            (m) => m.PortalSocioComponent,
+          ),
+        title: 'Portal del Socio | Claude Lovers Gym',
+      },
     ],
   },
   { path: '**', redirectTo: '' },
