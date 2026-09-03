@@ -1,0 +1,26 @@
+.campo-password {
+    position: relative;
+}
+
+.campo-password .field__control {
+    padding-right: 46px;
+}
+
+.campo-password__ojo {
+    position: absolute;
+    top: 50%;
+    right: var(--sp-2);
+    transform: translateY(-50%);
+    display: grid;
+    place-items: center;
+    width: 34px;
+    height: 34px;
+    border: none;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--color-secondary);
+}
+
+.campo-password__ojo:hover {
+    color: var(--color-accent);
+}

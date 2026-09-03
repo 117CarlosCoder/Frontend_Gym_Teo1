@@ -1,0 +1,164 @@
+<form [formGroup]="userForm" (ngSubmit)="onSubmit()" novalidate class="user-form">
+    <!-- Nombre -->
+    <div class="field">
+        <label for="nombre" class="field__label">Nombre *</label>
+        <input type="text" id="nombre" class="field__control"
+            [class.is-invalid]="f['nombre'].invalid && (f['nombre'].touched || f['nombre'].dirty)"
+            formControlName="nombre" placeholder="Ingrese su nombre" />
+        @if (f['nombre'].invalid && (f['nombre'].touched || f['nombre'].dirty)) {
+        <div class="field__error">
+            @if (f['nombre'].errors?.['required']) { <span>El nombre es obligatorio.</span> }
+            @if (f['nombre'].errors?.['minlength']) { <span>El nombre debe tener al menos 2 caracteres.</span> }
+        </div>
+        }
+    </div>
+
+    <!-- Apellido -->
+    <div class="field">
+        <label for="apellido" class="field__label">Apellido *</label>
+        <input type="text" id="apellido" class="field__control"
+            [class.is-invalid]="f['apellido'].invalid && (f['apellido'].touched || f['apellido'].dirty)"
+            formControlName="apellido" placeholder="Ingrese su apellido" />
+        @if (f['apellido'].invalid && (f['apellido'].touched || f['apellido'].dirty)) {
+        <div class="field__error">
+            @if (f['apellido'].errors?.['required']) { <span>El apellido es obligatorio.</span> }
+            @if (f['apellido'].errors?.['minlength']) { <span>El apellido debe tener al menos 2 caracteres.</span> }
+        </div>
+        }
+    </div>
+
+    <!-- Correo -->
+    <div class="field">
+        <label for="correo" class="field__label">Correo electrónico *</label>
+        <input type="email" id="correo" class="field__control"
+            [class.is-invalid]="f['correo'].invalid && (f['correo'].touched || f['correo'].dirty)"
+            formControlName="correo" placeholder="nombre@ejemplo.com" />
+        @if (f['correo'].invalid && (f['correo'].touched || f['correo'].dirty)) {
+        <div class="field__error">
+            @if (f['correo'].errors?.['required']) { <span>El correo es obligatorio.</span> }
+            @if (f['correo'].errors?.['email']) { <span>Ingrese un correo válido.</span> }
+        </div>
+        }
+    </div>
+
+    <!-- Teléfono -->
+    <div class="field">
+        <label for="telefono" class="field__label">Teléfono *</label>
+        <input type="tel" id="telefono" class="field__control"
+            [class.is-invalid]="f['telefono'].invalid && (f['telefono'].touched || f['telefono'].dirty)"
+            formControlName="telefono" placeholder="Ej: 5555-1234" />
+        @if (f['telefono'].invalid && (f['telefono'].touched || f['telefono'].dirty)) {
+        <div class="field__error">
+            @if (f['telefono'].errors?.['required']) { <span>El teléfono es obligatorio.</span> }
+            @if (f['telefono'].errors?.['pattern']) { <span>Formato no válido (solo números, espacios, +, -,
+                paréntesis).</span> }
+        </div>
+        }
+    </div>
+
+    <!-- DPI -->
+    <div class="field">
+        <label for="dpi" class="field__label">DPI (13 dígitos) *</label>
+        <input type="text" id="dpi" class="field__control"
+            [class.is-invalid]="f['dpi'].invalid && (f['dpi'].touched || f['dpi'].dirty)" formControlName="dpi"
+            placeholder="Ingrese los 13 dígitos" maxlength="13" />
+        @if (f['dpi'].invalid && (f['dpi'].touched || f['dpi'].dirty)) {
+        <div class="field__error">
+            @if (f['dpi'].errors?.['required']) { <span>El DPI es obligatorio.</span> }
+            @if (f['dpi'].errors?.['pattern']) { <span>Debe contener exactamente 13 dígitos.</span> }
+        </div>
+        }
+    </div>
+
+    <!-- Campos adicionales solo en modo self -->
+    @if (mode() === 'self') {
+    <!-- Username -->
+    <div class="field">
+        <label for="username" class="field__label">Nombre de usuario *</label>
+        <input type="text" id="username" class="field__control"
+            [class.is-invalid]="f['username'].invalid && (f['username'].touched || f['username'].dirty)"
+            formControlName="username" placeholder="Elija un nombre de usuario" />
+        @if (f['username'].invalid && (f['username'].touched || f['username'].dirty)) {
+        <div class="field__error">
+            @if (f['username'].errors?.['required']) { <span>El nombre de usuario es obligatorio.</span> }
+            @if (f['username'].errors?.['minlength']) { <span>Mínimo 4 caracteres.</span> }
+            @if (f['username'].errors?.['maxlength']) { <span>Máximo 20 caracteres.</span> }
+            @if (f['username'].errors?.['pattern']) { <span>Solo letras, números y guiones bajos.</span> }
+        </div>
+        }
+    </div>
+
+    <!-- Contraseña -->
+    <div class="field">
+        <label for="password" class="field__label">Contraseña *</label>
+        <div class="campo-password">
+            <input type="password" id="password" class="field__control"
+                [class.is-invalid]="f['password'].invalid && (f['password'].touched || f['password'].dirty)"
+                formControlName="password" placeholder="Mínimo 6 caracteres, al menos una letra y un número"
+                [type]="mostrarPassword() ? 'text' : 'password'" />
+            <button type="button" class="campo-password__ojo" (click)="alternarPassword()"
+                [attr.aria-label]="mostrarPassword() ? 'Ocultar contraseña' : 'Mostrar contraseña'">
+                @if (mostrarPassword()) {
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                    <path
+                        d="M12 7c2.8 0 5 2.2 5 5 0 .6-.1 1.2-.3 1.7l2.9 2.9c1.5-1.3 2.7-2.9 3.4-4.6-1.7-4.1-5.6-7-10-7-1.3 0-2.5.2-3.6.6l2.1 2.1c.5-.5 1-.7 1.5-.7zM2.7 3.4L1.4 4.7l2.5 2.5C2.3 8.5 1 10.1.3 12c1.7 4.1 5.6 7 10 7 1.4 0 2.7-.3 3.9-.7l3.1 3.1 1.3-1.3L2.7 3.4zM12 17c-2.8 0-5-2.2-5-5 0-.8.2-1.5.5-2.1l1.5 1.5c0 .2-.1.4-.1.6 0 1.7 1.4 3 3 3 .2 0 .4 0 .6-.1l1.5 1.5c-.6.4-1.3.6-2 .6z" />
+                </svg>
+                } @else {
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                    <path
+                        d="M12 5C7.6 5 3.7 7.9 2 12c1.7 4.1 5.6 7 10 7s8.3-2.9 10-7c-1.7-4.1-5.6-7-10-7zm0 12c-2.8 0-5-2.2-5-5s2.2-5 5-5 5 2.2 5 5-2.2 5-5 5zm0-8a3 3 0 100 6 3 3 0 000-6z" />
+                </svg>
+                }
+            </button>
+        </div>
+        @if (f['password'].invalid && (f['password'].touched || f['password'].dirty)) {
+        <div class="field__error">
+            @if (f['password'].errors?.['required']) { <span>La contraseña es obligatoria.</span> }
+            @if (f['password'].errors?.['minlength']) { <span>Debe tener al menos 6 caracteres.</span> }
+            @if (f['password'].errors?.['pattern']) { <span>Debe contener al menos una letra y un número.</span> }
+        </div>
+        }
+
+    </div>
+
+    <!-- Confirmar contraseña -->
+    <div class="field">
+        <label for="confirmPassword" class="field__label">Confirmar contraseña *</label>
+        <div class="campo-password">
+
+            <input type="password" id="confirmPassword" class="field__control"
+                [class.is-invalid]="f['confirmPassword'].invalid && (f['confirmPassword'].touched || f['confirmPassword'].dirty)"
+                formControlName="confirmPassword" placeholder="Repita la contraseña"
+                [type]="mostrarPassword() ? 'text' : 'password'" />
+            <button type="button" class="campo-password__ojo" (click)="alternarPassword()"
+                [attr.aria-label]="mostrarPassword() ? 'Ocultar contraseña' : 'Mostrar contraseña'">
+                @if (mostrarPassword()) {
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                    <path
+                        d="M12 7c2.8 0 5 2.2 5 5 0 .6-.1 1.2-.3 1.7l2.9 2.9c1.5-1.3 2.7-2.9 3.4-4.6-1.7-4.1-5.6-7-10-7-1.3 0-2.5.2-3.6.6l2.1 2.1c.5-.5 1-.7 1.5-.7zM2.7 3.4L1.4 4.7l2.5 2.5C2.3 8.5 1 10.1.3 12c1.7 4.1 5.6 7 10 7 1.4 0 2.7-.3 3.9-.7l3.1 3.1 1.3-1.3L2.7 3.4zM12 17c-2.8 0-5-2.2-5-5 0-.8.2-1.5.5-2.1l1.5 1.5c0 .2-.1.4-.1.6 0 1.7 1.4 3 3 3 .2 0 .4 0 .6-.1l1.5 1.5c-.6.4-1.3.6-2 .6z" />
+                </svg>
+                } @else {
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                    <path
+                        d="M12 5C7.6 5 3.7 7.9 2 12c1.7 4.1 5.6 7 10 7s8.3-2.9 10-7c-1.7-4.1-5.6-7-10-7zm0 12c-2.8 0-5-2.2-5-5s2.2-5 5-5 5 2.2 5 5-2.2 5-5 5zm0-8a3 3 0 100 6 3 3 0 000-6z" />
+                </svg>
+                }
+            </button>
+        </div>
+        @if (f['confirmPassword'].invalid && (f['confirmPassword'].touched || f['confirmPassword'].dirty)) {
+        <div class="field__error">
+            @if (f['confirmPassword'].errors?.['required']) { <span>Debe confirmar la contraseña.</span> }
+        </div>
+        }
+        <!-- Error de coincidencia a nivel de grupo -->
+        @if (userForm.errors?.['passwordMismatch'] && f['confirmPassword'].touched) {
+        <div class="field__error">Las contraseñas no coinciden.</div>
+        }
+    </div>
+    }
+
+    <!-- Botón de envío -->
+    <button type="submit" class="btn btn--primary btn--block btn--lg" [disabled]="userForm.invalid">
+        {{ mode() === 'self' ? 'Registrarme' : 'Registrar usuario' }}
+    </button>
+</form>
