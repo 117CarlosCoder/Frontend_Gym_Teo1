@@ -1,4 +1,4 @@
-export interface Clase {
+export interface ClaseDB {
     id_clase: number;
     id_tipo_clase: number;
     id_entrenador: number;

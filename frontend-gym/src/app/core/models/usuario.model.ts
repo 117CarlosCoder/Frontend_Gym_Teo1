@@ -3,6 +3,7 @@ export type RolUsuario = 'ADMIN' | 'RECEPCION' | 'ENTRENADOR' | 'SOCIO';
 
 export interface Usuario {
   id: number;
+  dpi: string;
   nombre: string;
   apellido: string;
   correo: string;

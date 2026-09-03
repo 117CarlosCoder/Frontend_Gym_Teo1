@@ -97,8 +97,8 @@
                         <td>
                             <div class="mb-1">
                                 <strong class="text-mini socios-lista__text-secondary">Coach:</strong>
-                                @for (coach of socio.entrenadoresAsignados; track coach.id_entrenador) {
-                                <span class="d-block small">• {{ coach.nombres }} {{ coach.apellidos
+                                @for (coach of socio.entrenadoresAsignados; track coach.idEntrenador) {
+                                <span class="d-block small">• {{ coach.nombre }} {{ coach.apellido
                                     }}</span>
                                 } @empty {
                                 <span class="d-block small socios-lista__text-secondary italic">Sin coach
@@ -107,8 +107,8 @@
                             </div>
                             <div>
                                 <strong class="text-mini socios-lista__text-secondary">Clase:</strong>
-                                @for (clase of socio.clasesAsignadas; track clase.id_clase) {
-                                <span class="d-block small">• {{ clase.nombre_clase }}</span>
+                                @for (clase of socio.clasesAsignadas; track clase.idClase) {
+                                <span class="d-block small">• {{ clase.nombre }}</span>
                                 } @empty {
                                 <span class="d-block small socios-lista__text-secondary italic">Sin clases
                                     inscritas</span>

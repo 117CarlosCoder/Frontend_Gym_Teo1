@@ -1,15 +1,14 @@
 import { MedicionFisica } from "./medicion-fisica.model";
-import { Socio } from "./socio.model";
+import { SocioDB } from "./socio-db.model";
 import { Usuario } from "../../../core/models/usuario.model";
-import { ClaseInscrita } from "./clase-inscrita.model";
-import { EntrenadorAsignado } from "./entrenador-asignado.model";
+import { Clase, Entrenador } from "../../../core/models/gimnasio.model";
 
 export interface SocioTablaDTO {
     id_socio: number;
     usuario: Usuario;
-    socioInfo: Socio;
-    entrenadoresAsignados: EntrenadorAsignado[];
-    clasesAsignadas: ClaseInscrita[];
+    socioInfo: SocioDB;
+    entrenadoresAsignados: Entrenador[];
+    clasesAsignadas: Clase[];
     ultimaMedicion?: MedicionFisica; // Puede no tener mediciones aún
     estadoMembresia: string;
     tipoPlan: string;

@@ -54,7 +54,7 @@ export class ListaSocios {
   protected obtenerEstiloBadge(estado: string): string {
     const normalizado = estado.toLowerCase().trim();
     if (normalizado.includes('activo')) return 'socios-lista__badge--activo';
-    if (normalizado.includes('pendiente')) return 'socios-lista__badge--pendiente';
+    if (normalizado.includes('vencida')) return 'socios-lista__badge--vencida';
     return 'socios-lista__badge--inactivo';
   }
 
