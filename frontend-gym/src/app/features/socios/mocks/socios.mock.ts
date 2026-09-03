@@ -4,10 +4,10 @@ export const MOCK_SOCIOS_TABLA: SocioTablaDTO[] = [
     {
         id_socio: 1,
         usuario: {
-            id_usuario: 10,
-            id_rol: 2,
-            nombres: 'Juan Carlos',
-            apellidos: 'Pérez Gómez',
+            id: 10,
+            rol: 'SOCIO',
+            nombre: 'Juan Carlos',
+            apellido: 'Pérez Gómez',
             correo: 'juan.perez@example.com',
             telefono: '+502 5555-1234',
             username: 'juan.perez',
@@ -44,10 +44,10 @@ export const MOCK_SOCIOS_TABLA: SocioTablaDTO[] = [
     {
         id_socio: 2,
         usuario: {
-            id_usuario: 11,
-            id_rol: 2,
-            nombres: 'María Antonieta',
-            apellidos: 'Díaz López',
+            id: 11,
+            rol: 'SOCIO',
+            nombre: 'María Antonieta',
+            apellido: 'Díaz López',
             correo: 'maria.diaz@example.com',
             telefono: '+502 4444-5678',
             username: 'maria.diaz',

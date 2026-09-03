@@ -44,8 +44,8 @@ export class ListaSocios {
 
     // Filtramos por nombres, apellidos o correo electrónico
     return listaOriginal.filter(socio =>
-      socio.usuario.nombres.toLowerCase().includes(textoBusqueda) ||
-      socio.usuario.apellidos.toLowerCase().includes(textoBusqueda) ||
+      socio.usuario.nombre.toLowerCase().includes(textoBusqueda) ||
+      socio.usuario.apellido.toLowerCase().includes(textoBusqueda) ||
       socio.usuario.correo.toLowerCase().includes(textoBusqueda)
     );
   });

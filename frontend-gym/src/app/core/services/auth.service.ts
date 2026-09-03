@@ -21,6 +21,9 @@ const USUARIOS_DEMO: Array<{ password: string; usuario: Usuario }> = [
       correo: 'admin@claudelovers.com',
       rol: 'ADMIN',
       activo: true,
+      fecha_creacion: '2026-01-15T08:00:00Z',
+      doble_autenticacion: false,
+      username: 'diego.gonzales'
     },
   },
   {
@@ -32,6 +35,9 @@ const USUARIOS_DEMO: Array<{ password: string; usuario: Usuario }> = [
       correo: 'recepcion@claudelovers.com',
       rol: 'RECEPCION',
       activo: true,
+      fecha_creacion: '2026-01-15T08:00:00Z',
+      doble_autenticacion: false,
+      username: 'enmer.sandoval'
     },
   },
   {
@@ -43,6 +49,9 @@ const USUARIOS_DEMO: Array<{ password: string; usuario: Usuario }> = [
       correo: 'socio@claudelovers.com',
       rol: 'SOCIO',
       activo: true,
+      fecha_creacion: '2026-01-15T08:00:00Z',
+      doble_autenticacion: false,
+      username: 'brandon.cotom'
     },
   },
 ];
