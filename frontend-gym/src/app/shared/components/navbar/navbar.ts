@@ -1,7 +1,8 @@
-import { Component, inject, signal } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { Component, inject, input, signal } from '@angular/core';
+import { Router, RouterLink } from '@angular/router';
 
 import { AuthService } from '../../../core/services/auth.service';
+import { RUTAS } from '../../../core/constants/rutas.constants';
 
 interface EnlaceNav {
   etiqueta: string;
@@ -16,6 +17,7 @@ interface EnlaceNav {
 })
 export class Navbar {
   protected readonly auth = inject(AuthService);
+  private readonly router = inject(Router);
 
   protected readonly menuAbierto = signal(false);
 
@@ -34,5 +36,14 @@ export class Navbar {
 
   protected cerrarMenu(): void {
     this.menuAbierto.set(false);
+  }
+
+  private rutaPorRol(): string {
+    return this.auth.rol() === 'SOCIO' ? RUTAS.dashboard.portalSocio : RUTAS.dashboard.default;
+  }
+
+  protected ingresarPortal(): void {
+    this.cerrarMenu();
+    this.router.navigateByUrl(this.rutaPorRol());
   }
 }
