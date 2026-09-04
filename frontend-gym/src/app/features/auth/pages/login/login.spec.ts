@@ -50,6 +50,17 @@ describe('Login', () => {
     await vi.waitFor(() => expect(navegar).toHaveBeenCalledWith('/dashboard'));
   });
 
+  it('navega al portal del socio según su rol', async () => {
+    const router = TestBed.inject(Router);
+    const navegar = vi.spyOn(router, 'navigateByUrl').mockResolvedValue(true);
+
+    escribir('#correo', 'socio@claudelovers.com');
+    escribir('#password', 'socio123');
+    elemento.querySelector('form')!.dispatchEvent(new Event('submit'));
+
+    await vi.waitFor(() => expect(navegar).toHaveBeenCalledWith('/dashboard/portal-socio'));
+  });
+
   it('muestra el mensaje del servidor con credenciales incorrectas', async () => {
     escribir('#correo', 'admin@claudelovers.com');
     escribir('#password', 'clave-mala');

@@ -1,5 +1,8 @@
 export const RUTAS = {
   inicio: '/',
   login: '/login',
-  dashboard: '/dashboard',
+  dashboard: {
+    default: '/dashboard',
+    portalSocio: '/dashboard/portal-socio'
+  },
 } as const;

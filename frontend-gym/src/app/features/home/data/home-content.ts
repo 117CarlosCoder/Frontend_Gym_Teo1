@@ -170,12 +170,22 @@ export const CLASES: ClaseHorario[] = [
     hora: '7:00 - 8:00',
     entrenador: 'Andrea Morales',
   },
-  { nombre: 'Yoga', dias: 'Lunes / Miércoles', hora: '18:00 - 19:00', entrenador: 'Karla Ramírez' },
+  {
+    nombre: 'Yoga',
+    dias: 'Lunes / Miércoles',
+    hora: '18:00 - 19:00',
+    entrenador: 'Karla Ramírez'
+  },
   {
     nombre: 'Boxeo',
     dias: 'Martes / Jueves / Sábado',
     hora: '19:00 - 20:30',
     entrenador: 'Mario Cifuentes',
   },
-  { nombre: 'GAP', dias: 'Sábado', hora: '9:00 - 10:00', entrenador: 'Andrea Morales' },
+  {
+    nombre: 'GAP',
+    dias: 'Sábado',
+    hora: '9:00 - 10:00',
+    entrenador: 'Andrea Morales'
+  },
 ];

@@ -1,0 +1,77 @@
+/* Tarjetas personalizadas */
+.portal__card {
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    transition: box-shadow var(--transition);
+}
+
+.portal__card:hover {
+    box-shadow: var(--shadow-md);
+}
+
+.portal__card-header {
+    background-color: var(--color-primary);
+    color: var(--color-on-dark);
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    padding: var(--sp-4) var(--sp-5);
+}
+
+.portal__card-header--success {
+    background-color: var(--color-success);
+}
+
+.portal__card-header--info {
+    background-color: var(--color-accent);
+}
+
+.portal__section-title {
+    color: var(--color-primary);
+    font-weight: 700;
+    margin-top: var(--sp-4);
+    margin-bottom: var(--sp-2);
+}
+
+.portal__list {
+    list-style: none;
+    padding-left: 0;
+    margin-bottom: 0;
+}
+
+.portal__list-item {
+    margin-bottom: var(--sp-2);
+}
+
+.portal__badge {
+    background-color: var(--color-success);
+    color: var(--color-on-dark);
+    padding: var(--sp-1) var(--sp-2);
+    border-radius: var(--radius-pill);
+    font-size: var(--fs-xs);
+    font-weight: 700;
+}
+
+.portal__alert {
+    border-radius: var(--radius-md);
+    padding: var(--sp-3) var(--sp-4);
+}
+
+/* Tabla */
+.portal__table {
+    margin-bottom: 0;
+}
+
+.portal__table th {
+    color: var(--color-primary);
+    font-weight: 700;
+}
+
+.portal__table td,
+.portal__table th {
+    padding: var(--sp-3);
+    vertical-align: middle;
+}
+
+/* Botón dentro de alerta */
+.portal__retry-btn {
+    margin-left: var(--sp-3);
+}

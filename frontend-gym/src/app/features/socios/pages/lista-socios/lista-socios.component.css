@@ -65,7 +65,7 @@
     background-color: var(--color-success);
 }
 
-.socios-lista__badge--pendiente {
+.socios-lista__badge--vencida {
     background-color: var(--color-warning);
     color: var(--color-text);
 }

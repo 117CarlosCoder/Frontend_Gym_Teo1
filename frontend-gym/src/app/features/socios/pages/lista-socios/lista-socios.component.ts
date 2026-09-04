@@ -44,8 +44,8 @@ export class ListaSocios {
 
     // Filtramos por nombres, apellidos o correo electrónico
     return listaOriginal.filter(socio =>
-      socio.usuario.nombres.toLowerCase().includes(textoBusqueda) ||
-      socio.usuario.apellidos.toLowerCase().includes(textoBusqueda) ||
+      socio.usuario.nombre.toLowerCase().includes(textoBusqueda) ||
+      socio.usuario.apellido.toLowerCase().includes(textoBusqueda) ||
       socio.usuario.correo.toLowerCase().includes(textoBusqueda)
     );
   });
@@ -53,8 +53,8 @@ export class ListaSocios {
   // Helper para asignar colores dinámicos a los badges de Bootstrap
   protected obtenerEstiloBadge(estado: string): string {
     const normalizado = estado.toLowerCase().trim();
-    if (normalizado.includes('activo')) return 'socios-lista__badge--activo';
-    if (normalizado.includes('pendiente')) return 'socios-lista__badge--pendiente';
+    if (normalizado.includes('activa')) return 'socios-lista__badge--activo';
+    if (normalizado.includes('vencida')) return 'socios-lista__badge--vencida';
     return 'socios-lista__badge--inactivo';
   }
 

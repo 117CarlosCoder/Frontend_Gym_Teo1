@@ -16,33 +16,45 @@ const USUARIOS_DEMO: Array<{ password: string; usuario: Usuario }> = [
     password: 'admin123',
     usuario: {
       id: 1,
+      dpi: '1111111111111',
       nombre: 'Diego',
       apellido: 'González',
       correo: 'admin@claudelovers.com',
       rol: 'ADMIN',
       activo: true,
+      fecha_creacion: '2026-01-15T08:00:00Z',
+      doble_autenticacion: false,
+      username: 'diego.gonzales'
     },
   },
   {
     password: 'recepcion123',
     usuario: {
       id: 2,
+      dpi: '2222222222222',
       nombre: 'Enmer',
       apellido: 'Sandoval',
       correo: 'recepcion@claudelovers.com',
       rol: 'RECEPCION',
       activo: true,
+      fecha_creacion: '2026-01-15T08:00:00Z',
+      doble_autenticacion: false,
+      username: 'enmer.sandoval'
     },
   },
   {
     password: 'socio123',
     usuario: {
       id: 3,
+      dpi: '3333333333333',
       nombre: 'Brandon',
       apellido: 'Cotom',
       correo: 'socio@claudelovers.com',
       rol: 'SOCIO',
       activo: true,
+      fecha_creacion: '2026-01-15T08:00:00Z',
+      doble_autenticacion: false,
+      username: 'brandon.cotom'
     },
   },
 ];

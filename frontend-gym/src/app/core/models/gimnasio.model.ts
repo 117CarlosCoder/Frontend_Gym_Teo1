@@ -7,8 +7,12 @@ export interface Socio {
   fechaInscripcion: string;
 }
 
-export interface Membresia {
+export interface MembresiaSocio {
   idMembresia: number;
+  fechaInicio: string;
+  fechaVencimiento: string;
+  estado: string;
+  descripcionEstado: string;
   tipo: string;
   precio: number;
   duracionDias: number;
@@ -27,6 +31,7 @@ export interface Inscripcion {
 export interface Entrenador {
   idEntrenador: number;
   nombre: string;
+  apellido: string;
   especialidad: string;
   telefono?: string;
 }
@@ -34,6 +39,7 @@ export interface Entrenador {
 export interface Clase {
   idClase: number;
   idEntrenador: number;
+  nombreEntrenador: string;
   nombre: string;
   horario: string;
   cupoMaximo?: number;
@@ -43,4 +49,6 @@ export interface AsistenciaClase {
   idSocio: number;
   idClase: number;
   fecha: string;
+  horaEntrada: string;
+  horaSalida: string | null; // null si aún está dentro
 }
