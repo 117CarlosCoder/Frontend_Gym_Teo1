@@ -3,6 +3,8 @@ import { Routes } from '@angular/router';
 import { authGuard } from './core/guards/auth.guard';
 import { guestGuard } from './core/guards/guest.guard';
 import { rolGuard } from './core/guards/rol.guard';
+import { AuthService } from './core/services/auth.service';
+import { inject } from '@angular/core';
 
 /**
  * Todas las rutas se cargan de forma diferida (lazy) para que la página de
@@ -36,6 +38,8 @@ export const routes: Routes = [
     children: [
       {
         path: '',
+        // Si el usuario es ADMIN o RECEPCION, carga este componente
+        canMatch: [() => inject(AuthService).tieneRol('ADMIN', 'RECEPCION')],
         loadComponent: () =>
           import('./features/dashboard/pages/dashboard-home/dashboard-home').then(
             (m) => m.DashboardHome,
@@ -43,7 +47,9 @@ export const routes: Routes = [
         title: 'Panel | Claude Lovers Gym',
       },
       {
-        path: 'portal-socio',
+        path: '',
+        // Si el usuario es SOCIO, carga este componente
+        canMatch: [() => inject(AuthService).tieneRol('SOCIO')],
         loadComponent: () =>
           import('./features/socios/pages/portal-socio/portal-socio.component').then(
             (m) => m.PortalSocioComponent,

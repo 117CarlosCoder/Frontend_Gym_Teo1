@@ -61,7 +61,7 @@ export class Login {
     this.auth.login(this.formulario.getRawValue()).subscribe({
       next: () => {
         this.cargando.set(false);
-        this.router.navigateByUrl(this.redirigir() ?? this.rutaPorRol());
+        this.router.navigateByUrl(this.redirigir() ?? RUTAS.dashboard.default);
       },
       error: (error: Error) => {
         this.cargando.set(false);
@@ -69,10 +69,6 @@ export class Login {
         this.errorServidor.set(error.message || 'No se pudo iniciar sesión.');
       },
     });
-  }
-
-  private rutaPorRol(): string {
-    return this.auth.rol() === 'SOCIO' ? RUTAS.dashboard.portalSocio : RUTAS.dashboard.default;
   }
 
   /** Rellena el formulario con un usuario de prueba (solo modo demo). */
