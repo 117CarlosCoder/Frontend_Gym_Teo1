@@ -1,8 +1,9 @@
-import { AsistenciaRegistro, SocioAsistencia, Sucursal } from '../models/asistencia.model';
+import { Sucursal } from '../../../core/models/sucursal.model';
+import { AsistenciaRegistro, SocioAsistencia } from '../models/asistencia.model';
 
 export const MOCK_SUCURSALES: Sucursal[] = [
-  { idSucursal: 1, nombre: 'Sucursal Centro - Zona 3', direccion: 'Quetzaltenango' },
-  { idSucursal: 2, nombre: 'Sucursal Norte - Zona 7', direccion: 'Quetzaltenango' }
+  { idSucursal: 1, nombre: 'Sucursal Centro - Zona 3', direccion: 'Quetzaltenango', activa: true },
+  { idSucursal: 2, nombre: 'Sucursal Norte - Zona 7', direccion: 'Quetzaltenango', activa: true }
 ];
 
 export const MOCK_ASISTENCIAS_HOY: AsistenciaRegistro[] = [

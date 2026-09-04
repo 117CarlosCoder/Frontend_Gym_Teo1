@@ -38,6 +38,11 @@ export class DashboardLayout {
     this.auth.tieneRol('ADMIN', 'RECEPCION'),
   );
 
+  /** Determina si el usuario puede ver el módulo de membresias. */
+  protected readonly puedeGestionarMembresias = computed(() =>
+    this.auth.tieneRol('ADMIN', 'RECEPCION'),
+  );
+
   protected cerrarSesion(): void {
     this.auth.logout();
     this.router.navigate([RUTAS.inicio]);

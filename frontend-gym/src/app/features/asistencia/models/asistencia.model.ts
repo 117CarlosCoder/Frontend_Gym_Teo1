@@ -1,9 +1,3 @@
-export interface Sucursal {
-  idSucursal: number;
-  nombre: string;
-  direccion: string;
-}
-
 export interface AsistenciaRegistro {
   idAsistencia: number;
   idSocio: number;

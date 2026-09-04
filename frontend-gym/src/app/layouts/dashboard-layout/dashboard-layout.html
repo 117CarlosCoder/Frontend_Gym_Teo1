@@ -11,6 +11,11 @@
           Asistencia
         </a>
       }
+      @if (puedeGestionarMembresias()) {
+        <a class="panel-nav__link" routerLink="/dashboard/membresias" routerLinkActive="panel-nav__link--activo">
+          Membresías
+        </a>
+      }
     </nav>
 
     <div class="panel-header__usuario">
