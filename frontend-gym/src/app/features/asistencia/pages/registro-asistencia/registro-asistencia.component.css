@@ -1,0 +1,113 @@
+/* Títulos y Encabezados */
+.asistencia__text-primary {
+    color: var(--color-primary);
+}
+
+.asistencia__text-secondary {
+    color: var(--color-secondary);
+}
+
+/* Barra de Busqueda */
+.asistencia__search-group {
+    border: 1px solid var(--color-secondary-light);
+    transition: border-color var(--transition), box-shadow var(--transition);
+}
+
+.asistencia__search-group:focus-within {
+    border-color: var(--color-accent);
+    box-shadow: 0 0 0 0.25rem rgba(3, 94, 123, 0.15);
+}
+
+.asistencia__search-icon {
+    color: var(--color-secondary-light);
+}
+
+.asistencia__search-input:focus {
+    border-color: var(--color-accent);
+    box-shadow: 0 0 0 0.25rem rgba(3, 94, 123, 0.15);
+}
+
+/* Select */
+.asistencia__select:focus {
+    border-color: var(--color-accent);
+    box-shadow: 0 0 0 0.25rem rgba(3, 94, 123, 0.15);
+}
+
+/* Stats Card */
+.asistencia__stat-card {
+    border-radius: var(--radius-md);
+    background-color: var(--color-bg);
+}
+
+/* Avatar del Socio (Color de Acento) */
+.asistencia__avatar {
+    width: 42px;
+    height: 42px;
+    background-color: var(--color-accent);
+    color: var(--color-bg);
+    font-size: var(--fs-md);
+    flex-shrink: 0;
+}
+
+/* Spinner personalizado */
+.asistencia__spinner {
+    color: var(--color-accent);
+}
+
+/* Tabla Personalizada */
+.asistencia__table thead th {
+    background-color: var(--color-surface);
+    color: var(--color-primary);
+    font-weight: 700;
+    border-bottom: 2px solid var(--color-primary);
+    letter-spacing: 0.5px;
+}
+
+.asistencia__table tbody tr:hover {
+    background-color: var(--color-surface);
+}
+
+/* Badges de membresía (base + modificadores) */
+.asistencia__badge {
+    background-color: var(--color-secondary-light);
+    color: var(--color-on-dark);
+}
+
+.asistencia__badge--activo {
+    background-color: var(--color-success);
+    color: var(--color-on-dark);
+}
+
+.asistencia__badge--vencida {
+    background-color: var(--color-warning);
+    color: var(--color-text);
+}
+
+.asistencia__badge--inactivo,
+.asistencia__badge--danger {
+    background-color: var(--color-danger);
+    color: var(--color-on-dark);
+}
+
+/* Buttons */
+.asistencia__btn-entrada {
+    background-color: var(--color-accent);
+    border-color: var(--color-accent);
+}
+.asistencia__btn-entrada:hover {
+    background-color: var(--color-accent-dark);
+    border-color: var(--color-accent-dark);
+}
+
+/* Clases de utilidad */
+.text-mini {
+    font-size: var(--fs-xs);
+}
+
+.fs-7 {
+    font-size: 0.85rem;
+}
+
+.fs-8 {
+    font-size: 0.72rem;
+}

@@ -81,7 +81,7 @@
 }
 
 .btn--accent {
-  background-color: var(--color-accent);
+  background-color: var(--color-accent-light);
   color: var(--color-on-dark);
 }
 
@@ -103,14 +103,15 @@
 }
 
 .btn--light {
-  background-color: transparent;
-  border-color: rgba(255, 255, 255, 0.6);
-  color: var(--color-on-dark);
+  background-color: var(--color-on-dark);
+  border-color: var(--color-on-dark);
+  color: var(--color-primary);
 }
 
 .btn--light:not(:disabled):hover {
-  background-color: var(--color-on-dark);
-  color: var(--color-primary);
+  background-color: transparent;
+  border-color: var(--color-on-dark);
+  color: var(--color-on-dark);
 }
 
 .btn--block {

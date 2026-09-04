@@ -1,0 +1,176 @@
+<div class="container mt-4 asistencia">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="asistencia__text-primary fw-bold m-0">Registro de Asistencia</h2>
+            <p class="asistencia__text-secondary small">Registra la entrada y salida de socios en la sucursal</p>
+        </div>
+    </div>
+
+    @if (errorCarga) {
+    <div class="alert alert-danger d-flex align-items-center shadow-sm" role="alert">
+        <div class="fw-semibold">Hubo un problema al conectar con el servidor. Por favor, intenta de nuevo.</div>
+    </div>
+    }
+
+    <div class="row mb-4 g-3 align-items-center">
+        <div class="col-md-4">
+            <label class="form-label fw-bold asistencia__text-primary text-mini mb-1">Sucursal</label>
+            <select class="form-select asistencia__select shadow-sm" (change)="alCambiarSucursal($event)" [value]="idSucursal()">
+                @for (sucursal of sucursalesSignal(); track sucursal.idSucursal) {
+                    <option [value]="sucursal.idSucursal">{{ sucursal.nombre }}</option>
+                }
+            </select>
+        </div>
+        <div class="col-md-4">
+            <div class="card shadow-sm border-0 asistencia__stat-card">
+                <div class="card-body py-2">
+                    <div class="asistencia__text-secondary small">Entradas hoy</div>
+                    <div class="fs-4 fw-bold asistencia__text-primary">{{ totalEntradas() }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card shadow-sm border-0 asistencia__stat-card">
+                <div class="card-body py-2">
+                    <div class="asistencia__text-secondary small">Socios dentro</div>
+                    <div class="fs-4 fw-bold text-success">{{ sociosDentro() }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @if (sociosSignal() === undefined) {
+    <div class="d-flex justify-content-center align-items-center my-5 py-5">
+        <div class="spinner-border asistencia__spinner" role="status"></div>
+        <span class="ms-3 asistencia__text-secondary fw-semibold">Cargando socios...</span>
+    </div>
+    }
+    @else {
+    <div class="row mb-3">
+        <div class="col-md-5 col-lg-4">
+            <div class="input-group input-group-sm shadow-sm rounded asistencia__search-group">
+                <span class="input-group-text bg-white border-end-0 text-muted asistencia__search-icon">🔍</span>
+                <input type="text" class="form-control border-0 ps-1 py-2 fs-7 asistencia__search-input"
+                    placeholder="Buscar socio..." [value]="query()" (input)="alBuscar($event)" />
+            </div>
+        </div>
+        <div class="col-md-7 col-lg-8 d-flex align-items-center justify-content-md-end mt-2 mt-md-0">
+            <span class="asistencia__text-secondary small">
+                Mostrando <b class="asistencia__text-primary">{{ sociosFiltrados().length }}</b> socios
+            </span>
+        </div>
+    </div>
+
+    <div class="card shadow-sm border-0 overflow-hidden mb-5">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0 asistencia__table">
+                <thead class="text-uppercase fs-7">
+                    <tr>
+                        <th class="ps-4">Socio</th>
+                        <th>Membresía</th>
+                        <th>Estado</th>
+                        <th>Acción</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @for (socio of sociosFiltrados(); track socio.idSocio) {
+                    <tr>
+                        <td class="ps-4 py-3">
+                            <div class="d-flex align-items-center">
+                                <div class="asistencia__avatar rounded-circle d-flex align-items-center justify-content-center fw-bold me-3">
+                                    {{ socio.nombre.charAt(0) }}{{ socio.apellido.charAt(0) }}
+                                </div>
+                                <div>
+                                    <div class="fw-bold asistencia__text-primary">{{ socio.nombre }} {{ socio.apellido }}</div>
+                                    <div class="asistencia__text-secondary small mb-1">socio_{{ socio.idSocio }}@gym.com</div>
+                                    <span class="badge bg-light text-secondary border fs-8">ID: {{ socio.idSocio }}</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <div>
+                                <span class="badge rounded-pill mb-1 asistencia__badge" [ngClass]="obtenerEstiloBadge(socio.estadoMembresia)">
+                                    {{ socio.estadoMembresia }}
+                                </span>
+                                <div class="fw-semibold asistencia__text-secondary small">{{ socio.tipoPlan }}</div>
+                            </div>
+                        </td>
+                        <td>
+                            @if (esSocioDentro(socio.idSocio)) {
+                                <span class="badge rounded-pill asistencia__badge--activo">Dentro</span>
+                            } @else {
+                                <span class="badge rounded-pill bg-secondary">Fuera</span>
+                            }
+                        </td>
+                        <td>
+                            @if (esSocioDentro(socio.idSocio)) {
+                                <button class="btn btn-sm btn-outline-warning fw-bold shadow-sm" (click)="registrarSalida(obtenerAsistenciaActiva(socio.idSocio).idAsistencia)">
+                                    Registrar Salida
+                                </button>
+                            } @else {
+                                <button class="btn btn-sm btn-primary asistencia__btn-entrada fw-bold shadow-sm" (click)="registrarEntrada(socio.idSocio)">
+                                    Registrar Entrada
+                                </button>
+                            }
+                        </td>
+                    </tr>
+                    } @empty {
+                    <tr>
+                        <td colspan="4" class="text-center py-5">
+                            <p class="m-0 fw-semibold asistencia__text-primary">No se encontraron socios.</p>
+                        </td>
+                    </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+    }
+
+    <h3 class="asistencia__text-primary fw-bold mb-3 h5">Asistencias de hoy</h3>
+    
+    @if (loadingAsistencias() || asistencias() === undefined) {
+        <div class="d-flex justify-content-center my-4">
+            <div class="spinner-border asistencia__spinner" role="status"></div>
+        </div>
+    } @else {
+        <div class="card shadow-sm border-0 overflow-hidden mb-4">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0 asistencia__table">
+                    <thead class="text-uppercase fs-7">
+                        <tr>
+                            <th class="ps-4">Socio</th>
+                            <th>Hora Entrada</th>
+                            <th>Hora Salida</th>
+                            <th>Sucursal</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @for (asistencia of asistencias(); track asistencia.idAsistencia) {
+                        <tr>
+                            <td class="ps-4 py-3 fw-bold asistencia__text-primary">
+                                {{ asistencia.nombreSocio }} {{ asistencia.apellidoSocio }}
+                            </td>
+                            <td>{{ asistencia.horaEntrada }}</td>
+                            <td>
+                                @if (asistencia.horaSalida) {
+                                    {{ asistencia.horaSalida }}
+                                } @else {
+                                    <span class="badge rounded-pill asistencia__badge--activo px-2 py-1">Dentro</span>
+                                }
+                            </td>
+                            <td class="asistencia__text-secondary small">{{ asistencia.sucursal }}</td>
+                        </tr>
+                        } @empty {
+                        <tr>
+                            <td colspan="4" class="text-center py-4 asistencia__text-secondary">
+                                No hay asistencias registradas hoy en esta sucursal.
+                            </td>
+                        </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+</div>

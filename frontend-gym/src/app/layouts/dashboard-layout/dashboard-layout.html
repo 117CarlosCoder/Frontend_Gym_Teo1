@@ -1,6 +1,17 @@
 <header class="panel-header">
   <div class="container panel-header__inner">
-    <a class="panel-header__brand" routerLink="/"> CLAUDE LOVERS <span>GYM</span> </a>
+    <a class="panel-header__brand" routerLink="/">CLAUDE LOVERS <span>GYM</span></a>
+
+    <nav class="panel-nav">
+      <a class="panel-nav__link" routerLink="/dashboard" routerLinkActive="panel-nav__link--activo" [routerLinkActiveOptions]="{ exact: true }">
+        Panel
+      </a>
+      @if (puedeVerAsistencia()) {
+        <a class="panel-nav__link" routerLink="/dashboard/asistencia" routerLinkActive="panel-nav__link--activo">
+          Asistencia
+        </a>
+      }
+    </nav>
 
     <div class="panel-header__usuario">
       <span class="panel-header__avatar" aria-hidden="true">{{ iniciales() }}</span>
