@@ -51,6 +51,35 @@
   margin-bottom: var(--sp-8);
 }
 
+.hero__acciones .btn--accent {
+  background-color: var(--color-accent-light);
+  border-color: var(--color-accent-light);
+  color: var(--color-primary-dark);
+  font-weight: 700;
+  box-shadow: 0 4px 14px rgba(0, 180, 216, 0.35);
+}
+
+.hero__acciones .btn--accent:hover {
+  background-color: var(--color-accent);
+  border-color: var(--color-accent);
+  color: var(--color-on-dark);
+  box-shadow: 0 6px 20px rgba(0, 180, 216, 0.55);
+}
+
+.hero__acciones .btn--light {
+  background-color: #ffffff;
+  border-color: #ffffff;
+  color: var(--color-primary);
+  font-weight: 700;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.hero__acciones .btn--light:hover {
+  background-color: rgba(255, 255, 255, 0.15);
+  border-color: #ffffff;
+  color: #ffffff;
+}
+
 .hero__stats {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -337,8 +366,30 @@
   color: var(--color-accent-light);
 }
 
-.plan--destacado .btn--accent:hover {
+.plan--destacado .btn--accent {
   background-color: var(--color-accent-light);
+  border-color: var(--color-accent-light);
+  color: var(--color-primary-dark);
+  font-weight: 700;
+  box-shadow: 0 4px 15px rgba(0, 180, 216, 0.4);
+}
+
+.plan--destacado .btn--accent:hover {
+  background-color: var(--color-accent);
+  border-color: var(--color-accent);
+  color: var(--color-on-dark);
+  box-shadow: 0 6px 20px rgba(0, 180, 216, 0.6);
+}
+
+.plan .btn--outline {
+  border: 2px solid var(--color-primary);
+  color: var(--color-primary);
+  font-weight: 700;
+}
+
+.plan .btn--outline:hover {
+  background-color: var(--color-primary);
+  color: var(--color-on-dark);
 }
 
 /* ===================== CLASES ===================== */
@@ -449,6 +500,35 @@
   display: flex;
   flex-wrap: wrap;
   gap: var(--sp-3);
+}
+
+.cta__acciones .btn--accent {
+  background-color: var(--color-accent-light);
+  border-color: var(--color-accent-light);
+  color: var(--color-primary-dark);
+  font-weight: 700;
+  box-shadow: 0 4px 14px rgba(0, 180, 216, 0.35);
+}
+
+.cta__acciones .btn--accent:hover {
+  background-color: var(--color-accent);
+  border-color: var(--color-accent);
+  color: var(--color-on-dark);
+  box-shadow: 0 6px 20px rgba(0, 180, 216, 0.55);
+}
+
+.cta__acciones .btn--light {
+  background-color: #ffffff;
+  border-color: #ffffff;
+  color: var(--color-primary);
+  font-weight: 700;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.cta__acciones .btn--light:hover {
+  background-color: rgba(255, 255, 255, 0.15);
+  border-color: #ffffff;
+  color: #ffffff;
 }
 
 .cta__datos {

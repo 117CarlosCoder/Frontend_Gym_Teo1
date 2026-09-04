@@ -39,11 +39,11 @@
               }
             ],
             "styles": [
-              "src/styles.css",
-              "src/styles/base.css",
+              "node_modules/bootstrap/dist/css/bootstrap.min.css",
               "src/styles/tokens.css",
+              "src/styles/base.css",
               "src/styles/utilities.css",
-              "node_modules/bootstrap/dist/css/bootstrap.min.css"
+              "src/styles.css"
             ],
             "scripts": [
               "node_modules/bootstrap/dist/js/bootstrap.bundle.min.js"

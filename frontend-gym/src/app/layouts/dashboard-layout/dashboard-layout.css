@@ -74,6 +74,32 @@
   color: var(--color-primary);
 }
 
+/* ---------- Navegación del dashboard ---------- */
+.panel-nav {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-1);
+}
+
+.panel-nav__link {
+  padding: var(--sp-2) var(--sp-4);
+  border-radius: var(--radius-sm);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  color: var(--color-on-dark-muted);
+  transition: background-color var(--transition), color var(--transition);
+}
+
+.panel-nav__link:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: var(--color-on-dark);
+}
+
+.panel-nav__link--activo {
+  background-color: rgba(255, 255, 255, 0.15);
+  color: var(--color-on-dark);
+}
+
 .panel-contenido {
   padding-block: var(--sp-7);
 }

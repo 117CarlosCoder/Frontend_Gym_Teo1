@@ -2,6 +2,7 @@ import { Routes } from '@angular/router';
 
 import { authGuard } from './core/guards/auth.guard';
 import { guestGuard } from './core/guards/guest.guard';
+import { rolGuard } from './core/guards/rol.guard';
 
 /**
  * Todas las rutas se cargan de forma diferida (lazy) para que la página de
@@ -48,6 +49,15 @@ export const routes: Routes = [
             (m) => m.PortalSocioComponent,
           ),
         title: 'Portal del Socio | Claude Lovers Gym',
+      },
+      {
+        path: 'asistencia',
+        canActivate: [rolGuard('ADMIN', 'RECEPCION')],
+        loadComponent: () =>
+          import('./features/asistencia/pages/registro-asistencia/registro-asistencia.component').then(
+            (m) => m.RegistroAsistenciaComponent,
+          ),
+        title: 'Asistencia | Claude Lovers Gym',
       },
     ],
   },
