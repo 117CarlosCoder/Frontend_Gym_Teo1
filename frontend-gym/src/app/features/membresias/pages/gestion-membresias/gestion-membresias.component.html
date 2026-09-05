@@ -1,9 +1,9 @@
 <section class="membresias container">
   <header class="membresias__header row align-items-center g-3">
     <div class="col">
-      <p class="membresias__eyebrow">Operación del gimnasio</p>
       <h1 class="membresias__title">Gestión de membresías</h1>
-      <p class="membresias__subtitle">Asigna acceso, administra sucursales y conserva cada cambio.</p>
+      <p class="membresias__subtitle">Asigna acceso a membresias, administra sucursales y conserva historial de cambios.
+      </p>
     </div>
     @if (vista() === 'membresias') { <div class="col-auto"><button class="btn btn-primary" type="button"
         (click)="nueva()">+ Nueva
@@ -15,10 +15,10 @@
 
   <div class="membresias__stats row g-3">
     <div class="col-12 col-sm-4">
-      <div class="membresias__stat card h-100"><span>Vigentes</span><strong>{{ activas() }}</strong></div>
+      <div class="membresias__stat card h-100"><span>Membresias Vigentes</span><strong>{{ activas() }}</strong></div>
     </div>
     <div class="col-12 col-sm-4">
-      <div class="membresias__stat card h-100"><span>Registros visibles</span><strong>{{ filtradas().length }}</strong>
+      <div class="membresias__stat card h-100"><span>Membresias visibles</span><strong>{{ filtradas().length }}</strong>
       </div>
     </div>
     <div class="col-12 col-sm-4">
@@ -29,10 +29,14 @@
   <nav class="membresias__tabs nav nav-tabs" aria-label="Vistas de membresías">
     <button class="nav-link" type="button" [class.active]="vista() === 'membresias'"
       (click)="seleccionarVista('membresias')">Membresías</button>
-    <button class="nav-link" type="button" [class.active]="vista() === 'auditoria'"
-      (click)="seleccionarVista('auditoria')">Auditoría</button>
-    @if (auth.tieneRol('ADMIN')) { <button class="nav-link" type="button" [class.active]="vista() === 'sucursales'"
-      (click)="seleccionarVista('sucursales')">Sucursales</button> }
+    <button class="nav-link" type="button" [class.active]="vista() === 'historial'"
+      (click)="seleccionarVista('historial')">Historial de membresías</button>
+    @if (auth.tieneRol('ADMIN')) {
+    <button class="nav-link" type="button" [class.active]="vista() === 'historial-sucursales'"
+      (click)="seleccionarVista('historial-sucursales')">Historial de sucursales</button>
+    <button class="nav-link" type="button" [class.active]="vista() === 'sucursales'"
+      (click)="seleccionarVista('sucursales')">Sucursales</button>
+    }
   </nav>
 
   @if (vista() === 'membresias') {
@@ -48,32 +52,38 @@
           <th>Socio / ID único</th>
           <th>Plan</th>
           <th>Vigencia</th>
-          <th>Sucursales</th>
           <th>Estado</th>
-          <th></th>
+          <th>Accion</th>
         </tr>
       </thead>
       <tbody>
         @for (item of filtradas(); track item.idMembresia) { <tr>
-          <td><strong>{{ item.nombreSocio }}</strong><small class="d-block">ID socio: {{ item.idSocio }}</small></td>
-          <td><strong>{{ item.plan.tipo }}</strong><small class="d-block">Q {{ item.precio | number:'1.2-2' }}</small>
+          <td>
+            <strong>{{ item.nombreSocio }}</strong>
+            <small class="d-block">ID socio: {{ item.idSocio }}</small>
           </td>
-          <td><small>{{ item.fechaInicio | date:'dd/MM/yyyy' }} al {{ item.fechaFin | date:'dd/MM/yyyy' }}</small></td>
-          <td>@for (branch of item.sucursales; track branch.idSucursal) {<span class="membresias__branch">{{
-              branch.nombre
-              }}</span>}</td>
-          <td><span class="membresias__status" [ngClass]="estiloEstado(item.estado)">{{ item.estado }}</span><small
-              class="d-block">{{
-              item.descripcionEstado }}</small></td>
-          <td><button class="btn btn-link p-0" type="button" (click)="editar(item)">Editar</button></td>
+          <td>
+            <strong>{{ item.plan.tipo }}</strong>
+            <small class="d-block">Q {{ item.precio | number:'1.2-2' }}</small>
+          </td>
+          <td>
+            <small>{{ item.fechaInicio | date:'dd/MM/yyyy' }} al {{ item.fechaFin | date:'dd/MM/yyyy' }}</small>
+          </td>
+          <td>
+            <span class="membresias__status" [ngClass]="estiloEstado(item.estado)">{{ item.estado }}</span>
+            <small class="d-block">{{ item.descripcionEstado }}</small>
+          </td>
+          <td>
+            <button class="btn btn-primary membresias__btn-editar p-2" (click)="editar(item)">Editar</button>
+          </td>
         </tr> }
         @empty { <tr>
-          <td colspan="6" class="empty">No hay membresías para mostrar.</td>
+          <td colspan="5" class="empty">No hay membresías para mostrar.</td>
         </tr> }
       </tbody>
     </table>
   </div>
-  } @else if (vista() === 'auditoria') {
+  } @else if (vista() === 'historial') {
   <div class="membresias__table-wrap table-responsive">
     <table class="table table-hover align-middle mb-0">
       <thead>
@@ -83,17 +93,48 @@
           <th>Socio</th>
           <th>Ejecutado por</th>
           <th>Detalle</th>
+          <th>Valor anterior</th>
+          <th>Valor nuevo</th>
         </tr>
       </thead>
-      <tbody>@for (item of auditoria(); track item.idAuditoria) { <tr>
+      <tbody>@for (item of auditoriaMembresias(); track item.idAuditoria) { <tr>
           <td>{{ item.fecha | date:'dd/MM/yyyy HH:mm' }}</td>
           <td><span class="membresias__status membresias__status--audit">{{ item.accion }}</span></td>
           <td>{{ item.nombreSocio || 'Catálogo de sucursales' }}<small class="d-block">ID: {{ item.idSocio || 'N/A'
               }}</small></td>
           <td>{{ item.nombreUsuario }}<small class="d-block">ID: {{ item.idUsuario }}</small></td>
           <td>{{ item.detalle }}</td>
+          <td>{{ item.valorAnterior || '—' }}</td>
+          <td>{{ item.valorNuevo || '—' }}</td>
         </tr>} @empty {<tr>
-          <td colspan="5" class="empty">Aún no hay movimientos auditados.</td>
+          <td colspan="7" class="empty">Aún no hay cambios de membresías registrados.</td>
+        </tr>}</tbody>
+    </table>
+  </div>
+  } @else if (vista() === 'historial-sucursales') {
+  <div class="membresias__table-wrap table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead>
+        <tr>
+          <th>Fecha</th>
+          <th>Acción</th>
+          <th>Sucursal</th>
+          <th>Ejecutado por</th>
+          <th>Detalle</th>
+          <th>Valor anterior</th>
+          <th>Valor nuevo</th>
+        </tr>
+      </thead>
+      <tbody>@for (item of auditoriaSucursales(); track item.idAuditoria) { <tr>
+          <td>{{ item.fecha | date:'dd/MM/yyyy HH:mm' }}</td>
+          <td><span class="membresias__status membresias__status--audit">{{ item.accion }}</span></td>
+          <td>{{ item.detalle }}</td>
+          <td>{{ item.nombreUsuario }}<small class="d-block">ID: {{ item.idUsuario }}</small></td>
+          <td>{{ item.detalle }}</td>
+          <td>{{ item.valorAnterior || '—' }}</td>
+          <td>{{ item.valorNuevo || '—' }}</td>
+        </tr>} @empty {<tr>
+          <td colspan="7" class="empty">Aún no hay cambios de sucursales registrados.</td>
         </tr>}</tbody>
     </table>
   </div>
@@ -106,19 +147,32 @@
           <th>Sucursal</th>
           <th>Dirección</th>
           <th>Estado</th>
-          <th></th>
+          <th>Accion</th>
         </tr>
       </thead>
-      <tbody>@for (sucursal of sucursales(); track sucursal.idSucursal) { <tr>
+      <tbody>
+        @for (sucursal of sucursales(); track sucursal.idSucursal) {
+        <tr>
           <td>{{ sucursal.idSucursal }}</td>
           <td><strong>{{ sucursal.nombre }}</strong></td>
           <td>{{ sucursal.direccion }}</td>
-          <td><span class="membresias__status" [class.membresias__status--activo]="sucursal.activa">{{ sucursal.activa ?
+          <td>
+            <span class="membresias__status" [class.membresias__status--activo]="sucursal.activa">{{ sucursal.activa ?
               'ACTIVA' : 'INACTIVA'
-              }}</span></td>
-          <td>@if (sucursal.activa) {<button class="btn btn-link p-0 text-danger" type="button"
-              (click)="desactivarSucursal(sucursal)">Desactivar</button>}</td>
-        </tr>}</tbody>
+              }}</span>
+          </td>
+          <td>
+            @if (sucursal.activa) {
+            <button type="button" class="btn btn-outline-danger fw-bold shadow-sm p-1"
+              (click)="desactivarSucursal(sucursal)">Desactivar</button>
+            } @else {
+            <button type="button" class="btn btn-outline-success fw-bold shadow-sm p-1"
+              (click)="reactivarSucursal(sucursal)">Reactivar</button>
+            }
+          </td>
+        </tr>
+        }
+      </tbody>
     </table>
   </div>
   }
@@ -142,31 +196,28 @@
           inmutable</span><strong>{{
           formulario.nombreSocio }} · {{ formulario.idSocio }}</strong></div> }
       <label class="col-12 col-md-6">Plan<select class="form-select" name="plan" [(ngModel)]="formulario.idPlan"
-          required>
+          (ngModelChange)="cambiarPlan($event)" required>
           <option [ngValue]="0">Seleccionar plan</option>@for (plan of planes(); track plan.idPlan) {<option
             [ngValue]="plan.idPlan">{{ plan.tipo }} · Q {{ plan.precio }}</option>}
         </select></label><label class="col-12 col-md-6">Precio<input class="form-control" name="precio" type="number"
-          min="0" [(ngModel)]="formulario.precio" required></label><label class="col-12 col-md-6">Fecha inicio<input
-          class="form-control" name="inicio" type="date" [(ngModel)]="formulario.fechaInicio" required></label><label
-        class="col-12 col-md-6">Fecha fin<input class="form-control" name="fin" type="date"
-          [(ngModel)]="formulario.fechaFin" required></label><label class="col-12 col-md-6">Estado<select
-          class="form-select" name="estado" [(ngModel)]="formulario.estado">
-          <option value="ACTIVA">ACTIVA</option>
-          <option value="INACTIVA">INACTIVA</option>
-          <option value="CANCELADA">CANCELADA</option>
-          <option value="VENCIDA">VENCIDA</option>
+          [ngModel]="formulario.precio" readonly></label><label class="col-12 col-md-6">Fecha inicio<input
+          class="form-control" name="inicio" type="date" [(ngModel)]="formulario.fechaInicio"
+          (ngModelChange)="cambiarFechaInicio($event)" required></label><label class="col-12 col-md-6">Fecha fin<input
+          class="form-control" name="fin" type="date" [ngModel]="formulario.fechaFin" readonly></label><label
+        class="col-12 col-md-6">Estado<select class="form-select" name="estado" [(ngModel)]="formulario.idEstado"
+          (ngModelChange)="cambiarEstado($event)">
+          @for (estado of estados(); track estado.idEstado) {
+          @if (esNuevaMembresia() ? estado.nombre === 'ACTIVA' || estado.nombre === 'CONGELADA' : estado.nombre !==
+          'VENCIDA') {
+          <option [ngValue]="estado.idEstado">{{ estado.nombre }}</option>
+          }
+          }
         </select></label><label class="col-12">Descripción del estado<input class="form-control" name="descripcion"
-          [(ngModel)]="formulario.descripcionEstado" required></label><label class="col-12">Motivo de cancelación<input
-          class="form-control" name="motivo" [(ngModel)]="formulario.motivoCancelacion"
-          placeholder="Requerido para bajas definitivas"></label>
-      <fieldset class="col-12">
-        <legend>Sucursales permitidas</legend>
-        <div class="membresias__branches d-flex flex-wrap gap-3">@for (sucursal of sucursales(); track
-          sucursal.idSucursal) {<label class="form-check membresias__check" [class.disabled]="!sucursal.activa"><input
-              type="checkbox" [checked]="formulario.idsSucursales.includes(sucursal.idSucursal)"
-              [disabled]="!sucursal.activa" (change)="alternarSucursal(sucursal.idSucursal)"><input
-              class="form-check-input" type="checkbox">{{ sucursal.nombre }}</label>}</div>
-      </fieldset>
+          [ngModel]="formulario.descripcionEstado" readonly></label>
+      @if (!esNuevaMembresia() && formulario.estado === 'CANCELADA') {
+      <label class="col-12">Motivo de cancelación<input class="form-control" name="motivo"
+          [(ngModel)]="formulario.motivoCancelacion" required placeholder="Indica el motivo de la cancelación"></label>
+      }
     </div>
     <footer><button class="btn btn-secondary" type="button" (click)="cancelarFormulario()">Cerrar</button><button
         class="btn btn-primary" type="submit">Guardar cambios</button></footer>

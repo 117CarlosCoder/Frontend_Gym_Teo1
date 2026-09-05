@@ -11,15 +11,6 @@
     margin-bottom: var(--sp-5);
 }
 
-.membresias__eyebrow {
-    margin-bottom: var(--sp-2);
-    color: var(--color-accent);
-    font-size: var(--fs-xs);
-    font-weight: 700;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-}
-
 .membresias__title,
 .membresias__modal-title {
     color: var(--color-primary);
@@ -113,6 +104,7 @@
 }
 
 .membresias__status--inactiva,
+.membresias__status--congelada,
 .membresias__status--vencida {
     background-color: color-mix(in srgb, var(--color-warning) 18%, var(--color-bg));
     color: var(--color-warning);
@@ -126,6 +118,13 @@
 .membresias__status--audit {
     background-color: var(--color-surface-alt);
     color: var(--color-accent);
+}
+
+/* Buttons */
+.membresias__btn-editar {
+    background-color: var(--color-accent);
+    border-color: var(--color-accent);
+    font-size: var(--fs-xs);
 }
 
 .membresias__modal-backdrop {
