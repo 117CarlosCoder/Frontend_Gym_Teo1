@@ -1,0 +1,196 @@
+:host {
+    display: block;
+}
+
+.membresias {
+    padding-block: var(--sp-6) var(--sp-8);
+    color: var(--color-text);
+}
+
+.membresias__header {
+    margin-bottom: var(--sp-5);
+}
+
+.membresias__title,
+.membresias__modal-title {
+    color: var(--color-primary);
+}
+
+.membresias__title {
+    margin-bottom: var(--sp-2);
+    font-size: var(--fs-2xl);
+}
+
+.membresias__subtitle,
+.membresias__toolbar span,
+.membresias__stat span,
+.membresias td small,
+.membresias th {
+    color: var(--color-text-muted);
+}
+
+.membresias__stats {
+    margin-bottom: var(--sp-5);
+}
+
+.membresias__stat {
+    border-top: 3px solid var(--color-accent);
+}
+
+.membresias__stat strong {
+    display: block;
+    margin-top: var(--sp-1);
+    color: var(--color-primary);
+    font-size: var(--fs-xl);
+}
+
+.membresias__tabs {
+    margin-bottom: var(--sp-4);
+}
+
+.membresias__tabs .nav-link {
+    color: var(--color-secondary);
+}
+
+.membresias__tabs .nav-link.active {
+    color: var(--color-primary);
+    border-color: var(--color-border) var(--color-border) var(--color-bg);
+}
+
+.membresias__toolbar {
+    margin-bottom: var(--sp-4);
+}
+
+.membresias__table-wrap {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm);
+}
+
+.membresias__table-wrap th {
+    background-color: var(--color-primary);
+    color: var(--color-on-dark);
+    font-size: var(--fs-xs);
+    text-transform: uppercase;
+}
+
+.membresias__table-wrap td strong,
+.membresias__table-wrap td small {
+    display: block;
+}
+
+.membresias__branch {
+    display: inline-block;
+    margin: 0 var(--sp-1) var(--sp-1) 0;
+    padding: var(--sp-1) var(--sp-2);
+    border-radius: var(--radius-sm);
+    background-color: var(--color-surface-alt);
+    color: var(--color-primary);
+    font-size: var(--fs-xs);
+}
+
+.membresias__status {
+    display: inline-block;
+    padding: var(--sp-1) var(--sp-2);
+    border-radius: var(--radius-sm);
+    font-size: var(--fs-xs);
+    font-weight: 700;
+}
+
+.membresias__status--activa,
+.membresias__status--activo {
+    background-color: color-mix(in srgb, var(--color-success) 15%, var(--color-bg));
+    color: var(--color-success);
+}
+
+.membresias__status--inactiva,
+.membresias__status--congelada,
+.membresias__status--vencida {
+    background-color: color-mix(in srgb, var(--color-warning) 18%, var(--color-bg));
+    color: var(--color-warning);
+}
+
+.membresias__status--cancelada {
+    background-color: var(--color-danger-bg);
+    color: var(--color-danger);
+}
+
+.membresias__status--audit {
+    background-color: var(--color-surface-alt);
+    color: var(--color-accent);
+}
+
+/* Buttons */
+.membresias__btn-editar {
+    background-color: var(--color-accent);
+    border-color: var(--color-accent);
+    font-size: var(--fs-xs);
+}
+
+.membresias__modal-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 1050;
+    display: grid;
+    place-items: center;
+    padding: var(--sp-4);
+    background-color: rgb(16 29 66 / 65%);
+}
+
+.membresias__modal {
+    width: min(100%, 740px);
+    max-height: 94vh;
+    overflow-y: auto;
+    padding: var(--sp-5);
+    border-radius: var(--radius-md);
+    background-color: var(--color-bg);
+    box-shadow: var(--shadow-lg);
+}
+
+.membresias__modal>header,
+.membresias__modal>footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--sp-3);
+}
+
+.membresias__modal>footer {
+    justify-content: flex-end;
+    margin-top: var(--sp-5);
+}
+
+.membresias__identity {
+    padding: var(--sp-3);
+    border-radius: var(--radius-sm);
+    background-color: var(--color-surface-alt);
+}
+
+.membresias__identity span {
+    display: block;
+    color: var(--color-text-muted);
+    font-size: var(--fs-xs);
+}
+
+.membresias__check {
+    color: var(--color-primary);
+    font-weight: 400;
+}
+
+.membresias__check.disabled {
+    color: var(--color-secondary-light);
+}
+
+@media (max-width: 575.98px) {
+    .membresias {
+        padding-block: var(--sp-4) var(--sp-6);
+    }
+
+    .membresias__title {
+        font-size: var(--fs-xl);
+    }
+
+    .membresias__modal {
+        padding: var(--sp-4);
+    }
+}

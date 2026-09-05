@@ -65,6 +65,15 @@ export const routes: Routes = [
           ),
         title: 'Asistencia | Claude Lovers Gym',
       },
+      {
+        path: 'membresias',
+        canActivate: [rolGuard('ADMIN', 'RECEPCION')],
+        loadComponent: () =>
+          import('./features/membresias/pages/gestion-membresias/gestion-membresias.component').then(
+            (m) => m.GestionMembresiasComponent,
+          ),
+        title: 'Membresías | Claude Lovers Gym',
+      },
     ],
   },
   { path: '**', redirectTo: '' },
