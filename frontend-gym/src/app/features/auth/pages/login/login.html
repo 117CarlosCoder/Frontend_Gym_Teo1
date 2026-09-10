@@ -97,25 +97,22 @@
         </button>
       </form>
 
-      @if (modoDemo) {
-        <section class="demo">
-          <p class="demo__titulo">Cuentas de prueba (backend aún no conectado)</p>
-          <ul class="demo__lista">
-            @for (usuario of usuariosDemo; track usuario.correo) {
-              <li>
-                <button
-                  type="button"
-                  class="demo__boton"
-                  (click)="usarDemo(usuario.correo, usuario.password)"
-                >
-                  <strong>{{ usuario.rol }}</strong>
-                  <span>{{ usuario.correo }} · {{ usuario.password }}</span>
-                </button>
-              </li>
-            }
-          </ul>
-        </section>
-      }
+      <!-- Acceso rápido con cuentas del Backend (MariaDB) -->
+      <div class="login__pruebas mt-4 pt-3 border-top">
+        <p class="small text-muted mb-2 fw-semibold">Cuentas oficiales del Backend (MariaDB):</p>
+        <div class="d-flex flex-wrap gap-2">
+          @for (u of usuariosDemo; track u.correo) {
+            <button
+              type="button"
+              class="btn btn-outline-secondary btn-sm"
+              (click)="usarDemo(u.correo, u.password)"
+              title="Cargar credenciales de {{ u.rol }}"
+            >
+              {{ u.rol }}
+            </button>
+          }
+        </div>
+      </div>
 
       <p class="login__nota">
         ¿Todavía no eres socio?

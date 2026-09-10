@@ -55,6 +55,10 @@
                             <i class="bi bi-person-check text-success me-2"></i>
                             {{ entrenador.nombre }} {{ entrenador.apellido }} ({{ entrenador.especialidad }})
                         </li>
+                        } @empty {
+                        <li class="portal__list-item text-muted">
+                            <i class="bi bi-info-circle me-2"></i>Sin entrenador asignado actualmente.
+                        </li>
                         }
                     </ul>
 
@@ -66,13 +70,17 @@
                             <i class="bi bi-calendar-event text-info me-2"></i>
                             {{ clase.nombre }} - {{ clase.horario }} (Prof. {{ clase.nombreEntrenador }})
                         </li>
+                        } @empty {
+                        <li class="portal__list-item text-muted">
+                            <i class="bi bi-info-circle me-2"></i>Sin clases inscritas actualmente.
+                        </li>
                         }
                     </ul>
 
                     <!-- Medición física actual -->
                     <h6 class="portal__section-title mt-3">Última Medición Física</h6>
-                    <p class="mb-1"><small class="text-muted">Fecha: {{ datos.medicion.fecha }}</small>
-                    </p>
+                    @if (datos.medicion && datos.medicion.peso) {
+                    <p class="mb-1"><small class="text-muted">Fecha: {{ datos.medicion.fecha }}</small></p>
                     <div class="row">
                         <div class="col-6 col-md-3 mb-2">
                             <span class="d-block text-muted">Peso</span>
@@ -91,6 +99,9 @@
                             <strong>{{ datos.medicion.masa_muscular }} kg</strong>
                         </div>
                     </div>
+                    } @else {
+                    <p class="text-muted small mb-0"><i class="bi bi-info-circle me-2"></i>Evaluación física inicial pendiente.</p>
+                    }
                 </div>
             </div>
         </div>
@@ -104,10 +115,10 @@
                 <div class="card-body">
                     <dl class="row mb-0">
                         <dt class="col-sm-4">Fecha de inicio:</dt>
-                        <dd class="col-sm-8">{{ datos.membresia.fechaInicio }}</dd>
+                        <dd class="col-sm-8">{{ datos.membresia.fechaInicio || 'No registrada' }}</dd>
 
                         <dt class="col-sm-4">Fecha de vencimiento:</dt>
-                        <dd class="col-sm-8">{{ datos.membresia.fechaVencimiento }}</dd>
+                        <dd class="col-sm-8">{{ datos.membresia.fechaVencimiento || 'Sin fecha' }}</dd>
 
                         <dt class="col-sm-4">Estado:</dt>
                         <dd class="col-sm-8">
@@ -122,20 +133,21 @@
                         <dd class="col-sm-8">{{ datos.membresia.duracionDias }} días</dd>
 
                         <dt class="col-sm-4">Precio:</dt>
-                        <dd class="col-sm-8">Q {{ datos.membresia.precio.toFixed(2) }}</dd>
+                        <dd class="col-sm-8">Q {{ (datos.membresia.precio || 0).toFixed(2) }}</dd>
 
                         <dt class="col-sm-4">Descripción:</dt>
                         <dd class="col-sm-8">{{ datos.membresia.descripcion }}</dd>
 
                         <dt class="col-sm-4">Beneficios:</dt>
-                        <dd class="col-sm-8">{{ datos.membresia.beneficios?.join(' - ') }}</dd>
+                        <dd class="col-sm-8">{{ datos.membresia.beneficios?.join(' - ') || 'Pesas y Cardio' }}</dd>
                     </dl>
 
+                    @if (datos.membresia.fechaVencimiento) {
                     <div class="alert portal__alert alert-warning mt-3 mb-0" role="alert">
                         <i class="bi bi-exclamation-triangle me-2"></i>
-                        Su membresía vence el <strong>{{ datos.membresia.fechaVencimiento }}</strong>. ¡Renueve a
-                        tiempo!
+                        Su membresía vence el <strong>{{ datos.membresia.fechaVencimiento }}</strong>. ¡Renueve a tiempo!
                     </div>
+                    }
                 </div>
             </div>
         </div>
@@ -169,6 +181,12 @@
                                         } @else {
                                         <span class="badge bg-warning text-dark">En curso</span>
                                         }
+                                    </td>
+                                </tr>
+                                } @empty {
+                                <tr>
+                                    <td colspan="4" class="text-center text-muted py-3">
+                                        No hay asistencias registradas recientemente.
                                     </td>
                                 </tr>
                                 }
