@@ -413,6 +413,35 @@
               <span class="badge bg-light text-dark border ms-2">DPI: {{ socioSeleccionado()?.usuario?.dpi }}</span>
             </div>
 
+            <!-- Advertencia si ya cuenta con membresía activa -->
+            @if (tieneMembresiaActiva()) {
+              <div class="alert alert-warning py-2 px-3 mb-3">
+                <div class="d-flex align-items-center gap-2 mb-1">
+                  <strong>⚠️ Membresía activa vigente</strong>
+                </div>
+                <div class="small">
+                  Este socio ya cuenta con el plan <strong>{{ socioSeleccionado()?.tipoPlan }}</strong> ({{ socioSeleccionado()?.estadoMembresia }})
+                  @if (socioSeleccionado()?.fechaVencimientoMembresia) {
+                    vigente hasta el <strong>{{ socioSeleccionado()?.fechaVencimientoMembresia | date:'dd/MM/yyyy' }}</strong>.
+                  }
+                  <div class="text-danger-emphasis mt-1">
+                    El backend no permite registrar una nueva membresía activa mientras exista una vigente.
+                  </div>
+                </div>
+              </div>
+            }
+
+            <!-- Mensaje de error de la API -->
+            @if (errorModalAsignar()) {
+              <div class="alert alert-danger py-2 px-3 mb-3 d-flex align-items-start justify-content-between">
+                <div>
+                  <strong>Error al procesar la membresía:</strong>
+                  <div class="small">{{ errorModalAsignar() }}</div>
+                </div>
+                <button type="button" class="btn-close" (click)="errorModalAsignar.set(null)"></button>
+              </div>
+            }
+
             <div class="row g-3">
               <!-- Selección de Plan -->
               <div class="col-12">
@@ -440,9 +469,14 @@
             </div>
           </div>
           <div class="modal-footer-custom">
-            <button type="button" class="btn btn-light" (click)="cerrarModalAsignarPlan()">Cancelar</button>
-            <button type="submit" class="btn btn--primary" [disabled]="formAsignarPlan.invalid">
-              Confirmar y Activar Membresía
+            <button type="button" class="btn btn-light" (click)="cerrarModalAsignarPlan()" [disabled]="guardandoAsignacion()">Cancelar</button>
+            <button type="submit" class="btn btn--primary" [disabled]="formAsignarPlan.invalid || guardandoAsignacion()">
+              @if (guardandoAsignacion()) {
+                <span class="spinner-border spinner-border-sm me-1" role="status"></span>
+                Asignando...
+              } @else {
+                Confirmar y Activar Membresía
+              }
             </button>
           </div>
         </form>

@@ -133,7 +133,7 @@
           Asistencias Registradas Hoy ({{ asistencias().length }})
         </h4>
         <a [routerLink]="RUTAS.dashboard.asistencia" class="btn btn-sm btn-outline-primary">
-          Ver Historial Completo →
+          Ver Historial Completo
         </a>
       </div>
       <div class="table-responsive">
@@ -180,7 +180,7 @@
                       Marcar Salida
                     </button>
                   } @else {
-                    <span class="text-muted small">✓ Completada</span>
+                    <span class="text-muted small">Completada</span>
                   }
                 </td>
               </tr>
@@ -255,7 +255,7 @@
               <p class="text-muted small">Catálogo de precios y asignación a miembros</p>
             </div>
             <a [routerLink]="RUTAS.dashboard.planes" class="btn btn-sm btn--primary">
-              Abrir Catálogo →
+              Abrir Catálogo
             </a>
           </div>
           <ul class="list-unstyled small text-muted mb-0">

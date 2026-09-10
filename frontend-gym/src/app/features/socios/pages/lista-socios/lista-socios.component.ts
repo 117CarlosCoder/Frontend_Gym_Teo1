@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule, DatePipe, NgClass } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { toSignal } from '@angular/core/rxjs-interop';
@@ -15,7 +15,7 @@ import { PlanMembresia } from '../../../../core/models/plan-membresia.model';
   templateUrl: './lista-socios.component.html',
   styleUrl: './lista-socios.component.css',
 })
-export class ListaSocios {
+export class ListaSocios implements OnInit {
   private readonly sociosService = inject(SociosService);
   private readonly planesService = inject(PlanesService);
   private readonly authService = inject(AuthService);
@@ -97,6 +97,10 @@ export class ListaSocios {
     // Recalcular vencimiento cuando cambia el plan o la fecha de inicio
     this.formAsignarPlan.get('id_plan')?.valueChanges.subscribe(() => this.actualizarFechaVencimiento());
     this.formAsignarPlan.get('fecha_inicio')?.valueChanges.subscribe(() => this.actualizarFechaVencimiento());
+  }
+
+  ngOnInit(): void {
+    this.sociosService.getSocios().subscribe({ error: () => {} });
   }
 
   // Búsqueda y Filtros
@@ -236,9 +240,28 @@ export class ListaSocios {
     }
   }
 
+  readonly errorModalAsignar = signal<string | null>(null);
+  readonly guardandoAsignacion = signal<boolean>(false);
+
+  readonly tieneMembresiaActiva = computed(() => {
+    const s = this.socioSeleccionado();
+    if (!s) return false;
+    const esActiva = !!(s.estadoMembresia && s.estadoMembresia.toLowerCase().includes('activ'));
+    const tienePlanValido = !!(s.tipoPlan && s.tipoPlan !== 'Sin Membresía' && s.tipoPlan !== 'Sin Plan Asignado');
+    if (!esActiva || !tienePlanValido) return false;
+
+    if (s.fechaVencimientoMembresia) {
+      const hoy = new Date().toISOString().split('T')[0];
+      return s.fechaVencimientoMembresia >= hoy;
+    }
+    return true;
+  });
+
   // Asignación de Plan de Membresía (M3)
   abrirModalAsignarPlan(socio: SocioTablaDTO): void {
     this.socioSeleccionado.set(socio);
+    this.errorModalAsignar.set(null);
+    this.guardandoAsignacion.set(false);
     const primerPlan = this.planesSignal()[0];
     const hoy = new Date().toISOString().split('T')[0];
 
@@ -252,6 +275,8 @@ export class ListaSocios {
 
   cerrarModalAsignarPlan(): void {
     this.modalAsignarPlan.set(false);
+    this.errorModalAsignar.set(null);
+    this.guardandoAsignacion.set(false);
     this.socioSeleccionado.set(null);
   }
 
@@ -281,14 +306,18 @@ export class ListaSocios {
 
     const fechaInicio = this.formAsignarPlan.get('fecha_inicio')?.value;
     const fechaVencimiento = this.formAsignarPlan.get('fecha_vencimiento')?.value;
+    this.errorModalAsignar.set(null);
+    this.guardandoAsignacion.set(true);
 
     this.sociosService.asignarPlan(socio.id_socio, plan.nombre, plan.id_plan, fechaInicio, fechaVencimiento).subscribe({
       next: (actualizado) => {
+        this.guardandoAsignacion.set(false);
         this.mostrarExito(`Plan "${plan.nombre}" asignado exitosamente a ${actualizado.usuario.nombre}. Membresía activa hasta ${fechaVencimiento}.`);
         this.cerrarModalAsignarPlan();
       },
       error: (err) => {
-        this.mensajeError.set(err.message || 'Error al asignar el plan.');
+        this.guardandoAsignacion.set(false);
+        this.errorModalAsignar.set(err.message || 'Error al asignar el plan.');
       },
     });
   }

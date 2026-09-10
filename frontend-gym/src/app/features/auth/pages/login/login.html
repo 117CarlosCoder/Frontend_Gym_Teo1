@@ -97,6 +97,22 @@
         </button>
       </form>
 
+      <!-- Acceso rápido con cuentas del Backend (MariaDB) -->
+      <div class="login__pruebas mt-4 pt-3 border-top">
+        <p class="small text-muted mb-2 fw-semibold">Cuentas oficiales del Backend (MariaDB):</p>
+        <div class="d-flex flex-wrap gap-2">
+          @for (u of usuariosDemo; track u.correo) {
+            <button
+              type="button"
+              class="btn btn-outline-secondary btn-sm"
+              (click)="usarDemo(u.correo, u.password)"
+              title="Cargar credenciales de {{ u.rol }}"
+            >
+              {{ u.rol }}
+            </button>
+          }
+        </div>
+      </div>
 
       <p class="login__nota">
         ¿Todavía no eres socio?

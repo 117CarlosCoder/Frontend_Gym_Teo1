@@ -1,5 +1,5 @@
-import { Component, computed, inject, signal } from '@angular/core';
-import { CommonModule, DecimalPipe } from '@angular/common';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { CommonModule, DatePipe, DecimalPipe } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { PlanesService } from '../../services/planes.service';
@@ -11,11 +11,11 @@ import { SocioTablaDTO } from '../../../socios/models/socio-tabla-dto.model';
 @Component({
   selector: 'app-lista-planes',
   standalone: true,
-  imports: [CommonModule, DecimalPipe, ReactiveFormsModule],
+  imports: [CommonModule, DatePipe, DecimalPipe, ReactiveFormsModule],
   templateUrl: './lista-planes.component.html',
   styleUrl: './lista-planes.component.css',
 })
-export class ListaPlanes {
+export class ListaPlanes implements OnInit {
   private readonly planesService = inject(PlanesService);
   private readonly sociosService = inject(SociosService);
   private readonly authService = inject(AuthService);
@@ -38,6 +38,29 @@ export class ListaPlanes {
   readonly modalAsignar = signal<boolean>(false);
 
   readonly planSeleccionado = signal<PlanMembresia | null>(null);
+  readonly errorModalAsignar = signal<string | null>(null);
+  readonly guardandoAsignacion = signal<boolean>(false);
+  readonly socioSeleccionadoId = signal<number | null>(null);
+
+  readonly socioSeleccionadoEnModal = computed(() => {
+    const id = this.socioSeleccionadoId();
+    if (!id) return null;
+    return this.socios().find((s) => s.id_socio === id) || null;
+  });
+
+  readonly socioTieneMembresiaActiva = computed(() => {
+    const s = this.socioSeleccionadoEnModal();
+    if (!s) return false;
+    const esActiva = !!(s.estadoMembresia && s.estadoMembresia.toLowerCase().includes('activ'));
+    const tienePlanValido = !!(s.tipoPlan && s.tipoPlan !== 'Sin Membresía' && s.tipoPlan !== 'Sin Plan Asignado');
+    if (!esActiva || !tienePlanValido) return false;
+
+    if (s.fechaVencimientoMembresia) {
+      const hoy = new Date().toISOString().split('T')[0];
+      return s.fechaVencimientoMembresia >= hoy;
+    }
+    return true;
+  });
 
   // Feedback
   readonly mensajeExito = signal<string | null>(null);
@@ -60,8 +83,16 @@ export class ListaPlanes {
   });
 
   constructor() {
+    this.formAsignar.get('id_socio')?.valueChanges.subscribe((val) => {
+      this.socioSeleccionadoId.set(val ? Number(val) : null);
+      this.errorModalAsignar.set(null);
+    });
     this.formAsignar.get('id_plan')?.valueChanges.subscribe(() => this.recalcularVencimiento());
     this.formAsignar.get('fecha_inicio')?.valueChanges.subscribe(() => this.recalcularVencimiento());
+  }
+
+  ngOnInit(): void {
+    this.sociosService.getSocios().subscribe({ error: () => {} });
   }
 
   // --- CRUD PLANES (M3) ---
@@ -198,6 +229,10 @@ export class ListaPlanes {
     const targetPlanId = plan ? plan.id_plan : this.planes()[0]?.id_plan || '';
     const hoy = new Date().toISOString().split('T')[0];
 
+    this.errorModalAsignar.set(null);
+    this.guardandoAsignacion.set(false);
+    this.socioSeleccionadoId.set(primerSocio ? primerSocio.id_socio : null);
+
     this.formAsignar.reset({
       id_socio: primerSocio ? primerSocio.id_socio : '',
       id_plan: targetPlanId,
@@ -209,6 +244,8 @@ export class ListaPlanes {
 
   cerrarModalAsignar(): void {
     this.modalAsignar.set(false);
+    this.errorModalAsignar.set(null);
+    this.guardandoAsignacion.set(false);
   }
 
   recalcularVencimiento(): void {
@@ -237,23 +274,48 @@ export class ListaPlanes {
 
     const fechaInicio = this.formAsignar.get('fecha_inicio')?.value;
     const fechaVencimiento = this.formAsignar.get('fecha_vencimiento')?.value;
+    this.errorModalAsignar.set(null);
+    this.guardandoAsignacion.set(true);
 
     this.sociosService.asignarPlan(socioId, plan.nombre, plan.id_plan, fechaInicio, fechaVencimiento).subscribe({
       next: () => {
+        this.guardandoAsignacion.set(false);
         this.mostrarExito(
           `¡Plan "${plan.nombre}" asignado a ${socio.usuario.nombre} ${socio.usuario.apellido}! Vigencia hasta: ${fechaVencimiento}`
         );
         this.cerrarModalAsignar();
       },
       error: (err) => {
-        this.mensajeError.set(err.message || 'Error al asignar el plan.');
+        this.guardandoAsignacion.set(false);
+        this.errorModalAsignar.set(err.message || 'Error al asignar el plan.');
       },
     });
   }
 
   // Helper para contar miembros con cada plan
-  obtenerCantidadMiembrosConPlan(planNombre: string): number {
-    return this.socios().filter((s) => s.tipoPlan === planNombre && s.estado === 'ACTIVO').length;
+  obtenerCantidadMiembrosConPlan(plan: PlanMembresia | string): number {
+    const planNombre = typeof plan === 'string' ? plan : plan.nombre;
+    const planId = typeof plan === 'object' ? plan.id_plan : undefined;
+    const nombreNormalizado = (planNombre || '').trim().toLowerCase();
+
+    return this.socios().filter((s) => {
+      const coincideId = planId !== undefined && s.id_plan === planId;
+      const socioPlan = (s.tipoPlan || '').trim().toLowerCase();
+      const coincidePlan =
+        coincideId ||
+        (socioPlan !== '' &&
+          socioPlan !== 'sin membresía' &&
+          socioPlan !== 'sin plan asignado' &&
+          (socioPlan === nombreNormalizado ||
+            socioPlan.includes(nombreNormalizado) ||
+            nombreNormalizado.includes(socioPlan)));
+
+      const esActivo =
+        s.estado === 'ACTIVO' ||
+        (s.estadoMembresia && s.estadoMembresia.toUpperCase().includes('ACTIV'));
+
+      return coincidePlan && esActivo;
+    }).length;
   }
 
   private mostrarExito(mensaje: string): void {

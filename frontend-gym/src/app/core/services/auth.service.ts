@@ -1,8 +1,7 @@
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Injectable, computed, inject, signal } from '@angular/core';
-import { Observable, catchError, delay, map, of, switchMap, tap, throwError, timer } from 'rxjs';
+import { Observable, catchError, map, of, switchMap, tap, throwError } from 'rxjs';
 
-import { environment } from '../../../environments/environment';
 import { API, STORAGE_KEYS } from '../constants/api.constants';
 import {
   BackendAuthResponse,
@@ -15,99 +14,6 @@ import { RolUsuario, UserResponseDto, Usuario } from '../models/usuario.model';
 import { StorageService } from './storage.service';
 
 const DURACION_SESION_MS = 8 * 60 * 60 * 1000;
-
-const USUARIOS_DEMO: Array<{ password: string; usuario: Usuario }> = [
-  {
-    password: 'Admin123*',
-    usuario: {
-      id: 1,
-      dpi: '1000000000001',
-      nombre: 'Carlos Raúl',
-      apellido: 'López (Admin)',
-      correo: 'clp64413@gmail.com',
-      rol: 'ADMIN',
-      activo: true,
-      fecha_creacion: '2026-01-15T08:00:00Z',
-      doble_autenticacion: false,
-      username: 'clopez.admin',
-    },
-  },
-  {
-    password: 'admin123',
-    usuario: {
-      id: 1,
-      dpi: '1111111111111',
-      nombre: 'Diego',
-      apellido: 'González',
-      correo: 'admin@claudelovers.com',
-      rol: 'ADMIN',
-      activo: true,
-      fecha_creacion: '2026-01-15T08:00:00Z',
-      doble_autenticacion: false,
-      username: 'diego.gonzales',
-    },
-  },
-  {
-    password: 'Recep123*',
-    usuario: {
-      id: 7,
-      dpi: '1000000000007',
-      nombre: 'María Fernanda',
-      apellido: 'Castro Silva',
-      correo: 'maria.castro@gymdemo.com',
-      rol: 'RECEPCIONISTA',
-      activo: true,
-      fecha_creacion: '2026-02-01T08:00:00Z',
-      doble_autenticacion: false,
-      username: 'mcastro.recep',
-    },
-  },
-  {
-    password: 'recepcion123',
-    usuario: {
-      id: 2,
-      dpi: '2222222222222',
-      nombre: 'Enmer',
-      apellido: 'Sandoval',
-      correo: 'recepcion@claudelovers.com',
-      rol: 'RECEPCION',
-      activo: true,
-      fecha_creacion: '2026-01-15T08:00:00Z',
-      doble_autenticacion: false,
-      username: 'enmer.sandoval',
-    },
-  },
-  {
-    password: 'Client123*',
-    usuario: {
-      id: 8,
-      dpi: '1000000000008',
-      nombre: 'Lucía Elena',
-      apellido: 'Hernández Ruiz',
-      correo: 'lucia.hernandez@gymdemo.com',
-      rol: 'CLIENTE',
-      activo: true,
-      fecha_creacion: '2026-04-01T08:00:00Z',
-      doble_autenticacion: false,
-      username: 'lhernandez',
-    },
-  },
-  {
-    password: 'socio123',
-    usuario: {
-      id: 3,
-      dpi: '3333333333333',
-      nombre: 'Brandon',
-      apellido: 'Cotom',
-      correo: 'socio@claudelovers.com',
-      rol: 'SOCIO',
-      activo: true,
-      fecha_creacion: '2026-01-15T08:00:00Z',
-      doble_autenticacion: false,
-      username: 'brandon.cotom',
-    },
-  },
-];
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
@@ -125,20 +31,21 @@ export class AuthService {
   }
 
   login(credenciales: LoginRequest): Observable<LoginResponse> {
-    const peticion$ = environment.useMockAuth
-      ? this.loginSimulado(credenciales)
-      : this.loginReal(credenciales).pipe(
-          catchError((err) => {
-            console.warn('Backend no disponible, recurriendo a credenciales demo...', err);
-            return this.loginSimulado(credenciales);
-          })
-        );
-
-    return peticion$.pipe(tap((respuesta) => this.abrirSesion(respuesta)));
+    return this.loginReal(credenciales).pipe(
+      catchError((err) => {
+        const msg =
+          err.backendError?.message ||
+          err.error?.message ||
+          err.message ||
+          'Correo o contraseña incorrectos.';
+        return throwError(() => new Error(msg));
+      }),
+      tap((respuesta) => this.abrirSesion(respuesta))
+    );
   }
 
   logout(): void {
-    if (!environment.useMockAuth && this.token) {
+    if (this.token) {
       this.http.post(API.auth.logout, {}).subscribe({
         error: () => {},
       });
@@ -249,29 +156,15 @@ export class AuthService {
     const guardada = this.storage.obtener<SesionGuardada>(STORAGE_KEYS.sesion);
     if (!guardada) return null;
 
-    if (guardada.expiraEn <= Date.now()) {
+    if (
+      guardada.expiraEn <= Date.now() ||
+      !guardada.token ||
+      guardada.token.startsWith('demo-') ||
+      !guardada.token.includes('.')
+    ) {
       this.storage.eliminar(STORAGE_KEYS.sesion);
       return null;
     }
     return guardada;
-  }
-
-  private loginSimulado(credenciales: LoginRequest): Observable<LoginResponse> {
-    const correo = credenciales.correo.trim().toLowerCase();
-    const encontrado = USUARIOS_DEMO.find(
-      (u) => u.usuario.correo.toLowerCase() === correo && u.password === credenciales.password,
-    );
-
-    if (!encontrado) {
-      return timer(600).pipe(
-        switchMap(() => throwError(() => new Error('Correo o contraseña incorrectos.'))),
-      );
-    }
-
-    const respuesta: LoginResponse = {
-      token: `demo-token-${encontrado.usuario.id}-${Date.now()}`,
-      usuario: encontrado.usuario,
-    };
-    return of(respuesta).pipe(delay(600));
   }
 }

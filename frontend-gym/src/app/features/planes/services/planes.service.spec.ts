@@ -16,12 +16,13 @@ describe('PlanesService', () => {
     expect(service).toBeTruthy();
   });
 
-  it('debe inicializarse y cargar los 3 planes obligatorios (Mensual, Trimestral, Anual)', async () => {
+  it('debe inicializarse y cargar los 4 planes del backend (Mensual, Trimestral, Semestral, Anual)', async () => {
     const planes = await firstValueFrom(service.getPlanes());
-    expect(planes.length).toBeGreaterThanOrEqual(3);
+    expect(planes.length).toBeGreaterThanOrEqual(4);
     const nombres = planes.map((p) => p.nombre.toLowerCase());
     expect(nombres.some((n) => n.includes('mensual'))).toBe(true);
     expect(nombres.some((n) => n.includes('trimestral'))).toBe(true);
+    expect(nombres.some((n) => n.includes('semestral'))).toBe(true);
     expect(nombres.some((n) => n.includes('anual'))).toBe(true);
   });
 

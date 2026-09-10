@@ -25,7 +25,16 @@ export const PLANES_BASE: PlanMembresia[] = [
   },
   {
     id_plan: 3,
-    nombre: 'Plan Anual VIP',
+    nombre: 'Plan Semestral',
+    duracion: 180,
+    precio: 1200.0,
+    descripcion: 'Membresía semestral con acceso completo a todas las áreas e instalaciones.',
+    beneficios: ['Pesas y máquinas', 'Cardio libre', 'Clases grupales', 'Evaluación física semestral'],
+    activo: true,
+  },
+  {
+    id_plan: 4,
+    nombre: 'Plan Anual',
     duracion: 365,
     precio: 2200.0,
     descripcion: 'Membresía anual completa con acceso ilimitado a todas las instalaciones.',
@@ -50,7 +59,7 @@ export class PlanesService {
 
   private cargarPlanesIniciales(): PlanMembresia[] {
     const guardados = this.storage.obtener<PlanMembresia[]>(STORAGE_KEYS.planes);
-    if (guardados && Array.isArray(guardados) && guardados.length > 0) {
+    if (guardados && Array.isArray(guardados) && guardados.length >= 4 && guardados.some(p => p.id_plan === 4)) {
       return guardados;
     }
     this.storage.guardar(STORAGE_KEYS.planes, PLANES_BASE);
