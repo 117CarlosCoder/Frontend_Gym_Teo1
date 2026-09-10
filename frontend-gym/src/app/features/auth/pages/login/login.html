@@ -97,23 +97,6 @@
         </button>
       </form>
 
-      <section class="demo">
-        <p class="demo__titulo">Cuentas de prueba (Seeds de la Base de Datos)</p>
-        <ul class="demo__lista">
-          @for (usuario of usuariosDemo; track usuario.correo) {
-            <li>
-              <button
-                type="button"
-                class="demo__boton"
-                (click)="usarDemo(usuario.correo, usuario.password)"
-              >
-                <strong>{{ usuario.rol }}</strong>
-                <span>{{ usuario.correo }} · {{ usuario.password }}</span>
-              </button>
-            </li>
-          }
-        </ul>
-      </section>
 
       <p class="login__nota">
         ¿Todavía no eres socio?

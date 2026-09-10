@@ -1,158 +1,452 @@
-<div class="container mt-4 socios-lista">
-    <!-- Encabezado -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <div>
-            <h2 class="socios-lista__text-primary fw-bold m-0">Gestión de Socios</h2>
-            <p class="socios-lista__text-secondary small">Listado general de usuarios inscritos en el gimnasio</p>
+<div class="container mt-4 socios-container">
+  <!-- Encabezado con Botón de Alta -->
+  <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+    <div>
+      <h2 class="socios-titulo m-0">Gestión de Miembros</h2>
+      <p class="socios-subtitulo m-0">Administración general, estados de cuenta y asignación de membresías</p>
+    </div>
+    <div class="d-flex align-items-center gap-2">
+      <button type="button" class="btn btn--primary" (click)="abrirModalCrear()">
+        <span class="me-1">➕</span> Nuevo Miembro
+      </button>
+    </div>
+  </div>
+
+  <!-- Alertas de éxito / error -->
+  @if (mensajeExito()) {
+    <div class="alert alert-success d-flex align-items-center justify-content-between shadow-sm" role="alert">
+      <div><strong>✓ Éxito:</strong> {{ mensajeExito() }}</div>
+      <button type="button" class="btn-close" (click)="mensajeExito.set(null)" aria-label="Cerrar"></button>
+    </div>
+  }
+  @if (mensajeError()) {
+    <div class="alert alert-danger d-flex align-items-center justify-content-between shadow-sm" role="alert">
+      <div><strong>Error:</strong> {{ mensajeError() }}</div>
+      <button type="button" class="btn-close" (click)="mensajeError.set(null)" aria-label="Cerrar"></button>
+    </div>
+  }
+
+  <!-- Barra de Búsqueda y Filtros por Estado (M2) -->
+  <div class="card mb-4 border-0 shadow-sm p-3 filtro-card">
+    <div class="row g-3 align-items-center">
+      <!-- Buscador en tiempo real -->
+      <div class="col-12 col-md-5">
+        <div class="input-group">
+          <span class="input-group-text bg-white border-end-0">🔍</span>
+          <input
+            type="text"
+            class="form-control border-start-0 ps-0"
+            placeholder="Buscar por nombre, DPI o correo..."
+            [value]="query()"
+            (input)="alBuscar($event)"
+          />
         </div>
+      </div>
+
+      <!-- Filtros por chips de estado (ACTIVO, INACTIVO, MOROSO) -->
+      <div class="col-12 col-md-7 d-flex flex-wrap align-items-center justify-content-md-end gap-2">
+        <span class="text-muted small fw-semibold me-1">Filtrar estado:</span>
+        <button
+          type="button"
+          class="chip-filtro"
+          [class.chip-filtro--activo]="filtroEstado() === 'TODOS'"
+          (click)="setFiltroEstado('TODOS')"
+        >
+          Todos <span class="badge rounded-pill bg-secondary ms-1">{{ conteoEstados().todos }}</span>
+        </button>
+        <button
+          type="button"
+          class="chip-filtro chip-filtro--verde"
+          [class.chip-filtro--activo]="filtroEstado() === 'ACTIVO'"
+          (click)="setFiltroEstado('ACTIVO')"
+        >
+          Activos <span class="badge rounded-pill bg-success ms-1">{{ conteoEstados().activos }}</span>
+        </button>
+        <button
+          type="button"
+          class="chip-filtro chip-filtro--rojo"
+          [class.chip-filtro--activo]="filtroEstado() === 'MOROSO'"
+          (click)="setFiltroEstado('MOROSO')"
+        >
+          Morosos <span class="badge rounded-pill bg-danger ms-1">{{ conteoEstados().morosos }}</span>
+        </button>
+        <button
+          type="button"
+          class="chip-filtro chip-filtro--gris"
+          [class.chip-filtro--activo]="filtroEstado() === 'INACTIVO'"
+          (click)="setFiltroEstado('INACTIVO')"
+        >
+          Inactivos <span class="badge rounded-pill bg-dark ms-1">{{ conteoEstados().inactivos }}</span>
+        </button>
+      </div>
     </div>
-    <!-- ESTADO 1: Error Crítico en la Petición -->
-    @if (errorCarga) {
-    <div class="alert alert-danger d-flex align-items-center shadow-sm" role="alert">
-        <div class="fw-semibold">Hubo un problema al conectar con el servidor. Por favor, intenta de nuevo.</div>
+  </div>
+
+  <!-- TABLA DE MIEMBROS -->
+  <div class="card shadow-sm border-0 overflow-hidden">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="table-light text-uppercase fs-xs">
+          <tr>
+            <th class="ps-4">Miembro / Contacto</th>
+            <th>Estado Socio</th>
+            <th>Membresía Vigente</th>
+            <th>Vigencia</th>
+            <th class="text-end pe-4">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (socio of sociosFiltrados(); track socio.id_socio) {
+            <tr>
+              <!-- Socio y contacto -->
+              <td class="ps-4 py-3">
+                <div class="d-flex align-items-center">
+                  <div class="avatar-socio me-3">
+                    {{ socio.usuario.nombre.charAt(0) }}{{ socio.usuario.apellido.charAt(0) }}
+                  </div>
+                  <div>
+                    <div class="fw-bold text-dark">
+                      {{ socio.usuario.nombre }} {{ socio.usuario.apellido }}
+                    </div>
+                    <div class="text-muted small">
+                      ✉ {{ socio.usuario.correo }}
+                    </div>
+                    <div class="text-muted fs-xs">
+                      <span class="badge bg-light text-dark border me-1">DPI: {{ socio.usuario.dpi || 'N/A' }}</span>
+                      @if (socio.usuario.telefono) {
+                        <span>{{ socio.usuario.telefono }}</span>
+                      }
+                    </div>
+                  </div>
+                </div>
+              </td>
+
+              <!-- Estado del Socio (ACTIVO / INACTIVO / MOROSO) -->
+              <td>
+                <div class="dropdown d-inline-block">
+                  <button
+                    class="btn btn-sm dropdown-toggle badge-estado"
+                    [ngClass]="obtenerEstiloEstado(socio.estado)"
+                    type="button"
+                    data-bs-toggle="dropdown"
+                    aria-expanded="false"
+                    title="Clic para cambiar estado rápido"
+                  >
+                    ● {{ socio.estado }}
+                  </button>
+                  <ul class="dropdown-menu shadow-sm">
+                    <li><h6 class="dropdown-header">Cambiar estado del socio:</h6></li>
+                    <li>
+                      <button class="dropdown-item text-success" type="button" (click)="cambiarEstadoDirecto(socio, 'ACTIVO')">
+                        ✓ Activo
+                      </button>
+                    </li>
+                    <li>
+                      <button class="dropdown-item text-danger" type="button" (click)="cambiarEstadoDirecto(socio, 'MOROSO')">
+                        Moroso (Pendiente de pago)
+                      </button>
+                    </li>
+                    <li>
+                      <button class="dropdown-item text-muted" type="button" (click)="cambiarEstadoDirecto(socio, 'INACTIVO')">
+                        ✕ Inactivo (Baja temporal)
+                      </button>
+                    </li>
+                  </ul>
+                </div>
+              </td>
+
+              <!-- Bloque de Membresía -->
+              <td>
+                <div>
+                  <span class="badge rounded-pill mb-1" [ngClass]="obtenerEstiloMembresia(socio.estadoMembresia)">
+                    {{ socio.estadoMembresia }}
+                  </span>
+                  <div class="fw-semibold small text-dark">{{ socio.tipoPlan }}</div>
+                </div>
+              </td>
+
+              <!-- Fechas de Vigencia -->
+              <td>
+                @if (socio.fechaVencimientoMembresia) {
+                  <div class="small">
+                    <span class="text-muted">Vence:</span>
+                    <strong class="ms-1">{{ socio.fechaVencimientoMembresia | date:'dd/MM/yyyy' }}</strong>
+                  </div>
+                  @if (socio.fechaInicioMembresia) {
+                    <div class="text-muted fs-xs">Desde: {{ socio.fechaInicioMembresia | date:'dd/MM/yyyy' }}</div>
+                  }
+                } @else {
+                  <span class="text-muted small fst-italic">Sin fecha registrada</span>
+                }
+              </td>
+
+              <!-- Acciones -->
+              <td class="text-end pe-4">
+                <div class="btn-group btn-group-sm" role="group">
+                  <!-- Asignar Plan -->
+                  <button
+                    type="button"
+                    class="btn btn-outline-primary"
+                    title="Asignar o renovar plan de membresía"
+                    (click)="abrirModalAsignarPlan(socio)"
+                  >
+                    Asignar Plan
+                  </button>
+
+                  <!-- Editar -->
+                  <button
+                    type="button"
+                    class="btn btn-outline-secondary"
+                    title="Editar datos personales"
+                    (click)="abrirModalEditar(socio)"
+                  >
+                    Editar
+                  </button>
+
+                  <!-- Baja / Eliminar -->
+                  @if (esAdmin()) {
+                    <button
+                      type="button"
+                      class="btn btn-outline-danger"
+                      title="Eliminar miembro definitivamente (Rol Admin)"
+                      (click)="abrirModalBaja(socio)"
+                    >
+                      Eliminar
+                    </button>
+                  } @else {
+                    <button
+                      type="button"
+                      class="btn btn-outline-warning"
+                      title="Dar de baja miembro (Inactivar)"
+                      (click)="abrirModalBaja(socio)"
+                    >
+                      Dar de Baja
+                    </button>
+                  }
+                </div>
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="5" class="text-center py-5">
+                <div class="py-4">
+                  <p class="fs-5 fw-semibold text-dark mb-1">No se encontraron miembros</p>
+                  <p class="text-muted small mb-3">No hay registros que coincidan con los filtros aplicados.</p>
+                  @if (query() || filtroEstado() !== 'TODOS') {
+                    <button type="button" class="btn btn-outline-secondary btn-sm" (click)="query.set(''); setFiltroEstado('TODOS')">
+                      Restablecer filtros
+                    </button>
+                  }
+                </div>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
     </div>
-    }
-    <!-- ESTADO 2: Cargando (Esperando los datos iniciales) -->
-    @else if (sociosSignal() === undefined) {
-    <div class="d-flex justify-content-center align-items-center my-5 py-5">
-        <div class="spinner-border socios-lista__spinner" role="status">
+  </div>
+
+  <!-- MODAL 1: ALTA DE SOCIO (NUEVO SOCIO) -->
+  @if (modalCrear()) {
+    <div class="modal-backdrop-custom">
+      <div class="modal-card-custom shadow-lg">
+        <div class="modal-header-custom">
+          <h4 class="m-0 fw-bold">Nuevo Miembro del Gimnasio</h4>
+          <button type="button" class="btn-close" (click)="cerrarModalCrear()"></button>
         </div>
-        <span class="ms-3 socios-lista__text-secondary fw-semibold">Cargando registros...</span>
-    </div>
-    }
-    <!-- ESTADO 3: Datos Listos (Incluye Buscador y Tabla) -->
-    @else {
-    <!-- BARRA DE BÚSQUEDA -->
-    <div class="row mb-3">
-        <div class="col-md-5 col-lg-4">
-            <div class="input-group input-group-sm shadow-sm rounded socios-lista__search-group">
-                <span class="input-group-text bg-white border-end-0 text-muted socios-lista__search-icon">
-                    🔍
-                </span>
-                <!-- Escuchamos el evento (input) para reaccionar en tiempo real -->
-                <input type="text" class="form-control border-0 ps-1 py-2 fs-7 socios-lista__search-input"
-                    placeholder="Buscar por nombre, apellido o correo..." [value]="query()"
-                    (input)="alBuscar($event)" />
+        <form [formGroup]="formSocio" (ngSubmit)="guardarNuevoSocio()">
+          <div class="modal-body-custom">
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">Nombres *</label>
+                <input type="text" class="form-control" formControlName="nombre" placeholder="Ej. Juan Carlos" />
+                @if (formSocio.get('nombre')?.touched && formSocio.get('nombre')?.invalid) {
+                  <small class="text-danger">El nombre es requerido.</small>
+                }
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">Apellidos *</label>
+                <input type="text" class="form-control" formControlName="apellido" placeholder="Ej. Pérez Gómez" />
+                @if (formSocio.get('apellido')?.touched && formSocio.get('apellido')?.invalid) {
+                  <small class="text-danger">El apellido es requerido.</small>
+                }
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">DPI (13 dígitos) *</label>
+                <input type="text" class="form-control" formControlName="dpi" placeholder="Ej. 1000000000001" maxlength="13" />
+                @if (formSocio.get('dpi')?.touched && formSocio.get('dpi')?.invalid) {
+                  <small class="text-danger">Debe contener exactamente 13 dígitos numéricos.</small>
+                }
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">Teléfono *</label>
+                <input type="text" class="form-control" formControlName="telefono" placeholder="Ej. 55551234" />
+                @if (formSocio.get('telefono')?.touched && formSocio.get('telefono')?.invalid) {
+                  <small class="text-danger">Ingrese un número telefónico válido.</small>
+                }
+              </div>
+              <div class="col-12">
+                <label class="form-label fw-semibold">Correo Electrónico *</label>
+                <input type="email" class="form-control" formControlName="correo" placeholder="correo@ejemplo.com" />
+                @if (formSocio.get('correo')?.touched && formSocio.get('correo')?.invalid) {
+                  <small class="text-danger">Ingrese un correo electrónico válido.</small>
+                }
+              </div>
+              <div class="col-12">
+                <label class="form-label fw-semibold">Estado Inicial *</label>
+                <select class="form-select" formControlName="estado">
+                  <option value="ACTIVO">ACTIVO (Habilitado)</option>
+                  <option value="MOROSO">MOROSO (Con saldo o pago pendiente)</option>
+                  <option value="INACTIVO">INACTIVO (Baja temporal)</option>
+                </select>
+              </div>
             </div>
-        </div>
-        <!-- Indicador dinámico de resultados -->
-        <div class="col-md-7 col-lg-8 d-flex align-items-center justify-content-md-end mt-2 mt-md-0">
-            <span class="socios-lista__text-secondary small">
-                Mostrando <b class="socios-lista__text-primary">{{ sociosFiltrados().length }}</b> de {{
-                sociosSignal()?.length }}
-                registros
-            </span>
-        </div>
+          </div>
+          <div class="modal-footer-custom">
+            <button type="button" class="btn btn-light" (click)="cerrarModalCrear()">Cancelar</button>
+            <button type="submit" class="btn btn--primary" [disabled]="formSocio.invalid">Registrar Miembro</button>
+          </div>
+        </form>
+      </div>
     </div>
+  }
 
-    <!-- TABLA DE REGISTROS -->
-    <div class="card shadow-sm border-0 overflow-hidden">
-        <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0 socios-lista__table">
-                <thead class="text-uppercase fs-7">
-                    <tr>
-                        <th class="ps-4">Socio / Contacto</th>
-                        <th>Membresía</th>
-                        <th>Asignaciones</th>
-                        <th>Última Medición</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <!-- Iteramos sobre el computed signal: sociosFiltrados() -->
-                    @for (socio of sociosFiltrados(); track socio.id_socio) {
-                    <tr>
-                        <!-- Bloque de datos del socio -->
-                        <td class="ps-4 py-3">
-                            <div class="d-flex align-items-center">
-                                <div
-                                    class="socios-lista__avatar rounded-circle d-flex align-items-center justify-content-center fw-bold me-3">
-                                    {{ socio.usuario.nombre.charAt(0) }}{{ socio.usuario.apellido.charAt(0) }}
-                                </div>
-                                <div>
-                                    <div class="fw-bold socios-lista__text-primary">{{ socio.usuario.nombre }} {{
-                                        socio.usuario.apellido }}</div>
-                                    <div class="socios-lista__text-secondary small mb-1">{{ socio.usuario.correo }}
-                                    </div>
-                                    <span class="badge bg-light text-secondary border fs-8">ID: {{ socio.id_socio
-                                        }}</span>
-                                </div>
-                            </div>
-                        </td>
-
-                        <!-- Bloque de Membresía -->
-                        <td>
-                            <div>
-                                <span class="badge rounded-pill mb-1 socios-lista__badge"
-                                    [ngClass]="obtenerEstiloBadge(socio.estadoMembresia)">
-                                    {{ socio.estadoMembresia }}
-                                </span>
-                                <div class="fw-semibold socios-lista__text-secondary small">{{ socio.tipoPlan }}</div>
-                                <div class="socios-lista__text-secondary text-mini">Desde: {{
-                                    socio.socioInfo.fecha_registro |
-                                    date:'dd/MM/yyyy' }}</div>
-                            </div>
-                        </td>
-
-                        <!-- Bloque de Asignaciones -->
-                        <td>
-                            <div class="mb-1">
-                                <strong class="text-mini socios-lista__text-secondary">Coach:</strong>
-                                @for (coach of socio.entrenadoresAsignados; track coach.idEntrenador) {
-                                <span class="d-block small">• {{ coach.nombre }} {{ coach.apellido
-                                    }}</span>
-                                } @empty {
-                                <span class="d-block small socios-lista__text-secondary italic">Sin coach
-                                    asignado</span>
-                                }
-                            </div>
-                            <div>
-                                <strong class="text-mini socios-lista__text-secondary">Clase:</strong>
-                                @for (clase of socio.clasesAsignadas; track clase.idClase) {
-                                <span class="d-block small">• {{ clase.nombre }}</span>
-                                } @empty {
-                                <span class="d-block small socios-lista__text-secondary italic">Sin clases
-                                    inscritas</span>
-                                }
-                            </div>
-                        </td>
-
-                        <!-- Bloque de Mediciones Físicas -->
-                        <td>
-                            @if (socio.ultimaMedicion) {
-                            <div class="row g-1 text-mini" style="max-width: 200px;">
-                                <div class="col-6"><b>Peso:</b> {{ socio.ultimaMedicion.peso }}
-                                    kg
-                                </div>
-                                <div class="col-6"><b>Alt:</b> {{ socio.ultimaMedicion.estatura
-                                    }} m
-                                </div>
-                                <div class="col-6"><b>Grasa:</b> {{
-                                    socio.ultimaMedicion.porcentaje_grasa }}%</div>
-                                <div class="col-6"><b>Músc:</b> {{
-                                    socio.ultimaMedicion.masa_muscular
-                                    }}%</div>
-                            </div>
-                            } @else {
-                            <span class="socios-lista__text-secondary small italic">Sin registros físicos</span>
-                            }
-                        </td>
-                    </tr>
-                    } @empty {
-                    <!-- Este bloque @empty se ejecuta si el filtro no coincide con ningún socio -->
-                    <tr>
-                        <td colspan="5" class="text-center py-5">
-                            <p class="m-0 fw-semibold socios-lista__text-primary">No se encontraron
-                                socios que coincidan con "{{
-                                query() }}".</p>
-                            <p class="socios-lista__text-secondary text-mini m-0">Intenta modificando los criterios de
-                                búsqueda.
-                            </p>
-                        </td>
-                    </tr>
-                    }
-                </tbody>
-            </table>
+  <!-- MODAL 2: EDICIÓN DE SOCIO -->
+  @if (modalEditar()) {
+    <div class="modal-backdrop-custom">
+      <div class="modal-card-custom shadow-lg">
+        <div class="modal-header-custom">
+          <h4 class="m-0 fw-bold">Editar Datos del Miembro</h4>
+          <button type="button" class="btn-close" (click)="cerrarModalEditar()"></button>
         </div>
+        <form [formGroup]="formSocio" (ngSubmit)="guardarEdicionSocio()">
+          <div class="modal-body-custom">
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">Nombres *</label>
+                <input type="text" class="form-control" formControlName="nombre" />
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">Apellidos *</label>
+                <input type="text" class="form-control" formControlName="apellido" />
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">DPI *</label>
+                <input type="text" class="form-control" formControlName="dpi" maxlength="13" />
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">Teléfono *</label>
+                <input type="text" class="form-control" formControlName="telefono" />
+              </div>
+              <div class="col-12">
+                <label class="form-label fw-semibold">Correo Electrónico *</label>
+                <input type="email" class="form-control" formControlName="correo" />
+              </div>
+              <div class="col-12">
+                <label class="form-label fw-semibold">Estado *</label>
+                <select class="form-select" formControlName="estado">
+                  <option value="ACTIVO">ACTIVO</option>
+                  <option value="MOROSO">MOROSO (Cuota o pago pendiente)</option>
+                  <option value="INACTIVO">INACTIVO (Baja temporal)</option>
+                </select>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer-custom">
+            <button type="button" class="btn btn-light" (click)="cerrarModalEditar()">Cancelar</button>
+            <button type="submit" class="btn btn--primary" [disabled]="formSocio.invalid">Guardar Cambios</button>
+          </div>
+        </form>
+      </div>
     </div>
-    }
+  }
+
+  <!-- MODAL 3: CONFIRMACIÓN DE BAJA / ELIMINACIÓN -->
+  @if (modalBaja()) {
+    <div class="modal-backdrop-custom">
+      <div class="modal-card-custom modal-card-sm shadow-lg">
+        <div class="modal-header-custom">
+          <h4 class="m-0 fw-bold text-danger">
+            {{ esAdmin() ? 'Eliminar Miembro' : 'Dar de Baja Miembro' }}
+          </h4>
+          <button type="button" class="btn-close" (click)="cerrarModalBaja()"></button>
+        </div>
+        <div class="modal-body-custom">
+          <p class="mb-2">
+            ¿Estás seguro de que deseas proceder con el miembro
+            <strong>{{ socioSeleccionado()?.usuario?.nombre }} {{ socioSeleccionado()?.usuario?.apellido }}</strong>?
+          </p>
+          @if (esAdmin()) {
+            <p class="small text-danger mb-0">
+              Como <strong>Administrador</strong>, esta acción eliminará permanentemente al socio y todos sus registros asociados.
+            </p>
+          } @else {
+            <p class="small text-muted mb-0">
+              Como <strong>Recepción</strong>, esta acción cambiará el estado del socio a <strong>INACTIVO</strong>. El borrado definitivo solo puede ser realizado por un Administrador.
+            </p>
+          }
+        </div>
+        <div class="modal-footer-custom">
+          <button type="button" class="btn btn-light" (click)="cerrarModalBaja()">Cancelar</button>
+          <button type="button" class="btn btn-danger" (click)="confirmarBajaSocio()">
+            {{ esAdmin() ? 'Eliminar Definitivamente' : 'Confirmar Baja' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- MODAL 4: ASIGNAR PLAN DE MEMBRESÍA (M3) -->
+  @if (modalAsignarPlan()) {
+    <div class="modal-backdrop-custom">
+      <div class="modal-card-custom shadow-lg">
+        <div class="modal-header-custom">
+          <h4 class="m-0 fw-bold">Asignar Plan de Membresía</h4>
+          <button type="button" class="btn-close" (click)="cerrarModalAsignarPlan()"></button>
+        </div>
+        <form [formGroup]="formAsignarPlan" (ngSubmit)="confirmarAsignacionPlan()">
+          <div class="modal-body-custom">
+            <!-- Destinatario -->
+            <div class="alert alert-info py-2 px-3 mb-3">
+              <small class="d-block text-muted">Asignando membresía a:</small>
+              <strong>{{ socioSeleccionado()?.usuario?.nombre }} {{ socioSeleccionado()?.usuario?.apellido }}</strong>
+              <span class="badge bg-light text-dark border ms-2">DPI: {{ socioSeleccionado()?.usuario?.dpi }}</span>
+            </div>
+
+            <div class="row g-3">
+              <!-- Selección de Plan -->
+              <div class="col-12">
+                <label class="form-label fw-semibold">Selecciona el Plan *</label>
+                <select class="form-select" formControlName="id_plan">
+                  <option value="" disabled>Seleccione un plan...</option>
+                  @for (plan of planesSignal(); track plan.id_plan) {
+                    <option [value]="plan.id_plan">
+                      {{ plan.nombre }} — {{ plan.duracion }} días — Q{{ plan.precio | number:'1.2-2' }}
+                    </option>
+                  }
+                </select>
+              </div>
+
+              <!-- Fechas -->
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">Fecha de Inicio *</label>
+                <input type="date" class="form-control" formControlName="fecha_inicio" />
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">Fecha de Vencimiento Calculada</label>
+                <input type="date" class="form-control bg-light" formControlName="fecha_vencimiento" />
+                <small class="text-muted">Calculada automáticamente según los días del plan.</small>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer-custom">
+            <button type="button" class="btn btn-light" (click)="cerrarModalAsignarPlan()">Cancelar</button>
+            <button type="submit" class="btn btn--primary" [disabled]="formAsignarPlan.invalid">
+              Confirmar y Activar Membresía
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
 </div>

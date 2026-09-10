@@ -1,93 +1,181 @@
-/* Títulos y Encabezados */
-.socios-lista__text-primary {
-    color: var(--color-primary);
+.socios-container {
+  max-width: 1200px;
 }
 
-.socios-lista__text-secondary {
-    color: var(--color-secondary);
+.socios-titulo {
+  color: var(--color-primary);
+  font-size: var(--fs-2xl);
+  font-weight: 800;
 }
 
-/* Barra de Busqueda */
-.socios-lista__search-group {
-    border: 1px solid var(--color-secondary-light);
-    transition: border-color var(--transition), box-shadow var(--transition);
+.socios-subtitulo {
+  color: var(--color-secondary);
+  font-size: var(--fs-sm);
 }
 
-.socios-lista__search-group:focus-within {
-    border-color: var(--color-accent);
-    box-shadow: 0 0 0 0.25rem rgba(3, 94, 123, 0.15);
+/* Chips de filtro */
+.chip-filtro {
+  border: 1px solid var(--color-border);
+  background-color: var(--color-bg);
+  color: var(--color-secondary);
+  padding: 0.35rem 0.75rem;
+  border-radius: var(--radius-pill);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition);
 }
 
-.socios-lista__search-icon {
-    color: var(--color-secondary-light);
+.chip-filtro:hover {
+  background-color: var(--color-surface);
+  border-color: var(--color-secondary-light);
 }
 
-.socios-lista__search-input:focus {
-    border-color: var(--color-accent);
-    box-shadow: 0 0 0 0.25rem rgba(3, 94, 123, 0.15);
+.chip-filtro--activo {
+  background-color: var(--color-primary) !important;
+  color: #fff !important;
+  border-color: var(--color-primary) !important;
 }
 
-/* Avatar del Socio (Color de Acento) */
-.socios-lista__avatar {
-    width: 42px;
-    height: 42px;
-    background-color: var(--color-accent);
-    color: var(--color-bg);
-    font-size: var(--fs-md);
-    flex-shrink: 0;
+.chip-filtro--verde.chip-filtro--activo {
+  background-color: var(--color-success) !important;
+  border-color: var(--color-success) !important;
 }
 
-/* Spinner personalizado */
-.socios-lista__spinner {
-    color: var(--color-accent);
+.chip-filtro--rojo.chip-filtro--activo {
+  background-color: var(--color-danger) !important;
+  border-color: var(--color-danger) !important;
 }
 
-/* Tabla Personalizada */
-.socios-lista__table thead th {
-    background-color: var(--color-surface);
-    color: var(--color-primary);
-    font-weight: 700;
-    border-bottom: 2px solid var(--color-primary);
-    letter-spacing: 0.5px;
+.chip-filtro--gris.chip-filtro--activo {
+  background-color: #495057 !important;
+  border-color: #495057 !important;
 }
 
-.socios-lista__table tbody tr:hover {
-    background-color: var(--color-surface);
+/* Avatar del socio */
+.avatar-socio {
+  width: 44px;
+  height: 44px;
+  background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
+  color: #ffffff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.95rem;
+  flex-shrink: 0;
 }
 
-/* Badges de membresía (base + modificadores) */
-.socios-lista__badge {
-    background-color: var(--color-secondary-light);
-    color: var(--color-on-dark);
+/* Badges de Estado de Socio (M2) */
+.badge-estado {
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  padding: 0.35rem 0.65rem;
+  border-radius: var(--radius-pill);
+  border: 1px solid transparent;
 }
 
-.socios-lista__badge--activo {
-    background-color: var(--color-success);
+.badge-estado--activo {
+  background-color: rgba(30, 125, 85, 0.12);
+  color: var(--color-success);
+  border-color: rgba(30, 125, 85, 0.25);
 }
 
-.socios-lista__badge--vencida {
-    background-color: var(--color-warning);
-    color: var(--color-text);
+.badge-estado--moroso {
+  background-color: rgba(179, 38, 30, 0.12);
+  color: var(--color-danger);
+  border-color: rgba(179, 38, 30, 0.25);
 }
 
-.socios-lista__badge--inactivo,
-.socios-lista__badge--danger {
-    background-color: var(--color-danger);
+.badge-estado--inactivo {
+  background-color: #e9ecef;
+  color: #6c757d;
+  border-color: #ced4da;
 }
 
-/* Clases de utilidad para densidades de texto */
-.text-mini {
-    font-size: var(--fs-xs);
+/* Badges de Estado de Membresía */
+.badge-membresia--activa {
+  background-color: var(--color-success);
+  color: #ffffff;
 }
 
-.fs-7 {
-    font-size: 0.85rem;
+.badge-membresia--vencida {
+  background-color: var(--color-warning);
+  color: #ffffff;
 }
 
-.fs-8 {
-    font-size: 0.72rem;
+.badge-membresia--moroso {
+  background-color: var(--color-danger);
+  color: #ffffff;
 }
 
-.italic {
-    font-style: italic;
+.badge-membresia--inactiva {
+  background-color: #6c757d;
+  color: #ffffff;
+}
+
+/* Modales personalizados */
+.modal-backdrop-custom {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(10, 19, 48, 0.6);
+  backdrop-filter: blur(3px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1050;
+  padding: 1rem;
+}
+
+.modal-card-custom {
+  background: #ffffff;
+  border-radius: var(--radius-lg);
+  width: 100%;
+  max-width: 600px;
+  overflow: hidden;
+  animation: modalEntrada 0.2s ease-out;
+}
+
+.modal-card-sm {
+  max-width: 440px;
+}
+
+.modal-header-custom {
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: var(--color-surface);
+}
+
+.modal-body-custom {
+  padding: 1.5rem;
+  max-height: 75vh;
+  overflow-y: auto;
+}
+
+.modal-footer-custom {
+  padding: 1rem 1.5rem;
+  border-top: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  background-color: var(--color-surface);
+}
+
+@keyframes modalEntrada {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
 }

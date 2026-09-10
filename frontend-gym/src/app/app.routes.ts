@@ -6,10 +6,6 @@ import { rolGuard } from './core/guards/rol.guard';
 import { AuthService } from './core/services/auth.service';
 import { inject } from '@angular/core';
 
-/**
- * Todas las rutas se cargan de forma diferida (lazy) para que la página de
- * inicio pese lo mínimo posible.
- */
 export const routes: Routes = [
   {
     path: '',
@@ -38,7 +34,6 @@ export const routes: Routes = [
     children: [
       {
         path: '',
-        // Si el usuario es ADMIN, RECEPCION(ISTA) o ENTRENADOR, carga este componente
         canMatch: [() => inject(AuthService).tieneRol('ADMIN', 'RECEPCION', 'RECEPCIONISTA', 'ENTRENADOR')],
         loadComponent: () =>
           import('./features/dashboard/pages/dashboard-home/dashboard-home').then(
@@ -48,13 +43,39 @@ export const routes: Routes = [
       },
       {
         path: '',
-        // Si el usuario es SOCIO / CLIENTE, carga este componente
         canMatch: [() => inject(AuthService).tieneRol('SOCIO', 'CLIENTE')],
         loadComponent: () =>
           import('./features/socios/pages/portal-socio/portal-socio.component').then(
             (m) => m.PortalSocioComponent,
           ),
         title: 'Portal del Socio | Claude Lovers Gym',
+      },
+      {
+        path: 'portal-socio',
+        canActivate: [rolGuard('SOCIO', 'CLIENTE')],
+        loadComponent: () =>
+          import('./features/socios/pages/portal-socio/portal-socio.component').then(
+            (m) => m.PortalSocioComponent,
+          ),
+        title: 'Portal del Socio | Claude Lovers Gym',
+      },
+      {
+        path: 'socios',
+        canActivate: [rolGuard('ADMIN', 'RECEPCION', 'RECEPCIONISTA')],
+        loadComponent: () =>
+          import('./features/socios/pages/lista-socios/lista-socios.component').then(
+            (m) => m.ListaSocios,
+          ),
+        title: 'Gestión de Miembros | Claude Lovers Gym',
+      },
+      {
+        path: 'planes',
+        canActivate: [rolGuard('ADMIN', 'RECEPCION', 'RECEPCIONISTA')],
+        loadComponent: () =>
+          import('./features/planes/pages/lista-planes/lista-planes.component').then(
+            (m) => m.ListaPlanes,
+          ),
+        title: 'Planes de Membresía | Claude Lovers Gym',
       },
       {
         path: 'asistencia',

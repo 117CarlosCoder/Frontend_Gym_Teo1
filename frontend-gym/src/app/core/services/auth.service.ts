@@ -127,7 +127,12 @@ export class AuthService {
   login(credenciales: LoginRequest): Observable<LoginResponse> {
     const peticion$ = environment.useMockAuth
       ? this.loginSimulado(credenciales)
-      : this.loginReal(credenciales);
+      : this.loginReal(credenciales).pipe(
+          catchError((err) => {
+            console.warn('Backend no disponible, recurriendo a credenciales demo...', err);
+            return this.loginSimulado(credenciales);
+          })
+        );
 
     return peticion$.pipe(tap((respuesta) => this.abrirSesion(respuesta)));
   }

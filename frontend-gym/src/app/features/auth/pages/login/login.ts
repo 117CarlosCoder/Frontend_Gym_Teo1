@@ -62,7 +62,9 @@ export class Login {
     this.auth.login(this.formulario.getRawValue()).subscribe({
       next: () => {
         this.cargando.set(false);
-        this.router.navigateByUrl(this.redirigir() ?? RUTAS.dashboard.default);
+        const esSocio = this.auth.tieneRol('SOCIO', 'CLIENTE');
+        const destino = this.redirigir() ?? (esSocio ? '/dashboard/portal-socio' : RUTAS.dashboard.default);
+        this.router.navigateByUrl(destino);
       },
       error: (error: Error) => {
         this.cargando.set(false);

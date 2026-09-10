@@ -1,24 +1,271 @@
-<h1 class="panel__titulo">{{ saludo() }}</h1>
-<p class="panel__subtitulo">
-  Este es el panel de control del gimnasio. Los datos mostrados son de ejemplo hasta conectar la API
-  de Spring Boot.
-</p>
-
-<section class="indicadores" aria-label="Indicadores del gimnasio">
-  @for (indicador of indicadores; track indicador.etiqueta) {
-    <article class="indicador">
-      <p class="indicador__etiqueta">{{ indicador.etiqueta }}</p>
-      <p class="indicador__valor">{{ indicador.valor }}</p>
-      <p class="indicador__detalle">{{ indicador.detalle }}</p>
-    </article>
-  }
-</section>
-
-<section class="card pendientes">
-  <h2 class="pendientes__titulo">Siguientes entregas del backlog</h2>
-  <ul class="pendientes__lista">
-    @for (pendiente of pendientes; track pendiente) {
-      <li>{{ pendiente }}</li>
+<div class="dashboard-main">
+  <!-- BANNER DE BIENVENIDA CON ROL -->
+  <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4 pb-2 border-bottom">
+    <div>
+      <h1 class="panel__titulo m-0">{{ saludo() }}</h1>
+      <p class="panel__subtitulo m-0">
+        @if (esRecepcionista()) {
+          <span>Puesto de Recepción · Control de acceso de socios y asistencias en tiempo real</span>
+        } @else {
+          <span>Panel de Administración Central · Métricas del gimnasio, catálogo y miembros</span>
+        }
+      </p>
+    </div>
+    <div>
+      @if (esAdmin()) {
+        <span class="badge bg-primary px-3 py-2 fs-xs rounded-pill shadow-sm">
+          Modo Administrador General
+        </span>
+      } @else if (esRecepcionista()) {
+        <span class="badge bg-info text-dark px-3 py-2 fs-xs rounded-pill shadow-sm">
+          Modo Recepción & Asistencias
+        </span>
+      }
+    </div>
+  </div>
+  @if (esRecepcionista()) {
+    <!-- Alertas de Asistencia -->
+    @if (mensajeAsistencia()) {
+      <div class="alert alert-success d-flex align-items-center justify-content-between shadow-sm" role="alert">
+        <div>{{ mensajeAsistencia() }}</div>
+        <button type="button" class="btn-close" (click)="mensajeAsistencia.set(null)"></button>
+      </div>
     }
-  </ul>
-</section>
+    @if (errorAsistencia()) {
+      <div class="alert alert-danger d-flex align-items-center justify-content-between shadow-sm" role="alert">
+        <div>{{ errorAsistencia() }}</div>
+        <button type="button" class="btn-close" (click)="errorAsistencia.set(null)"></button>
+      </div>
+    }
+
+    <div class="row g-4 mb-4">
+      <div class="col-12 col-lg-7">
+        <div class="card h-100 border-0 shadow-sm p-4">
+          <div class="d-flex align-items-center gap-2 mb-3">
+            <div>
+              <h3 class="fs-5 fw-bold m-0 text-dark">Registro Rápido de Asistencia</h3>
+              <p class="text-muted small m-0">Marcaje de ingreso de socios en recepción</p>
+            </div>
+          </div>
+
+          <form [formGroup]="formMarcaje" (ngSubmit)="registrarMarcajeRapido()">
+            <div class="mb-3">
+              <label class="form-label fw-semibold">Seleccionar Socio que Ingresa *</label>
+              <select class="form-select form-select-lg" formControlName="idSocio">
+                <option value="" disabled>Seleccione un socio...</option>
+                @for (socio of socios(); track socio.id_socio) {
+                  <option [value]="socio.id_socio">
+                    {{ socio.usuario.nombre }} {{ socio.usuario.apellido }} — DPI: {{ socio.usuario.dpi }} ({{ socio.estado }})
+                  </option>
+                }
+              </select>
+            </div>
+
+            <!-- Alerta visual previa al marcaje si el socio está moroso -->
+            @if (socioMarcajeSeleccionado()?.estado === 'MOROSO') {
+              <div class="alert alert-danger py-2 px-3 mb-3 d-flex align-items-center gap-2">
+                <div class="small">
+                  <strong>Atención:</strong> El socio seleccionado tiene estado <strong>MOROSO</strong> (pago pendiente).
+                </div>
+              </div>
+            } @else if (socioMarcajeSeleccionado()?.estado === 'INACTIVO') {
+              <div class="alert alert-warning py-2 px-3 mb-3 d-flex align-items-center gap-2">
+                <div class="small">
+                  <strong>Aviso:</strong> El socio seleccionado se encuentra <strong>INACTIVO</strong>.
+                </div>
+              </div>
+            }
+
+            <div class="d-flex gap-2">
+              <button
+                type="submit"
+                class="btn btn-primary btn-lg flex-fill"
+                [disabled]="formMarcaje.invalid"
+              >
+                Marcar Entrada Ahora
+              </button>
+              <a [routerLink]="RUTAS.dashboard.asistencia" class="btn btn-outline-secondary btn-lg">
+                Ver Módulo Completo
+              </a>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <div class="col-12 col-lg-5">
+        <div class="card h-100 border-0 shadow-sm p-4">
+          <h3 class="fs-5 fw-bold mb-3 text-dark">Operaciones de Recepción</h3>
+          <div class="d-flex flex-column gap-3">
+            <a [routerLink]="RUTAS.dashboard.socios" class="btn btn-outline-primary p-3 text-start d-flex align-items-center gap-3">
+              
+              <div>
+                <strong class="d-block">Registrar o Gestionar Miembros</strong>
+                <small class="text-muted">Alta de nuevos socios, datos personales y cambio de estado</small>
+              </div>
+            </a>
+
+            <a [routerLink]="RUTAS.dashboard.planes" class="btn btn-outline-primary p-3 text-start d-flex align-items-center gap-3">
+              
+              <div>
+                <strong class="d-block">Asignar Planes de Membresía</strong>
+                <small class="text-muted">Activar o renovar mensual, trimestral o anual a un miembro</small>
+              </div>
+            </a>
+
+            <div class="p-3 bg-light rounded d-flex justify-content-between align-items-center">
+              <div>
+                <span class="text-muted small d-block">Socios con Cuota Pendiente:</span>
+                <strong class="text-danger fs-5">{{ metricas().sociosMorosos }} morosos</strong>
+              </div>
+              <a [routerLink]="RUTAS.dashboard.socios" class="btn btn-sm btn-outline-danger">
+                Consultar
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TABLA DE ASISTENCIAS DE HOY EN RECEPCIÓN -->
+    <div class="card shadow-sm border-0 mb-5">
+      <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+        <h4 class="fs-6 fw-bold m-0 text-dark">
+          Asistencias Registradas Hoy ({{ asistencias().length }})
+        </h4>
+        <a [routerLink]="RUTAS.dashboard.asistencia" class="btn btn-sm btn-outline-primary">
+          Ver Historial Completo →
+        </a>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead class="table-light text-uppercase fs-xs">
+            <tr>
+              <th class="ps-4">Socio</th>
+              <th>Fecha</th>
+              <th>Hora Entrada</th>
+              <th>Hora Salida</th>
+              <th class="text-end pe-4">Acción</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (item of asistencias(); track item.idAsistencia) {
+              <tr>
+                <td class="ps-4 py-3 fw-semibold text-dark">
+                  {{ item.nombreSocio }} {{ item.apellidoSocio }}
+                </td>
+                <td class="text-muted small">{{ item.fecha | date:'dd/MM/yyyy' }}</td>
+                <td>
+                  <span class="badge bg-success-subtle text-success border border-success-subtle">
+                    {{ item.horaEntrada }}
+                  </span>
+                </td>
+                <td>
+                  @if (item.horaSalida) {
+                    <span class="badge bg-secondary-subtle text-secondary border">
+                      {{ item.horaSalida }}
+                    </span>
+                  } @else {
+                    <span class="badge bg-warning-subtle text-warning border border-warning-subtle">
+                      En instalaciones
+                    </span>
+                  }
+                </td>
+                <td class="text-end pe-4">
+                  @if (!item.horaSalida) {
+                    <button
+                      type="button"
+                      class="btn btn-sm btn-outline-secondary"
+                      (click)="registrarSalidaRapida(item.idAsistencia)"
+                    >
+                      Marcar Salida
+                    </button>
+                  } @else {
+                    <span class="text-muted small">✓ Completada</span>
+                  }
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="5" class="text-center py-4 text-muted small">
+                  No hay asistencias registradas hoy todavía.
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  }
+
+  @if (esAdmin()) {
+    <!-- Indicadores Principales de Administración -->
+    <section class="indicadores mb-4" aria-label="Indicadores clave del negocio">
+      <article class="indicador">
+        <p class="indicador__etiqueta">Total Miembros</p>
+        <p class="indicador__valor text-primary">{{ metricas().totalSocios }}</p>
+        <p class="indicador__detalle text-success">Registrados en la plataforma</p>
+      </article>
+
+      <article class="indicador">
+        <p class="indicador__etiqueta">Miembros Activos</p>
+        <p class="indicador__valor text-success">{{ metricas().sociosActivos }}</p>
+        <p class="indicador__detalle">Con membresía vigente</p>
+      </article>
+
+      <article class="indicador">
+        <p class="indicador__etiqueta">Miembros Morosos</p>
+        <p class="indicador__valor text-danger">{{ metricas().sociosMorosos }}</p>
+        <p class="indicador__detalle text-danger">Pendientes de pago</p>
+      </article>
+
+      <article class="indicador">
+        <p class="indicador__etiqueta">Planes en Catálogo</p>
+        <p class="indicador__valor text-accent">{{ metricas().totalPlanes }}</p>
+        <p class="indicador__detalle">Mensual, Trimestral, Anual</p>
+      </article>
+    </section>
+
+    <!-- Tarjetas de Módulos para Administrador -->
+    <div class="row g-4 mb-4">
+      <div class="col-12 col-md-6">
+        <div class="card h-100 border-0 shadow-sm p-4">
+          <div class="d-flex justify-content-between align-items-start mb-3">
+            <div>
+              <h3 class="fs-5 fw-bold text-dark mt-2 mb-1">Gestión de Miembros (M2)</h3>
+              <p class="text-muted small">Control total de altas, edición, bajas y estados</p>
+            </div>
+            <a [routerLink]="RUTAS.dashboard.socios" class="btn btn-sm btn--primary">
+              Abrir Módulo →
+            </a>
+          </div>
+          <ul class="list-unstyled small text-muted mb-0">
+            <li class="mb-1">✓ Alta de nuevos miembros con validación de DPI</li>
+            <li class="mb-1">✓ Actualización de datos personales y teléfono</li>
+            <li class="mb-1">✓ Estados: Activo, Inactivo y Moroso</li>
+            <li>✓ Eliminación permanente de registros (Exclusivo Admin)</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="col-12 col-md-6">
+        <div class="card h-100 border-0 shadow-sm p-4">
+          <div class="d-flex justify-content-between align-items-start mb-3">
+            <div>
+              <h3 class="fs-5 fw-bold text-dark mt-2 mb-1">Planes de Membresía (M3)</h3>
+              <p class="text-muted small">Catálogo de precios y asignación a miembros</p>
+            </div>
+            <a [routerLink]="RUTAS.dashboard.planes" class="btn btn-sm btn--primary">
+              Abrir Catálogo →
+            </a>
+          </div>
+          <ul class="list-unstyled small text-muted mb-0">
+            <li class="mb-1">✓ CRUD completo de planes: Mensual, Trimestral, Anual</li>
+            <li class="mb-1">✓ Configuración de duración en días y precio en Q</li>
+            <li class="mb-1">✓ Asignación de plan con vigencia calculada</li>
+            <li>✓ Edición y borrado del catálogo (Exclusivo Admin)</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  }
+</div>

@@ -9,6 +9,7 @@ export const API = {
   usuarios: `${environment.apiUrl}/users`,
   roles: `${environment.apiUrl}/roles`,
   socios: `${environment.apiUrl}/socios`,
+  planes: `${environment.apiUrl}/planes`,
   membresias: `${environment.apiUrl}/membresias`,
   inscripciones: `${environment.apiUrl}/inscripciones`,
   clases: `${environment.apiUrl}/clases`,
@@ -19,4 +20,8 @@ export const API = {
 /** Llaves usadas en localStorage. */
 export const STORAGE_KEYS = {
   sesion: 'gym.sesion',
+  socios: 'gym.socios',
+  planes: 'gym.planes',
+  asistencias: 'gym.asistencias',
 } as const;
+
