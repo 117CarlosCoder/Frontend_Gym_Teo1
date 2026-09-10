@@ -35,7 +35,7 @@ export class DashboardLayout {
 
   /** Determina si el usuario puede ver el módulo de asistencia. */
   protected readonly puedeVerAsistencia = computed(() =>
-    this.auth.tieneRol('ADMIN', 'RECEPCION'),
+    this.auth.tieneRol('ADMIN', 'RECEPCION', 'RECEPCIONISTA'),
   );
 
   protected cerrarSesion(): void {

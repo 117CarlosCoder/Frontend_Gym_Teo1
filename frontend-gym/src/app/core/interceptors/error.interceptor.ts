@@ -12,7 +12,7 @@ export const errorInterceptor: HttpInterceptorFn = (peticion, siguiente) => {
 
   return siguiente(peticion).pipe(
     catchError((error: HttpErrorResponse) => {
-      if (error.status === 401) {
+      if (error.status === 401 && !peticion.url.includes('/auth/')) {
         auth.logout();
         router.navigate([RUTAS.login]);
       }

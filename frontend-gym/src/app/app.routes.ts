@@ -38,8 +38,8 @@ export const routes: Routes = [
     children: [
       {
         path: '',
-        // Si el usuario es ADMIN o RECEPCION, carga este componente
-        canMatch: [() => inject(AuthService).tieneRol('ADMIN', 'RECEPCION')],
+        // Si el usuario es ADMIN, RECEPCION(ISTA) o ENTRENADOR, carga este componente
+        canMatch: [() => inject(AuthService).tieneRol('ADMIN', 'RECEPCION', 'RECEPCIONISTA', 'ENTRENADOR')],
         loadComponent: () =>
           import('./features/dashboard/pages/dashboard-home/dashboard-home').then(
             (m) => m.DashboardHome,
@@ -48,8 +48,8 @@ export const routes: Routes = [
       },
       {
         path: '',
-        // Si el usuario es SOCIO, carga este componente
-        canMatch: [() => inject(AuthService).tieneRol('SOCIO')],
+        // Si el usuario es SOCIO / CLIENTE, carga este componente
+        canMatch: [() => inject(AuthService).tieneRol('SOCIO', 'CLIENTE')],
         loadComponent: () =>
           import('./features/socios/pages/portal-socio/portal-socio.component').then(
             (m) => m.PortalSocioComponent,
@@ -58,7 +58,7 @@ export const routes: Routes = [
       },
       {
         path: 'asistencia',
-        canActivate: [rolGuard('ADMIN', 'RECEPCION')],
+        canActivate: [rolGuard('ADMIN', 'RECEPCION', 'RECEPCIONISTA', 'ENTRENADOR')],
         loadComponent: () =>
           import('./features/asistencia/pages/registro-asistencia/registro-asistencia.component').then(
             (m) => m.RegistroAsistenciaComponent,

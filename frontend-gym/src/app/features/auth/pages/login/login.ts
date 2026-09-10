@@ -30,9 +30,10 @@ export class Login {
 
   protected readonly modoDemo = environment.useMockAuth;
   protected readonly usuariosDemo = [
-    { rol: 'Administrador', correo: 'admin@claudelovers.com', password: 'admin123' },
-    { rol: 'Recepción', correo: 'recepcion@claudelovers.com', password: 'recepcion123' },
-    { rol: 'Socio', correo: 'socio@claudelovers.com', password: 'socio123' },
+    { rol: 'Administrador', correo: 'clp64413@gmail.com', password: 'Admin123*' },
+    { rol: 'Recepción', correo: 'maria.castro@gymdemo.com', password: 'Admin123*' },
+    { rol: 'Entrenador', correo: 'alejandro.garcia@gymdemo.com', password: 'Admin123*' },
+    { rol: 'Socio / Cliente', correo: 'lucia.hernandez@gymdemo.com', password: 'Admin123*' },
   ];
 
   protected get correo() {
