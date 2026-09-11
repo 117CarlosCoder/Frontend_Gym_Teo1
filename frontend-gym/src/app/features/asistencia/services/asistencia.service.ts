@@ -1,7 +1,8 @@
 import { Injectable } from '@angular/core';
 import { Observable, delay, of } from 'rxjs';
-import { AsistenciaRegistro, RegistrarAsistenciaRequest, SocioAsistencia, Sucursal } from '../models/asistencia.model';
+import { AsistenciaRegistro, RegistrarAsistenciaRequest, SocioAsistencia } from '../models/asistencia.model';
 import { MOCK_ASISTENCIAS_HOY, MOCK_SOCIOS_ASISTENCIA, MOCK_SUCURSALES } from '../mocks/asistencia.mock';
+import { Sucursal } from '../../../core/models/sucursal.model';
 
 @Injectable({
   providedIn: 'root'
