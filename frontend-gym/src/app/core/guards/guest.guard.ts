@@ -8,5 +8,5 @@ export const guestGuard: CanActivateFn = () => {
   const auth = inject(AuthService);
   const router = inject(Router);
 
-  return auth.estaAutenticado() ? router.createUrlTree([RUTAS.dashboard]) : true;
+  return auth.estaAutenticado() ? router.createUrlTree([RUTAS.dashboard.default]) : true;
 };

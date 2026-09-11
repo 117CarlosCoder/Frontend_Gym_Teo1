@@ -2,12 +2,15 @@ import { provideHttpClient } from '@angular/common/http';
 import { provideZonelessChangeDetection } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
+import { of, throwError } from 'rxjs';
 
 import { Login } from './login';
+import { AuthService } from '../../../../core/services/auth.service';
 
 describe('Login', () => {
   let fixture: ComponentFixture<Login>;
   let elemento: HTMLElement;
+  let authService: AuthService;
 
   beforeEach(async () => {
     localStorage.clear();
@@ -18,6 +21,7 @@ describe('Login', () => {
 
     fixture = TestBed.createComponent(Login);
     elemento = fixture.nativeElement as HTMLElement;
+    authService = TestBed.inject(AuthService);
     await fixture.whenStable();
   });
 
@@ -42,9 +46,16 @@ describe('Login', () => {
   it('navega al panel con credenciales correctas', async () => {
     const router = TestBed.inject(Router);
     const navegar = vi.spyOn(router, 'navigateByUrl').mockResolvedValue(true);
+    vi.spyOn(authService, 'login').mockReturnValue(
+      of({
+        token: 'token-admin',
+        usuario: { id: 1, nombre: 'Admin', rol: 'ADMIN' } as any,
+      }),
+    );
+    vi.spyOn(authService, 'tieneRol').mockReturnValue(false);
 
-    escribir('#correo', 'admin@claudelovers.com');
-    escribir('#password', 'admin123');
+    escribir('#correo', 'clp64413@gmail.com');
+    escribir('#password', 'Admin123*');
     elemento.querySelector('form')!.dispatchEvent(new Event('submit'));
 
     await vi.waitFor(() => expect(navegar).toHaveBeenCalledWith('/dashboard'));
@@ -53,15 +64,26 @@ describe('Login', () => {
   it('navega al portal del socio según su rol', async () => {
     const router = TestBed.inject(Router);
     const navegar = vi.spyOn(router, 'navigateByUrl').mockResolvedValue(true);
+    vi.spyOn(authService, 'login').mockReturnValue(
+      of({
+        token: 'token-socio',
+        usuario: { id: 8, nombre: 'Lucia', rol: 'CLIENTE' } as any,
+      }),
+    );
+    vi.spyOn(authService, 'tieneRol').mockReturnValue(true);
 
-    escribir('#correo', 'socio@claudelovers.com');
-    escribir('#password', 'socio123');
+    escribir('#correo', 'lucia.hernandez@gymdemo.com');
+    escribir('#password', 'Admin123*');
     elemento.querySelector('form')!.dispatchEvent(new Event('submit'));
 
     await vi.waitFor(() => expect(navegar).toHaveBeenCalledWith('/dashboard/portal-socio'));
   });
 
   it('muestra el mensaje del servidor con credenciales incorrectas', async () => {
+    vi.spyOn(authService, 'login').mockReturnValue(
+      throwError(() => new Error('Correo o contraseña incorrectos.')),
+    );
+
     escribir('#correo', 'admin@claudelovers.com');
     escribir('#password', 'clave-mala');
     elemento.querySelector('form')!.dispatchEvent(new Event('submit'));

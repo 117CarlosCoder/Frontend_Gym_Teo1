@@ -2,11 +2,14 @@ import { environment } from '../../../environments/environment';
 
 export const API = {
   auth: {
-    login: `${environment.apiUrl}/auth/login`,
-    logout: `${environment.apiUrl}/auth/logout`,
-    perfil: `${environment.apiUrl}/auth/perfil`,
+    login: `${environment.apiUrl}/auth/signin`,
+    logout: `${environment.apiUrl}/auth/signout`,
+    perfil: `${environment.apiUrl}/users/me`,
   },
+  usuarios: `${environment.apiUrl}/users`,
+  roles: `${environment.apiUrl}/roles`,
   socios: `${environment.apiUrl}/socios`,
+  planes: `${environment.apiUrl}/planes`,
   membresias: `${environment.apiUrl}/membresias`,
   inscripciones: `${environment.apiUrl}/inscripciones`,
   clases: `${environment.apiUrl}/clases`,
@@ -17,4 +20,8 @@ export const API = {
 /** Llaves usadas en localStorage. */
 export const STORAGE_KEYS = {
   sesion: 'gym.sesion',
+  socios: 'gym.socios',
+  planes: 'gym.planes',
+  asistencias: 'gym.asistencias',
 } as const;
+

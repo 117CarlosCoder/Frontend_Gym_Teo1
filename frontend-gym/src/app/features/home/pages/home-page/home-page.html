@@ -117,7 +117,7 @@
     </div>
 
     <div class="grid-planes">
-      @for (plan of planes; track plan.nombre) {
+      @for (plan of planes(); track plan.nombre) {
         <article class="plan" [class.plan--destacado]="plan.destacado">
           @if (plan.destacado) {
             <span class="plan__etiqueta">Más elegido</span>

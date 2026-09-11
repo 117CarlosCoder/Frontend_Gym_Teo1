@@ -1,0 +1,315 @@
+<div class="container mt-4 planes-container">
+  <!-- Encabezado y Acciones -->
+  <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+    <div>
+      <h2 class="planes-titulo m-0">Planes de Membresía</h2>
+      <p class="planes-subtitulo m-0">Catálogo oficial de suscripciones y asignación directa a miembros</p>
+    </div>
+    <div class="d-flex flex-wrap align-items-center gap-2">
+      <!-- Asignar Plan (Operativo: Ambos Roles) -->
+      <button type="button" class="btn btn-outline-primary" (click)="abrirModalAsignar()">
+        <span class="me-1"></span> Asignar Plan a Miembro
+      </button>
+
+      <!-- Nuevo Plan (Administrativo: Solo ADMIN) -->
+      @if (esAdmin()) {
+        <button type="button" class="btn btn--primary" (click)="abrirModalCrear()">
+          <span class="me-1"></span> Nuevo Plan
+        </button>
+      } @else {
+        <span class="badge bg-light text-muted border py-2 px-3" title="Solo los administradores pueden crear o alterar planes del catálogo">
+           Edición de Catálogo: Solo Admin
+        </span>
+      }
+    </div>
+  </div>
+
+  <!-- Alertas de éxito / error -->
+  @if (mensajeExito()) {
+    <div class="alert alert-success d-flex align-items-center justify-content-between shadow-sm" role="alert">
+      <div><strong>✓ Éxito:</strong> {{ mensajeExito() }}</div>
+      <button type="button" class="btn-close" (click)="mensajeExito.set(null)" aria-label="Cerrar"></button>
+    </div>
+  }
+  @if (mensajeError()) {
+    <div class="alert alert-danger d-flex align-items-center justify-content-between shadow-sm" role="alert">
+      <div><strong>Error:</strong> {{ mensajeError() }}</div>
+      <button type="button" class="btn-close" (click)="mensajeError.set(null)" aria-label="Cerrar"></button>
+    </div>
+  }
+
+  <!-- Cuadrícula de Planes -->
+  <div class="row g-4 mb-5">
+    @for (plan of planes(); track plan.id_plan) {
+      <div class="col-12 col-md-6 col-lg-4">
+        <div class="card h-100 border-0 shadow-sm plan-card">
+          <!-- Cabecera de la tarjeta del plan -->
+          <div class="plan-card__header">
+            <span class="plan-card__badge">
+              {{ plan.duracion }} días
+            </span>
+            <h3 class="plan-card__nombre">{{ plan.nombre }}</h3>
+            <div class="plan-card__precio">
+              <span class="moneda">Q</span>
+              <span class="monto">{{ plan.precio | number:'1.2-2' }}</span>
+              <span class="periodo">/ periodo</span>
+            </div>
+            <p class="plan-card__descripcion">{{ plan.descripcion }}</p>
+          </div>
+
+          <!-- Beneficios incluidos -->
+          <div class="plan-card__body">
+            <h6 class="text-uppercase fw-bold text-muted fs-xs mb-3">Beneficios incluidos:</h6>
+            <ul class="list-unstyled mb-4">
+              @for (beneficio of plan.beneficios; track beneficio) {
+                <li class="d-flex align-items-center gap-2 mb-2 small text-dark">
+                  <span class="text-success fw-bold">✓</span> {{ beneficio }}
+                </li>
+              }
+            </ul>
+
+            <div class="plan-card__stats mb-3">
+              <span class="text-muted small">
+                <strong>{{ obtenerCantidadMiembrosConPlan(plan) }}</strong> miembros activos
+              </span>
+            </div>
+          </div>
+
+          <!-- Pie de la tarjeta con acciones -->
+          <div class="plan-card__footer">
+            <button
+              type="button"
+              class="btn btn-primary btn--block mb-2"
+              (click)="abrirModalAsignar(plan)"
+            >
+              Asignar este Plan
+            </button>
+
+            <!-- Acciones administrativas exclusivas de ADMIN -->
+            @if (esAdmin()) {
+              <div class="d-flex gap-2 w-100">
+                <button
+                  type="button"
+                  class="btn btn-outline-secondary btn-sm flex-fill"
+                  (click)="abrirModalEditar(plan)"
+                >
+                  Editar
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-outline-danger btn-sm flex-fill"
+                  (click)="abrirModalEliminar(plan)"
+                >
+                  Eliminar
+                </button>
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+    }
+  </div>
+
+  <!-- MODAL: CREAR PLAN (SOLO ADMIN) -->
+  @if (modalCrear()) {
+    <div class="modal-backdrop-custom">
+      <div class="modal-card-custom shadow-lg">
+        <div class="modal-header-custom">
+          <h4 class="m-0 fw-bold">Crear Nuevo Plan de Membresía</h4>
+          <button type="button" class="btn-close" (click)="cerrarModalCrear()"></button>
+        </div>
+        <form [formGroup]="formPlan" (ngSubmit)="guardarNuevoPlan()">
+          <div class="modal-body-custom">
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">Nombre del Plan *</label>
+                <input type="text" class="form-control" formControlName="nombre" placeholder="Ej. Plan Semestral" />
+              </div>
+              <div class="col-md-3">
+                <label class="form-label fw-semibold">Duración (Días) *</label>
+                <input type="number" class="form-control" formControlName="duracion" placeholder="Ej. 180" />
+              </div>
+              <div class="col-md-3">
+                <label class="form-label fw-semibold">Precio (Q) *</label>
+                <input type="number" step="0.01" class="form-control" formControlName="precio" placeholder="Ej. 1200.00" />
+              </div>
+              <div class="col-12">
+                <label class="form-label fw-semibold">Descripción *</label>
+                <textarea class="form-control" rows="3" formControlName="descripcion" placeholder="Detalle de la cobertura del plan..."></textarea>
+              </div>
+              <div class="col-12">
+                <label class="form-label fw-semibold">Beneficios (separados por coma)</label>
+                <input type="text" class="form-control" formControlName="beneficiosTexto" placeholder="Pesas y cardio, Clases grupales, Casillero" />
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer-custom">
+            <button type="button" class="btn btn-light" (click)="cerrarModalCrear()">Cancelar</button>
+            <button type="submit" class="btn btn--primary" [disabled]="formPlan.invalid">Crear Plan</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+
+  <!-- MODAL: EDITAR PLAN (SOLO ADMIN) -->
+  @if (modalEditar()) {
+    <div class="modal-backdrop-custom">
+      <div class="modal-card-custom shadow-lg">
+        <div class="modal-header-custom">
+          <h4 class="m-0 fw-bold">Editar Plan de Membresía</h4>
+          <button type="button" class="btn-close" (click)="cerrarModalEditar()"></button>
+        </div>
+        <form [formGroup]="formPlan" (ngSubmit)="guardarEdicionPlan()">
+          <div class="modal-body-custom">
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">Nombre del Plan *</label>
+                <input type="text" class="form-control" formControlName="nombre" />
+              </div>
+              <div class="col-md-3">
+                <label class="form-label fw-semibold">Duración (Días) *</label>
+                <input type="number" class="form-control" formControlName="duracion" />
+              </div>
+              <div class="col-md-3">
+                <label class="form-label fw-semibold">Precio (Q) *</label>
+                <input type="number" step="0.01" class="form-control" formControlName="precio" />
+              </div>
+              <div class="col-12">
+                <label class="form-label fw-semibold">Descripción *</label>
+                <textarea class="form-control" rows="3" formControlName="descripcion"></textarea>
+              </div>
+              <div class="col-12">
+                <label class="form-label fw-semibold">Beneficios (separados por coma)</label>
+                <input type="text" class="form-control" formControlName="beneficiosTexto" />
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer-custom">
+            <button type="button" class="btn btn-light" (click)="cerrarModalEditar()">Cancelar</button>
+            <button type="submit" class="btn btn--primary" [disabled]="formPlan.invalid">Guardar Cambios</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+
+  <!-- MODAL: ELIMINAR PLAN (SOLO ADMIN) -->
+  @if (modalEliminar()) {
+    <div class="modal-backdrop-custom">
+      <div class="modal-card-custom modal-card-sm shadow-lg">
+        <div class="modal-header-custom">
+          <h4 class="m-0 fw-bold text-danger">Eliminar Plan del Catálogo</h4>
+          <button type="button" class="btn-close" (click)="cerrarModalEliminar()"></button>
+        </div>
+        <div class="modal-body-custom">
+          <p class="mb-2">
+            ¿Estás seguro de que deseas eliminar el <strong>{{ planSeleccionado()?.nombre }}</strong>?
+          </p>
+          <p class="small text-muted mb-0">
+            Los miembros que ya tienen este plan asignado mantendrán su vigencia actual, pero el plan no estará disponible para nuevas asignaciones.
+          </p>
+        </div>
+        <div class="modal-footer-custom">
+          <button type="button" class="btn btn-light" (click)="cerrarModalEliminar()">Cancelar</button>
+          <button type="button" class="btn btn-danger" (click)="confirmarEliminarPlan()">Eliminar Plan</button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- MODAL: ASIGNAR PLAN A MIEMBRO (FUNCIONALIDAD CLAVE M3) -->
+  @if (modalAsignar()) {
+    <div class="modal-backdrop-custom">
+      <div class="modal-card-custom shadow-lg">
+        <div class="modal-header-custom">
+          <h4 class="m-0 fw-bold">Asignar Plan a Miembro</h4>
+          <button type="button" class="btn-close" (click)="cerrarModalAsignar()"></button>
+        </div>
+        <form [formGroup]="formAsignar" (ngSubmit)="confirmarAsignacion()">
+          <div class="modal-body-custom">
+            <!-- Advertencia si el socio seleccionado ya cuenta con membresía activa -->
+            @if (socioTieneMembresiaActiva()) {
+              <div class="alert alert-warning py-2 px-3 mb-3">
+                <div class="d-flex align-items-center gap-2 mb-1">
+                  <strong>⚠️ Membresía activa vigente</strong>
+                </div>
+                <div class="small">
+                  Este socio ya cuenta con el plan <strong>{{ socioSeleccionadoEnModal()?.tipoPlan }}</strong> ({{ socioSeleccionadoEnModal()?.estadoMembresia }})
+                  @if (socioSeleccionadoEnModal()?.fechaVencimientoMembresia) {
+                    vigente hasta el <strong>{{ socioSeleccionadoEnModal()?.fechaVencimientoMembresia | date:'dd/MM/yyyy' }}</strong>.
+                  }
+                  <div class="text-danger-emphasis mt-1">
+                    El backend no permite registrar una nueva membresía activa mientras exista una vigente.
+                  </div>
+                </div>
+              </div>
+            }
+
+            <!-- Mensaje de error de la API -->
+            @if (errorModalAsignar()) {
+              <div class="alert alert-danger py-2 px-3 mb-3 d-flex align-items-start justify-content-between">
+                <div>
+                  <strong>Error al procesar la membresía:</strong>
+                  <div class="small">{{ errorModalAsignar() }}</div>
+                </div>
+                <button type="button" class="btn-close" (click)="errorModalAsignar.set(null)"></button>
+              </div>
+            }
+
+            <div class="row g-3">
+              <!-- Selección de Socio -->
+              <div class="col-12">
+                <label class="form-label fw-semibold">Selecciona el Miembro *</label>
+                <select class="form-select" formControlName="id_socio">
+                  <option value="" disabled>Seleccione un miembro...</option>
+                  @for (s of socios(); track s.id_socio) {
+                    <option [value]="s.id_socio">
+                      {{ s.usuario.nombre }} {{ s.usuario.apellido }} — DPI: {{ s.usuario.dpi }} ({{ s.estado }})
+                    </option>
+                  }
+                </select>
+              </div>
+
+              <!-- Selección de Plan -->
+              <div class="col-12">
+                <label class="form-label fw-semibold">Plan a Asignar *</label>
+                <select class="form-select" formControlName="id_plan">
+                  <option value="" disabled>Seleccione un plan...</option>
+                  @for (p of planes(); track p.id_plan) {
+                    <option [value]="p.id_plan">
+                      {{ p.nombre }} ({{ p.duracion }} días) — Q{{ p.precio | number:'1.2-2' }}
+                    </option>
+                  }
+                </select>
+              </div>
+
+              <!-- Fechas -->
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">Fecha de Inicio *</label>
+                <input type="date" class="form-control" formControlName="fecha_inicio" />
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">Fecha de Vencimiento Calculada</label>
+                <input type="date" class="form-control bg-light" formControlName="fecha_vencimiento" />
+                <small class="text-muted">Calculada automáticamente según los días del plan.</small>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer-custom">
+            <button type="button" class="btn btn-light" (click)="cerrarModalAsignar()" [disabled]="guardandoAsignacion()">Cancelar</button>
+            <button type="submit" class="btn btn--primary" [disabled]="formAsignar.invalid || guardandoAsignacion()">
+              @if (guardandoAsignacion()) {
+                <span class="spinner-border spinner-border-sm me-1" role="status"></span>
+                Asignando...
+              } @else {
+                Confirmar y Activar Membresía
+              }
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+</div>
+

@@ -1,0 +1,174 @@
+.planes-container {
+  max-width: 1200px;
+}
+
+.planes-titulo {
+  color: var(--color-primary);
+  font-size: var(--fs-2xl);
+  font-weight: 800;
+}
+
+.planes-subtitulo {
+  color: var(--color-secondary);
+  font-size: var(--fs-sm);
+}
+
+/* Tarjeta de Plan */
+.plan-card {
+  border-radius: var(--radius-lg);
+  display: flex;
+  flex-direction: column;
+  background-color: #ffffff;
+  border: 1px solid var(--color-border);
+  transition: transform var(--transition), box-shadow var(--transition);
+  position: relative;
+  overflow: hidden;
+}
+
+.plan-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-md);
+  border-color: var(--color-accent-light);
+}
+
+.plan-card__header {
+  padding: 1.5rem 1.5rem 1rem;
+  border-bottom: 1px solid var(--color-surface-alt);
+  background: linear-gradient(180deg, var(--color-surface) 0%, #ffffff 100%);
+}
+
+.plan-card__badge {
+  display: inline-block;
+  background-color: rgba(3, 94, 123, 0.1);
+  color: var(--color-accent);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  padding: 0.25rem 0.65rem;
+  border-radius: var(--radius-pill);
+  margin-bottom: 0.75rem;
+}
+
+.plan-card__nombre {
+  color: var(--color-primary);
+  font-size: var(--fs-xl);
+  font-weight: 800;
+  margin-bottom: 0.5rem;
+}
+
+.plan-card__precio {
+  display: flex;
+  align-items: baseline;
+  gap: 0.2rem;
+  margin-bottom: 0.75rem;
+}
+
+.plan-card__precio .moneda {
+  font-size: var(--fs-md);
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+.plan-card__precio .monto {
+  font-size: 2.25rem;
+  font-weight: 800;
+  color: var(--color-primary);
+  line-height: 1;
+}
+
+.plan-card__precio .periodo {
+  font-size: var(--fs-xs);
+  color: var(--color-secondary);
+  font-weight: 500;
+  margin-left: 0.25rem;
+}
+
+.plan-card__descripcion {
+  color: var(--color-secondary);
+  font-size: var(--fs-xs);
+  margin-bottom: 0;
+  line-height: 1.4;
+}
+
+.plan-card__body {
+  padding: 1.5rem;
+  flex: 1 1 auto;
+}
+
+.plan-card__stats {
+  background-color: var(--color-surface);
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+}
+
+.plan-card__footer {
+  padding: 1rem 1.5rem 1.5rem;
+  border-top: 1px solid var(--color-surface-alt);
+  background-color: #ffffff;
+}
+
+/* Modales personalizados */
+.modal-backdrop-custom {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(10, 19, 48, 0.6);
+  backdrop-filter: blur(3px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1050;
+  padding: 1rem;
+}
+
+.modal-card-custom {
+  background: #ffffff;
+  border-radius: var(--radius-lg);
+  width: 100%;
+  max-width: 600px;
+  overflow: hidden;
+  animation: modalEntrada 0.2s ease-out;
+}
+
+.modal-card-sm {
+  max-width: 440px;
+}
+
+.modal-header-custom {
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: var(--color-surface);
+}
+
+.modal-body-custom {
+  padding: 1.5rem;
+  max-height: 75vh;
+  overflow-y: auto;
+}
+
+.modal-footer-custom {
+  padding: 1rem 1.5rem;
+  border-top: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  background-color: var(--color-surface);
+}
+
+@keyframes modalEntrada {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+

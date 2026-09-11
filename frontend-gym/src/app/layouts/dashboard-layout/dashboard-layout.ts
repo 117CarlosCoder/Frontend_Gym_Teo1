@@ -33,9 +33,17 @@ export class DashboardLayout {
     return `${usuario.nombre.charAt(0)}${usuario.apellido.charAt(0)}`.toUpperCase();
   });
 
-  /** Determina si el usuario puede ver el módulo de asistencia. */
+  /** Determina si el usuario puede ver los módulos según rol. */
+  protected readonly puedeVerSocios = computed(() =>
+    this.auth.tieneRol('ADMIN', 'RECEPCION', 'RECEPCIONISTA'),
+  );
+
+  protected readonly puedeVerPlanes = computed(() =>
+    this.auth.tieneRol('ADMIN', 'RECEPCION', 'RECEPCIONISTA'),
+  );
+
   protected readonly puedeVerAsistencia = computed(() =>
-    this.auth.tieneRol('ADMIN', 'RECEPCION'),
+    this.auth.tieneRol('ADMIN', 'RECEPCION', 'RECEPCIONISTA', 'ENTRENADOR'),
   );
 
   /** Determina si el usuario puede ver el módulo de membresias. */

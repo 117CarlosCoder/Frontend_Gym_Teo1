@@ -10,6 +10,8 @@ export const rolGuard = (...rolesPermitidos: RolUsuario[]): CanActivateFn => {
     const auth = inject(AuthService);
     const router = inject(Router);
 
-    return auth.tieneRol(...rolesPermitidos) ? true : router.createUrlTree([RUTAS.dashboard]);
+    return auth.tieneRol(...rolesPermitidos)
+      ? true
+      : router.createUrlTree([RUTAS.dashboard.default]);
   };
 };

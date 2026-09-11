@@ -6,6 +6,16 @@
       <a class="panel-nav__link" routerLink="/dashboard" routerLinkActive="panel-nav__link--activo" [routerLinkActiveOptions]="{ exact: true }">
         Panel
       </a>
+      @if (puedeVerSocios()) {
+        <a class="panel-nav__link" routerLink="/dashboard/socios" routerLinkActive="panel-nav__link--activo">
+          Miembros
+        </a>
+      }
+      @if (puedeVerPlanes()) {
+        <a class="panel-nav__link" routerLink="/dashboard/planes" routerLinkActive="panel-nav__link--activo">
+          Planes de Membresía
+        </a>
+      }
       @if (puedeVerAsistencia()) {
         <a class="panel-nav__link" routerLink="/dashboard/asistencia" routerLinkActive="panel-nav__link--activo">
           Asistencia

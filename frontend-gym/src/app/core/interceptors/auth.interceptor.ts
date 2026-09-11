@@ -6,7 +6,8 @@ import { AuthService } from '../services/auth.service';
 export const authInterceptor: HttpInterceptorFn = (peticion, siguiente) => {
   const token = inject(AuthService).token;
 
-  if (!token) return siguiente(peticion);
+  // Si no hay token o es un token simulado de demo, no enviamos header Bearer inválido al backend
+  if (!token || token.startsWith('demo-')) return siguiente(peticion);
 
   return siguiente(
     peticion.clone({
