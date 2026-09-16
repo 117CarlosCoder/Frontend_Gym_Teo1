@@ -14,12 +14,15 @@ import { AsistenciaService } from '../../services/asistencia.service';
 export class RegistroAsistenciaComponent {
   
   protected errorCarga: boolean = false;
+  protected mensajeError = signal<string | null>(null);
+  protected mensajeExito = signal<string | null>(null);
   
   protected query = signal<string>('');
   protected idSucursal = signal<number>(1);
   protected loadingAsistencias = signal<boolean>(false);
   
   private asistenciaService = inject(AsistenciaService);
+
 
   protected sucursalesSignal = toSignal(
     this.asistenciaService.getSucursales().pipe(
@@ -113,15 +116,25 @@ export class RegistroAsistenciaComponent {
   }
 
   protected registrarEntrada(idSocio: number): void {
+    this.mensajeError.set(null);
+    this.mensajeExito.set(null);
+
     this.asistenciaService.registrarEntrada({
       idSocio,
       idSucursal: this.idSucursal(),
       tipo: 'ENTRADA'
-    }).subscribe(nueva => {
-      const current = this.asistencias() || [];
-      this.asistencias.set([...current, nueva]);
+    }).subscribe({
+      next: (nueva) => {
+        const current = this.asistencias() || [];
+        this.asistencias.set([nueva, ...current]);
+        this.mensajeExito.set(`Entrada registrada con éxito para ${nueva.nombreSocio} ${nueva.apellidoSocio}.`);
+      },
+      error: (err) => {
+        this.mensajeError.set(err.message || 'No se pudo registrar la entrada.');
+      }
     });
   }
+
 
   protected registrarSalida(idAsistencia: number): void {
     this.asistenciaService.registrarSalida(idAsistencia).subscribe(actualizada => {

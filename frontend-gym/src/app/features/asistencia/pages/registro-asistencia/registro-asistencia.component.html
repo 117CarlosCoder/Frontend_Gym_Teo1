@@ -12,6 +12,21 @@
     </div>
     }
 
+    @if (mensajeError()) {
+    <div class="alert alert-warning d-flex align-items-center shadow-sm" role="alert">
+        <div class="fw-bold me-2">⚠️ Acceso Denegado:</div>
+        <div>{{ mensajeError() }}</div>
+    </div>
+    }
+
+    @if (mensajeExito()) {
+    <div class="alert alert-success d-flex align-items-center shadow-sm" role="alert">
+        <div class="fw-bold me-2">✅ Ingreso Autorizado:</div>
+        <div>{{ mensajeExito() }}</div>
+    </div>
+    }
+
+
     <div class="row mb-4 g-3 align-items-center">
         <div class="col-md-4">
             <label class="form-label fw-bold asistencia__text-primary text-mini mb-1">Sucursal</label>

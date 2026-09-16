@@ -51,6 +51,12 @@ export class DashboardLayout {
     this.auth.tieneRol('ADMIN', 'RECEPCION'),
   );
 
+  /** Determina si el usuario puede administrar usuarios (Solo ADMIN). */
+  protected readonly puedeVerUsuarios = computed(() =>
+    this.auth.tieneRol('ADMIN'),
+  );
+
+
   protected cerrarSesion(): void {
     this.auth.logout();
     this.router.navigate([RUTAS.inicio]);

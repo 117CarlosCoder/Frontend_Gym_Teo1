@@ -558,6 +558,44 @@ export class SociosService {
   }
 
   /**
+   * Reactiva un socio previamente dado de baja mediante PATCH /socios/{id}/reactivar
+   */
+  reactivarSocio(id: number): Observable<boolean> {
+    if (!this.tieneTokenReal()) {
+      const actuales = this.sociosSubject.getValue();
+      const index = actuales.findIndex((s) => s.id_socio === id);
+      if (index !== -1) {
+        const actualizados = [...actuales];
+        actualizados[index] = { ...actualizados[index], estado: 'ACTIVO' };
+        this.guardarEnStorage(actualizados);
+      }
+      return of(true).pipe(delay(200));
+    }
+
+    return this.http.patch<any>(`${API.socios}/${id}/reactivar`, {}).pipe(
+      map(() => {
+        const actuales = this.sociosSubject.getValue();
+        const index = actuales.findIndex((s) => s.id_socio === id);
+        if (index !== -1) {
+          const actualizados = [...actuales];
+          actualizados[index] = { ...actualizados[index], estado: 'ACTIVO' };
+          this.guardarEnStorage(actualizados);
+        }
+        return true;
+      }),
+      tap(() => {
+        // Refrescar lista completa para sincronizar
+        this.getSocios().subscribe({ error: () => {} });
+      }),
+      catchError((err) => {
+        const msg = err.error?.message || err.message || 'Error al reactivar el socio en el servidor.';
+        return throwError(() => new Error(msg));
+      })
+    );
+  }
+
+  /**
+
    * Asigna un plan a un socio mediante POST /membresias
    * Payload: { idSocio, idPlan, sucursalIds: [1], fechaInicio, idEstadoMembresia: 1 }
    */
