@@ -84,13 +84,42 @@ export class GestionMembresiasComponent implements OnInit {
     this.formularioAbierto.set(true);
   }
 
+  protected esFormularioValido(): boolean {
+    if (this.esNuevaMembresia() && (!this.formulario.idSocio || Number(this.formulario.idSocio) <= 0)) {
+      return false;
+    }
+    if (!this.formulario.idPlan || Number(this.formulario.idPlan) <= 0) {
+      return false;
+    }
+    if (!this.formulario.fechaInicio) {
+      return false;
+    }
+    if (this.formulario.estado === 'CANCELADA' && (!this.formulario.motivoCancelacion || this.formulario.motivoCancelacion.trim().length < 3)) {
+      return false;
+    }
+    return true;
+  }
+
   protected guardar(): void {
     this.error.set('');
+    if (!this.esFormularioValido()) {
+      this.error.set('Por favor completa todos los campos requeridos antes de guardar.');
+      return;
+    }
     try {
       const operacion = this.editando()
         ? this.membresiasService.actualizar(this.editando()!.idMembresia, this.formulario, this.planes())
         : this.membresiasService.crear(this.formulario, this.planes());
-      operacion.subscribe({ next: () => { this.formularioAbierto.set(false); this.mensaje.set('Cambios guardados y auditados.'); this.cargar(); } });
+      operacion.subscribe({
+        next: () => {
+          this.formularioAbierto.set(false);
+          this.mensaje.set('Cambios guardados y auditados.');
+          this.cargar();
+        },
+        error: (err) => {
+          this.error.set(err?.error?.message || err?.message || 'Error al guardar la membresía');
+        }
+      });
     } catch (exception) {
       this.error.set(exception instanceof Error ? exception.message : 'No fue posible guardar la membresía.');
     }

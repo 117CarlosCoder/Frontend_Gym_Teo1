@@ -240,8 +240,20 @@ export class ListaSocios implements OnInit {
     }
   }
 
+  reactivarSocio(socio: SocioTablaDTO): void {
+    this.sociosService.reactivarSocio(socio.id_socio).subscribe({
+      next: () => {
+        this.mostrarExito(`Socio "${socio.usuario.nombre} ${socio.usuario.apellido}" reactivado exitosamente.`);
+      },
+      error: (err) => {
+        this.mensajeError.set(err.message || 'No se pudo reactivar el socio.');
+      },
+    });
+  }
+
   readonly errorModalAsignar = signal<string | null>(null);
   readonly guardandoAsignacion = signal<boolean>(false);
+
 
   readonly tieneMembresiaActiva = computed(() => {
     const s = this.socioSeleccionado();

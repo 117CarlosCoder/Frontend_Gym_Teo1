@@ -124,18 +124,30 @@
               <div class="col-md-6">
                 <label class="form-label fw-semibold">Nombre del Plan *</label>
                 <input type="text" class="form-control" formControlName="nombre" placeholder="Ej. Plan Semestral" />
+                @if (formPlan.get('nombre')?.touched && formPlan.get('nombre')?.invalid) {
+                  <small class="text-danger d-block mt-1">El nombre es requerido (mínimo 3 caracteres).</small>
+                }
               </div>
               <div class="col-md-3">
                 <label class="form-label fw-semibold">Duración (Días) *</label>
                 <input type="number" class="form-control" formControlName="duracion" placeholder="Ej. 180" />
+                @if (formPlan.get('duracion')?.touched && formPlan.get('duracion')?.invalid) {
+                  <small class="text-danger d-block mt-1">La duración debe ser de al menos 1 día.</small>
+                }
               </div>
               <div class="col-md-3">
                 <label class="form-label fw-semibold">Precio (Q) *</label>
                 <input type="number" step="0.01" class="form-control" formControlName="precio" placeholder="Ej. 1200.00" />
+                @if (formPlan.get('precio')?.touched && formPlan.get('precio')?.invalid) {
+                  <small class="text-danger d-block mt-1">El precio debe ser mayor a 0.</small>
+                }
               </div>
               <div class="col-12">
                 <label class="form-label fw-semibold">Descripción *</label>
                 <textarea class="form-control" rows="3" formControlName="descripcion" placeholder="Detalle de la cobertura del plan..."></textarea>
+                @if (formPlan.get('descripcion')?.touched && formPlan.get('descripcion')?.invalid) {
+                  <small class="text-danger d-block mt-1">La descripción es obligatoria.</small>
+                }
               </div>
               <div class="col-12">
                 <label class="form-label fw-semibold">Beneficios (separados por coma)</label>
@@ -166,18 +178,30 @@
               <div class="col-md-6">
                 <label class="form-label fw-semibold">Nombre del Plan *</label>
                 <input type="text" class="form-control" formControlName="nombre" />
+                @if (formPlan.get('nombre')?.touched && formPlan.get('nombre')?.invalid) {
+                  <small class="text-danger d-block mt-1">El nombre es requerido (mínimo 3 caracteres).</small>
+                }
               </div>
               <div class="col-md-3">
                 <label class="form-label fw-semibold">Duración (Días) *</label>
                 <input type="number" class="form-control" formControlName="duracion" />
+                @if (formPlan.get('duracion')?.touched && formPlan.get('duracion')?.invalid) {
+                  <small class="text-danger d-block mt-1">La duración debe ser de al menos 1 día.</small>
+                }
               </div>
               <div class="col-md-3">
                 <label class="form-label fw-semibold">Precio (Q) *</label>
                 <input type="number" step="0.01" class="form-control" formControlName="precio" />
+                @if (formPlan.get('precio')?.touched && formPlan.get('precio')?.invalid) {
+                  <small class="text-danger d-block mt-1">El precio debe ser mayor a 0.</small>
+                }
               </div>
               <div class="col-12">
                 <label class="form-label fw-semibold">Descripción *</label>
                 <textarea class="form-control" rows="3" formControlName="descripcion"></textarea>
+                @if (formPlan.get('descripcion')?.touched && formPlan.get('descripcion')?.invalid) {
+                  <small class="text-danger d-block mt-1">La descripción es obligatoria.</small>
+                }
               </div>
               <div class="col-12">
                 <label class="form-label fw-semibold">Beneficios (separados por coma)</label>
@@ -269,6 +293,9 @@
                     </option>
                   }
                 </select>
+                @if (formAsignar.get('id_socio')?.touched && formAsignar.get('id_socio')?.invalid) {
+                  <small class="text-danger d-block mt-1">Debes seleccionar un miembro.</small>
+                }
               </div>
 
               <!-- Selección de Plan -->
@@ -282,12 +309,18 @@
                     </option>
                   }
                 </select>
+                @if (formAsignar.get('id_plan')?.touched && formAsignar.get('id_plan')?.invalid) {
+                  <small class="text-danger d-block mt-1">Debes seleccionar un plan.</small>
+                }
               </div>
 
               <!-- Fechas -->
               <div class="col-md-6">
                 <label class="form-label fw-semibold">Fecha de Inicio *</label>
                 <input type="date" class="form-control" formControlName="fecha_inicio" />
+                @if (formAsignar.get('fecha_inicio')?.touched && formAsignar.get('fecha_inicio')?.invalid) {
+                  <small class="text-danger d-block mt-1">La fecha de inicio es requerida.</small>
+                }
               </div>
               <div class="col-md-6">
                 <label class="form-label fw-semibold">Fecha de Vencimiento Calculada</label>

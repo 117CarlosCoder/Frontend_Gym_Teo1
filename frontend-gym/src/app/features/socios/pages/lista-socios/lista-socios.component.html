@@ -203,7 +203,16 @@
                   </button>
 
                   <!-- Baja / Eliminar -->
-                  @if (esAdmin()) {
+                  @if (socio.estado === 'INACTIVO') {
+                    <button
+                      type="button"
+                      class="btn btn-outline-success"
+                      title="Reactivar cuenta del socio en el gimnasio"
+                      (click)="reactivarSocio(socio)"
+                    >
+                      Reactivar
+                    </button>
+                  } @else if (esAdmin()) {
                     <button
                       type="button"
                       class="btn btn-outline-danger"
@@ -224,6 +233,7 @@
                   }
                 </div>
               </td>
+
             </tr>
           } @empty {
             <tr>
@@ -324,22 +334,37 @@
               <div class="col-md-6">
                 <label class="form-label fw-semibold">Nombres *</label>
                 <input type="text" class="form-control" formControlName="nombre" />
+                @if (formSocio.get('nombre')?.touched && formSocio.get('nombre')?.invalid) {
+                  <small class="text-danger">El nombre es requerido.</small>
+                }
               </div>
               <div class="col-md-6">
                 <label class="form-label fw-semibold">Apellidos *</label>
                 <input type="text" class="form-control" formControlName="apellido" />
+                @if (formSocio.get('apellido')?.touched && formSocio.get('apellido')?.invalid) {
+                  <small class="text-danger">El apellido es requerido.</small>
+                }
               </div>
               <div class="col-md-6">
                 <label class="form-label fw-semibold">DPI *</label>
                 <input type="text" class="form-control" formControlName="dpi" maxlength="13" />
+                @if (formSocio.get('dpi')?.touched && formSocio.get('dpi')?.invalid) {
+                  <small class="text-danger">Debe contener exactamente 13 dígitos numéricos.</small>
+                }
               </div>
               <div class="col-md-6">
                 <label class="form-label fw-semibold">Teléfono *</label>
                 <input type="text" class="form-control" formControlName="telefono" />
+                @if (formSocio.get('telefono')?.touched && formSocio.get('telefono')?.invalid) {
+                  <small class="text-danger">Ingrese un número telefónico válido.</small>
+                }
               </div>
               <div class="col-12">
                 <label class="form-label fw-semibold">Correo Electrónico *</label>
                 <input type="email" class="form-control" formControlName="correo" />
+                @if (formSocio.get('correo')?.touched && formSocio.get('correo')?.invalid) {
+                  <small class="text-danger">Ingrese un correo electrónico válido.</small>
+                }
               </div>
               <div class="col-12">
                 <label class="form-label fw-semibold">Estado *</label>
@@ -453,12 +478,18 @@
                     </option>
                   }
                 </select>
+                @if (formAsignarPlan.get('id_plan')?.touched && formAsignarPlan.get('id_plan')?.invalid) {
+                  <small class="text-danger d-block mt-1">Debes seleccionar un plan.</small>
+                }
               </div>
 
               <!-- Fechas -->
               <div class="col-md-6">
                 <label class="form-label fw-semibold">Fecha de Inicio *</label>
                 <input type="date" class="form-control" formControlName="fecha_inicio" />
+                @if (formAsignarPlan.get('fecha_inicio')?.touched && formAsignarPlan.get('fecha_inicio')?.invalid) {
+                  <small class="text-danger d-block mt-1">La fecha de inicio es requerida.</small>
+                }
               </div>
               <div class="col-md-6">
                 <label class="form-label fw-semibold">Fecha de Vencimiento Calculada</label>

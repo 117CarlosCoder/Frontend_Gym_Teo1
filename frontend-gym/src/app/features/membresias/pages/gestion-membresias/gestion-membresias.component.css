@@ -121,10 +121,37 @@
 }
 
 /* Buttons */
+.btn-nueva-membresia {
+    background-color: rgb(16, 29, 66) !important;
+    border-color: rgb(16, 29, 66) !important;
+    color: #ffffff !important;
+    cursor: pointer !important;
+    font-weight: 700;
+}
+
+.btn-nueva-membresia:hover {
+    background-color: rgb(28, 47, 102) !important;
+    border-color: rgb(28, 47, 102) !important;
+    color: #ffffff !important;
+}
+
+button,
+.btn,
+.btn-close,
+.nav-link {
+    cursor: pointer !important;
+}
+
+button:disabled,
+.btn:disabled {
+    cursor: not-allowed !important;
+}
+
 .membresias__btn-editar {
     background-color: var(--color-accent);
     border-color: var(--color-accent);
     font-size: var(--fs-xs);
+    cursor: pointer !important;
 }
 
 .membresias__modal-backdrop {
@@ -134,7 +161,8 @@
     display: grid;
     place-items: center;
     padding: var(--sp-4);
-    background-color: rgb(16 29 66 / 65%);
+    background-color: rgba(10, 19, 48, 0.6);
+    backdrop-filter: blur(3px);
 }
 
 .membresias__modal {
@@ -142,9 +170,21 @@
     max-height: 94vh;
     overflow-y: auto;
     padding: var(--sp-5);
-    border-radius: var(--radius-md);
-    background-color: var(--color-bg);
+    border-radius: var(--radius-lg, 16px);
+    background-color: #ffffff;
     box-shadow: var(--shadow-lg);
+    animation: modalEntrada 0.2s ease-out;
+}
+
+@keyframes modalEntrada {
+    from {
+        opacity: 0;
+        transform: scale(0.96) translateY(-8px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
 }
 
 .membresias__modal>header,

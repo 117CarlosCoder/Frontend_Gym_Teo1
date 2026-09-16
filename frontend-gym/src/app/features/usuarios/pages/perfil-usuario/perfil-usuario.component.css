@@ -1,0 +1,299 @@
+.perfil-container {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 1.5rem 1rem;
+}
+
+.header-perfil {
+  margin-bottom: 2rem;
+}
+
+.titulo {
+  font-size: var(--fs-2xl, 1.8rem);
+  font-weight: 800;
+  color: var(--color-primary, #101d42);
+  margin-bottom: 0.25rem;
+}
+
+.subtitulo {
+  font-size: var(--fs-sm, 0.9rem);
+  color: var(--color-secondary, #6e6a6f);
+}
+
+.alerta {
+  padding: 1rem 1.25rem;
+  border-radius: var(--radius-md, 8px);
+  margin-bottom: 1.5rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.alerta--exito {
+  background-color: #d1e7dd;
+  border: 1px solid #badbcc;
+  color: #0f5132;
+}
+
+.alerta--error {
+  background-color: #f8d7da;
+  border: 1px solid #f5c2c7;
+  color: #842029;
+}
+
+.cargando-box {
+  padding: 3rem;
+  text-align: center;
+  color: var(--color-secondary, #6e6a6f);
+}
+
+.perfil-grid {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+@media (max-width: 860px) {
+  .perfil-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Tarjeta Resumen */
+.card-resumen {
+  background-color: #ffffff;
+  border: 1px solid var(--color-border, #e2e6ee);
+  border-radius: var(--radius-lg, 16px);
+  padding: 2rem 1.5rem;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-shadow: var(--shadow-sm, 0 1px 3px rgba(16, 29, 66, 0.08));
+}
+
+/* Círculo de perfil usando rgb(3, 94, 123) */
+.avatar-grande {
+  width: 84px;
+  height: 84px;
+  border-radius: 50%;
+  background-color: rgb(3, 94, 123);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 1.9rem;
+  margin-bottom: 1.25rem;
+  box-shadow: 0 4px 14px rgba(3, 94, 123, 0.35);
+  flex-shrink: 0;
+}
+
+.nombre-completo {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--color-primary, #101d42);
+  margin-bottom: 0.5rem;
+}
+
+.badge {
+  display: inline-block;
+  padding: 0.35rem 0.85rem;
+  border-radius: var(--radius-pill, 999px);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  margin-bottom: 1.5rem;
+}
+
+.badge--rol {
+  background-color: rgba(3, 94, 123, 0.1);
+  color: rgb(3, 94, 123);
+  border: 1px solid rgba(3, 94, 123, 0.25);
+}
+
+.datos-meta {
+  width: 100%;
+  border-top: 1px solid var(--color-border, #e2e6ee);
+  padding-top: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  text-align: left;
+}
+
+.dato-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.etiqueta {
+  font-size: var(--fs-xs, 0.75rem);
+  color: var(--color-secondary, #6e6a6f);
+  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+.valor {
+  font-size: var(--fs-sm, 0.9rem);
+  color: var(--color-primary, #101d42);
+  font-weight: 600;
+}
+
+.mono {
+  font-family: monospace;
+}
+
+.texto-verde {
+  color: var(--color-success, #1e7d55) !important;
+}
+
+.texto-rojo {
+  color: var(--color-danger, #b3261e) !important;
+}
+
+/* Columna de Formularios */
+.formularios-columna {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.card-seccion {
+  background-color: #ffffff;
+  border: 1px solid var(--color-border, #e2e6ee);
+  border-radius: var(--radius-lg, 16px);
+  padding: 1.75rem;
+  box-shadow: var(--shadow-sm, 0 1px 3px rgba(16, 29, 66, 0.08));
+}
+
+.seccion-titulo {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--color-primary, #101d42);
+  margin-bottom: 0.35rem;
+}
+
+.subtitulo-seccion {
+  font-size: var(--fs-sm, 0.875rem);
+  color: var(--color-secondary, #6e6a6f);
+  margin-bottom: 1.25rem;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+@media (max-width: 600px) {
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 1rem;
+}
+
+.form-group label {
+  font-size: var(--fs-xs, 0.8rem);
+  font-weight: 700;
+  color: var(--color-primary, #101d42);
+  margin-bottom: 0.35rem;
+}
+
+.form-control {
+  background-color: #ffffff;
+  border: 1px solid var(--color-border, #e2e6ee);
+  border-radius: var(--radius-sm, 6px);
+  padding: 0.65rem 0.9rem;
+  color: #212529;
+  font-size: var(--fs-sm, 0.9rem);
+  transition: border-color var(--transition, 0.2s), box-shadow var(--transition, 0.2s);
+}
+
+.form-control:focus {
+  outline: none;
+  border-color: rgb(3, 94, 123);
+  box-shadow: 0 0 0 3px rgba(3, 94, 123, 0.15);
+}
+
+.form-control::placeholder {
+  color: #adb5bd;
+}
+
+.form-acciones {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 1rem;
+}
+
+.error-texto {
+  color: var(--color-danger, #b3261e);
+  font-size: 0.75rem;
+  font-weight: 500;
+  margin-top: 0.25rem;
+}
+
+/* Botones con cursor pointer y estilos de la paleta */
+button {
+  cursor: pointer;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.65rem 1.4rem;
+  border-radius: var(--radius-pill, 999px);
+  font-size: var(--fs-sm, 0.875rem);
+  font-weight: 700;
+  border: 2px solid transparent;
+  cursor: pointer !important;
+  transition: all var(--transition, 0.2s);
+}
+
+.btn:hover {
+  cursor: pointer !important;
+}
+
+.btn--primary {
+  background-color: var(--color-primary, #101d42);
+  color: #ffffff;
+  border-color: var(--color-primary, #101d42);
+}
+
+.btn--primary:hover:not(:disabled) {
+  background-color: var(--color-primary-light, #1c2f66);
+  border-color: var(--color-primary-light, #1c2f66);
+  color: #ffffff;
+  box-shadow: var(--shadow-md, 0 6px 18px rgba(16, 29, 66, 0.15));
+  transform: translateY(-1px);
+}
+
+.btn--outline {
+  background-color: transparent;
+  border-color: rgb(3, 94, 123);
+  color: rgb(3, 94, 123);
+}
+
+.btn--outline:hover:not(:disabled) {
+  background-color: rgb(3, 94, 123);
+  border-color: rgb(3, 94, 123);
+  color: #ffffff;
+  box-shadow: 0 4px 14px rgba(3, 94, 123, 0.35);
+  transform: translateY(-1px);
+}
+
+.btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed !important;
+  transform: none !important;
+}

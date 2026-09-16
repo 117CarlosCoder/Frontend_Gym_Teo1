@@ -55,10 +55,16 @@ ul {
   list-style: none;
 }
 
-button {
+button,
+.btn,
+[role="button"],
+input[type="button"],
+input[type="submit"],
+input[type="reset"] {
   font-family: inherit;
-  cursor: pointer;
+  cursor: pointer !important;
 }
+
 
 :focus-visible {
   outline: 3px solid var(--color-accent-light);

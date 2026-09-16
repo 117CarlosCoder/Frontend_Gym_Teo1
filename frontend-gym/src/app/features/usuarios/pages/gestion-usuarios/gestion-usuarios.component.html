@@ -1,0 +1,428 @@
+<div class="usuarios-container">
+  <!-- Encabezado -->
+  <div class="header-acciones">
+    <div>
+      <h1 class="titulo">Gestión de Usuarios</h1>
+      <p class="subtitulo">Administra los accesos del personal administrativo, entrenadores y clientes.</p>
+    </div>
+    <button type="button" class="btn btn--primary" (click)="abrirModalCrear()">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="12" y1="5" x2="12" y2="19"></line>
+        <line x1="5" y1="12" x2="19" y2="12"></line>
+      </svg>
+      Nuevo Usuario
+    </button>
+  </div>
+
+  <!-- Alerta de éxito con credencial temporal -->
+  @if (credencialTemporal()) {
+    <div class="alerta-credencial">
+      <div class="alerta-credencial__header">
+        <span class="badge-alerta">¡Atención Administrador!</span>
+        <p>El usuario fue creado exitosamente con la siguiente <strong>contraseña temporal autogenerada</strong>:</p>
+      </div>
+      <div class="alerta-credencial__codigo">
+        <code>{{ credencialTemporal() }}</code>
+        <button type="button" class="btn-copiar" (click)="copiarContrasenia(credencialTemporal()!)">
+          Copiar
+        </button>
+      </div>
+      <small>Comparte esta clave de forma segura con el nuevo usuario o indícale que revise su correo electrónico.</small>
+    </div>
+  }
+
+  <!-- Mensajes de feedback -->
+  @if (exitoMensaje() && !credencialTemporal()) {
+    <div class="alerta alerta--exito">
+      {{ exitoMensaje() }}
+    </div>
+  }
+
+  @if (errorMensaje()) {
+    <div class="alerta alerta--error">
+      {{ errorMensaje() }}
+    </div>
+  }
+
+  <!-- Métricas Rápidas -->
+  <div class="metricas-grid">
+    <div class="card-metrica">
+      <span class="card-metrica__valor">{{ totalUsuarios() }}</span>
+      <span class="card-metrica__etiqueta">Total Registrados</span>
+    </div>
+    <div class="card-metrica card-metrica--activos">
+      <span class="card-metrica__valor">{{ totalActivos() }}</span>
+      <span class="card-metrica__etiqueta">Usuarios Activos</span>
+    </div>
+    <div class="card-metrica card-metrica--inactivos">
+      <span class="card-metrica__valor">{{ totalInactivos() }}</span>
+      <span class="card-metrica__etiqueta">Usuarios Desactivados</span>
+    </div>
+  </div>
+
+  <!-- Barra de Filtros y Búsqueda -->
+  <div class="filtros-seccion">
+    <div class="chips-roles">
+      <button
+        type="button"
+        class="chip-filtro"
+        [class.chip-filtro--activo]="filtroRol() === 'TODOS'"
+        (click)="cambiarFiltroRol('TODOS')">
+        Todos
+      </button>
+      <button
+        type="button"
+        class="chip-filtro"
+        [class.chip-filtro--activo]="filtroRol() === 'ADMIN'"
+        (click)="cambiarFiltroRol('ADMIN')">
+        Administradores
+      </button>
+      <button
+        type="button"
+        class="chip-filtro"
+        [class.chip-filtro--activo]="filtroRol() === 'RECEPCIONISTA'"
+        (click)="cambiarFiltroRol('RECEPCIONISTA')">
+        Recepción
+      </button>
+      <button
+        type="button"
+        class="chip-filtro"
+        [class.chip-filtro--activo]="filtroRol() === 'ENTRENADOR'"
+        (click)="cambiarFiltroRol('ENTRENADOR')">
+        Entrenadores
+      </button>
+      <button
+        type="button"
+        class="chip-filtro"
+        [class.chip-filtro--activo]="filtroRol() === 'CLIENTE'"
+        (click)="cambiarFiltroRol('CLIENTE')">
+        Clientes / Socios
+      </button>
+    </div>
+
+    <div class="input-busqueda-wrapper">
+      <input
+        type="text"
+        placeholder="Buscar por nombre, DPI, correo..."
+        class="input-busqueda"
+        [value]="terminoBusqueda()"
+        (input)="onBuscar($event)"
+      />
+    </div>
+  </div>
+
+  <!-- Tabla de Usuarios -->
+  <div class="tabla-card">
+    @if (cargando()) {
+      <div class="estado-vacio">
+        <p>Cargando información de usuarios...</p>
+      </div>
+    } @else if (usuariosFiltrados().length === 0) {
+      <div class="estado-vacio">
+        <p>No se encontraron usuarios que coincidan con los filtros seleccionados.</p>
+      </div>
+    } @else {
+      <div class="tabla-responsive">
+        <table class="tabla">
+          <thead>
+            <tr>
+              <th>Usuario</th>
+              <th>DPI</th>
+              <th>Contacto</th>
+              <th>Rol</th>
+              <th>Estado</th>
+              <th style="text-align: right;">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (usuario of usuariosFiltrados(); track usuario.id) {
+              <tr [class.fila-desactivada]="!usuario.estado">
+                <td>
+                  <div class="usuario-info">
+                    <div class="avatar">{{ usuario.nombres.charAt(0) }}{{ usuario.apellidos.charAt(0) }}</div>
+                    <div>
+                      <strong>{{ usuario.nombres }} {{ usuario.apellidos }}</strong>
+                      <small class="texto-secundario">{{ usuario.correo }}</small>
+                    </div>
+                  </div>
+                </td>
+                <td>
+                  <span class="mono">{{ usuario.dpi }}</span>
+                </td>
+                <td>
+                  <span>{{ usuario.telefono || 'Sin teléfono' }}</span>
+                </td>
+                <td>
+                  <span class="badge badge--rol badge--{{ usuario.rol.toLowerCase() }}">
+                    {{ getNombreRol(usuario.rol) }}
+                  </span>
+                </td>
+                <td>
+                  @if (usuario.estado) {
+                    <span class="badge badge--activo">Activo</span>
+                  } @else {
+                    <span class="badge badge--inactivo">Inactivo</span>
+                  }
+                </td>
+                <td style="text-align: right;">
+                  <div class="acciones-fila">
+                    <button
+                      type="button"
+                      class="btn-accion btn-accion--editar"
+                      title="Editar usuario"
+                      (click)="abrirModalEditar(usuario)">
+                      Editar
+                    </button>
+                    @if (usuario.estado) {
+                      <button
+                        type="button"
+                        class="btn-accion btn-accion--desactivar"
+                        title="Desactivar usuario"
+                        (click)="abrirModalDesactivar(usuario)">
+                        Desactivar
+                      </button>
+                    }
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </div>
+
+  <!-- MODAL: CREAR USUARIO -->
+  @if (modalCrearAbierto()) {
+    <div class="modal-overlay" (click)="cerrarModalCrear()">
+      <div class="modal-dialog" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h2>Nuevo Usuario Administrativo</h2>
+          <button type="button" class="btn-cerrar" (click)="cerrarModalCrear()">×</button>
+        </div>
+
+        <form [formGroup]="formCrear" (ngSubmit)="guardarNuevoUsuario()">
+          <div class="modal-body">
+            <p class="modal-instruccion">
+              La contraseña de acceso será generada de manera segura por el sistema y notificada por correo al usuario.
+            </p>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="crear-dpi">DPI (13-20 dígitos) *</label>
+                <input
+                  id="crear-dpi"
+                  type="text"
+                  class="form-control"
+                  formControlName="dpi"
+                  placeholder="Ej. 1000000000088"
+                />
+                @if (formCrear.get('dpi')?.touched && formCrear.get('dpi')?.invalid) {
+                  <span class="error-texto">DPI obligatorio (13 a 20 caracteres).</span>
+                }
+              </div>
+
+              <div class="form-group">
+                <label for="crear-rol">Rol en el Gimnasio *</label>
+                <select id="crear-rol" class="form-control" formControlName="rol">
+                  @for (r of roles(); track r.id) {
+                    <option [value]="r.nombre">{{ r.nombre }} - {{ r.descripcion }}</option>
+                  }
+                </select>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="crear-nombres">Nombres *</label>
+                <input
+                  id="crear-nombres"
+                  type="text"
+                  class="form-control"
+                  formControlName="nombres"
+                  placeholder="Ej. Rodrigo Fernando"
+                />
+                @if (formCrear.get('nombres')?.touched && formCrear.get('nombres')?.invalid) {
+                  <span class="error-texto">Nombres son obligatorios.</span>
+                }
+              </div>
+
+              <div class="form-group">
+                <label for="crear-apellidos">Apellidos *</label>
+                <input
+                  id="crear-apellidos"
+                  type="text"
+                  class="form-control"
+                  formControlName="apellidos"
+                  placeholder="Ej. Alvarado Soto"
+                />
+                @if (formCrear.get('apellidos')?.touched && formCrear.get('apellidos')?.invalid) {
+                  <span class="error-texto">Apellidos son obligatorios.</span>
+                }
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="crear-correo">Correo Electrónico *</label>
+                <input
+                  id="crear-correo"
+                  type="email"
+                  class="form-control"
+                  formControlName="correo"
+                  placeholder="ejemplo@gymdemo.com"
+                />
+                @if (formCrear.get('correo')?.touched && formCrear.get('correo')?.invalid) {
+                  <span class="error-texto">Correo electrónico válido obligatorio.</span>
+                }
+              </div>
+
+              <div class="form-group">
+                <label for="crear-telefono">Teléfono</label>
+                <input
+                  id="crear-telefono"
+                  type="text"
+                  class="form-control"
+                  formControlName="telefono"
+                  placeholder="Ej. 55550088"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="btn btn--secundario" (click)="cerrarModalCrear()">Cancelar</button>
+            <button type="submit" class="btn btn--primary" [disabled]="cargando()">
+              {{ cargando() ? 'Creando...' : 'Crear Usuario' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+
+  <!-- MODAL: EDITAR USUARIO -->
+  @if (modalEditarAbierto()) {
+    <div class="modal-overlay" (click)="cerrarModalEditar()">
+      <div class="modal-dialog" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h2>Editar Usuario #{{ usuarioSeleccionado()?.id }}</h2>
+          <button type="button" class="btn-cerrar" (click)="cerrarModalEditar()">×</button>
+        </div>
+
+        <form [formGroup]="formEditar" (ngSubmit)="guardarEdicionUsuario()">
+          <div class="modal-body">
+            <div class="form-row">
+              <div class="form-group">
+                <label for="edit-dpi">DPI (13-20 dígitos) *</label>
+                <input id="edit-dpi" type="text" class="form-control" formControlName="dpi" placeholder="Ej. 1000000000088" />
+                @if (formEditar.get('dpi')?.touched && formEditar.get('dpi')?.invalid) {
+                  <span class="error-texto">DPI obligatorio (13 a 20 dígitos numéricos).</span>
+                }
+              </div>
+              <div class="form-group">
+                <label for="edit-rol">Rol *</label>
+                <select id="edit-rol" class="form-control" formControlName="rol">
+                  @for (r of roles(); track r.id) {
+                    <option [value]="r.nombre">{{ r.nombre }} - {{ r.descripcion }}</option>
+                  }
+                </select>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="edit-nombres">Nombres *</label>
+                <input id="edit-nombres" type="text" class="form-control" formControlName="nombres" />
+                @if (formEditar.get('nombres')?.touched && formEditar.get('nombres')?.invalid) {
+                  <span class="error-texto">Nombres son requeridos (mínimo 2 letras).</span>
+                }
+              </div>
+              <div class="form-group">
+                <label for="edit-apellidos">Apellidos *</label>
+                <input id="edit-apellidos" type="text" class="form-control" formControlName="apellidos" />
+                @if (formEditar.get('apellidos')?.touched && formEditar.get('apellidos')?.invalid) {
+                  <span class="error-texto">Apellidos son requeridos (mínimo 2 letras).</span>
+                }
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="edit-correo">Correo Electrónico *</label>
+                <input id="edit-correo" type="email" class="form-control" formControlName="correo" />
+                @if (formEditar.get('correo')?.touched && formEditar.get('correo')?.invalid) {
+                  <span class="error-texto">Correo electrónico válido requerido.</span>
+                }
+              </div>
+              <div class="form-group">
+                <label for="edit-telefono">Teléfono</label>
+                <input id="edit-telefono" type="text" class="form-control" formControlName="telefono" placeholder="Ej. 55550002" />
+                @if (formEditar.get('telefono')?.touched && formEditar.get('telefono')?.invalid) {
+                  <span class="error-texto">Formato de teléfono inválido (8 a 15 dígitos).</span>
+                }
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="edit-estado">Estado de la Cuenta *</label>
+              <select id="edit-estado" class="form-control" formControlName="estado">
+                <option [ngValue]="true">Activo (Acceso Habilitado)</option>
+                <option [ngValue]="false">Inactivo (Acceso Bloqueado)</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="edit-pass">Restablecer Contraseña (Opcional)</label>
+              <input
+                id="edit-pass"
+                type="password"
+                class="form-control"
+                formControlName="contrasenia"
+                placeholder="Dejar en blanco para mantener la actual"
+              />
+              @if (formEditar.get('contrasenia')?.touched && formEditar.get('contrasenia')?.value && formEditar.get('contrasenia')?.invalid) {
+                <span class="error-texto">La nueva contraseña debe tener al menos 6 caracteres.</span>
+              }
+              <small class="texto-secundario">Si se ingresa, se sobreescribirá encriptada en el backend.</small>
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="btn btn--secundario" (click)="cerrarModalEditar()">Cancelar</button>
+            <button type="submit" class="btn btn--primary" [disabled]="cargando() || formEditar.invalid">
+              {{ cargando() ? 'Guardando...' : 'Guardar Cambios' }}
+            </button>
+          </div>
+        </form>
+
+      </div>
+    </div>
+  }
+
+  <!-- MODAL: CONFIRMAR DESACTIVAR -->
+  @if (modalDesactivarAbierto()) {
+    <div class="modal-overlay" (click)="cerrarModalDesactivar()">
+      <div class="modal-dialog modal-dialog--sm" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h2>Desactivar Usuario</h2>
+          <button type="button" class="btn-cerrar" (click)="cerrarModalDesactivar()">×</button>
+        </div>
+        <div class="modal-body">
+          <p>
+            ¿Estás seguro de que deseas desactivar la cuenta de
+            <strong>{{ usuarioSeleccionado()?.nombres }} {{ usuarioSeleccionado()?.apellidos }}</strong>?
+          </p>
+          <small class="texto-secundario">El usuario no podrá iniciar sesión en el gimnasio hasta ser reactivado.</small>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn--secundario" (click)="cerrarModalDesactivar()">Cancelar</button>
+          <button type="button" class="btn btn--peligro" [disabled]="cargando()" (click)="confirmarDesactivar()">
+            {{ cargando() ? 'Desactivando...' : 'Sí, Desactivar' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+</div>
+

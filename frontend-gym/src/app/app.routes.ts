@@ -95,7 +95,26 @@ export const routes: Routes = [
           ),
         title: 'Membresías | Claude Lovers Gym',
       },
+      {
+        path: 'usuarios',
+        canActivate: [rolGuard('ADMIN')],
+        loadComponent: () =>
+          import('./features/usuarios/pages/gestion-usuarios/gestion-usuarios.component').then(
+            (m) => m.GestionUsuariosComponent,
+          ),
+        title: 'Gestión de Usuarios | Claude Lovers Gym',
+      },
+      {
+        path: 'perfil',
+        canActivate: [authGuard],
+        loadComponent: () =>
+          import('./features/usuarios/pages/perfil-usuario/perfil-usuario.component').then(
+            (m) => m.PerfilUsuarioComponent,
+          ),
+        title: 'Mi Perfil | Claude Lovers Gym',
+      },
     ],
   },
   { path: '**', redirectTo: '' },
 ];
+
