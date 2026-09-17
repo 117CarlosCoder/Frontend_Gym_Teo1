@@ -161,6 +161,18 @@
   background-color: var(--color-surface);
 }
 
+button,
+.btn,
+.btn-close,
+.modal-footer-custom button {
+  cursor: pointer !important;
+}
+
+button:disabled,
+.btn:disabled {
+  cursor: not-allowed !important;
+}
+
 @keyframes modalEntrada {
   from {
     opacity: 0;

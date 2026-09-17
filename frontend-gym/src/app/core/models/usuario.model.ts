@@ -33,6 +33,45 @@ export interface UserResponseDto {
   eliminadoEn?: string;
 }
 
+/** DTO para crear un usuario desde administración */
+export interface CreateUserDto {
+  dpi: string;
+  nombres: string;
+  apellidos: string;
+  telefono?: string;
+  correo: string;
+  rol: string;
+}
+
+/** DTO para actualizar un usuario desde administración */
+export interface UpdateUserAdminDto {
+  dpi?: string;
+  nombres?: string;
+  apellidos?: string;
+  telefono?: string;
+  correo?: string;
+  contrasenia?: string;
+  rol?: string;
+  estado?: boolean;
+}
+
+/** DTO para actualizar el perfil propio (/users/me) */
+export interface UpdateProfileDto {
+  nombres?: string;
+  apellidos?: string;
+  telefono?: string;
+  correo?: string;
+  contraseniaActual?: string;
+  nuevaContrasenia?: string;
+}
+
+/** DTO de Rol devuelto por /roles */
+export interface RolDto {
+  id: number;
+  nombre: string;
+  descripcion?: string;
+}
+
 /** Etiqueta legible del rol, para mostrar en la interfaz. */
 export const ETIQUETA_ROL: Record<RolUsuario, string> = {
   ADMIN: 'Administrador',
@@ -42,3 +81,4 @@ export const ETIQUETA_ROL: Record<RolUsuario, string> = {
   CLIENTE: 'Cliente / Socio',
   SOCIO: 'Socio',
 };
+

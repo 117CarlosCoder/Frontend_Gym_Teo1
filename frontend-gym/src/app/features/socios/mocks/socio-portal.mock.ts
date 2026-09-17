@@ -60,7 +60,7 @@ export const MOCK_SOCIO_PORTAL: SocioPortalDTO = {
         idMembresia: 1,
         fechaInicio: '2026-08-01',
         fechaVencimiento: '2026-09-01',
-        estado: 'Activa',
+        estado: 'ACTIVA',
         descripcionEstado: 'Membresía vigente y con acceso habilitado',
         tipo: 'Premium',
         precio: 400.00,

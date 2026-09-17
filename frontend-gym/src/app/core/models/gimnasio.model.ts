@@ -1,3 +1,5 @@
+import { EstadoMembresia } from "../../features/membresias/models/membresia.model";
+
 export interface Socio {
   idSocio: number;
   nombre: string;
@@ -11,7 +13,7 @@ export interface MembresiaSocio {
   idMembresia: number;
   fechaInicio: string;
   fechaVencimiento: string;
-  estado: string;
+  estado: EstadoMembresia;
   descripcionEstado: string;
   tipo: string;
   precio: number;

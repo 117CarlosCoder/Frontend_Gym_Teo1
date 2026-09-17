@@ -269,3 +269,47 @@
     scroll-behavior: auto !important;
   }
 }
+
+/* ---------- Dashboard Authenticated Area: Botones con cursor mano y color rgb(16, 29, 66) ---------- */
+.panel-contenido button,
+.panel-contenido .btn,
+.panel-contenido [role="button"],
+.panel-contenido .btn-close,
+.panel-contenido .btn-cerrar,
+.panel-contenido .chip-filtro,
+.panel-contenido .btn-accion,
+.panel-contenido .btn-copiar,
+.panel-header button,
+.panel-header .btn {
+  cursor: pointer !important;
+}
+
+.panel-contenido button:disabled,
+.panel-contenido .btn:disabled {
+  cursor: not-allowed !important;
+}
+
+.panel-contenido .btn--primary,
+.panel-contenido .btn-primary,
+.panel-contenido .btn-secundary,
+.panel-contenido .btn-nueva-membresia,
+.panel-contenido button.btn--primary,
+.panel-contenido button.btn-primary,
+.panel-contenido button[type="submit"]:not(.btn--secundario):not(.btn-secondary):not(.btn-outline-danger):not(.btn-light):not(.btn-danger) {
+  background-color: rgb(16, 29, 66) !important;
+  border-color: rgb(16, 29, 66) !important;
+  color: #ffffff !important;
+  cursor: pointer !important;
+}
+
+.panel-contenido .btn--primary:hover:not(:disabled),
+.panel-contenido .btn-primary:hover:not(:disabled),
+.panel-contenido .btn-secundary:hover:not(:disabled),
+.panel-contenido .btn-nueva-membresia:hover:not(:disabled),
+.panel-contenido button.btn--primary:hover:not(:disabled),
+.panel-contenido button.btn-primary:hover:not(:disabled),
+.panel-contenido button[type="submit"]:not(.btn--secundario):not(.btn-secondary):not(.btn-outline-danger):not(.btn-light):not(.btn-danger):hover:not(:disabled) {
+  background-color: rgb(28, 47, 102) !important;
+  border-color: rgb(28, 47, 102) !important;
+  color: #ffffff !important;
+}

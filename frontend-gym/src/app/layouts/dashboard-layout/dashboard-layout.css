@@ -41,16 +41,18 @@
   width: 40px;
   height: 40px;
   border-radius: var(--radius-pill);
-  background-color: var(--color-accent);
+  background-color: rgb(3, 94, 123);
   color: var(--color-on-dark);
   font-weight: 700;
   font-size: var(--fs-sm);
+  cursor: pointer;
 }
 
 .panel-header__datos {
   display: flex;
   flex-direction: column;
   line-height: 1.2;
+  cursor: pointer;
 }
 
 .panel-header__datos strong {
@@ -67,12 +69,15 @@
   color: var(--color-on-dark);
   padding: var(--sp-2) var(--sp-4);
   font-size: var(--fs-xs);
+  cursor: pointer !important;
 }
 
 .panel-header .btn--outline:hover {
   background-color: var(--color-on-dark);
   color: var(--color-primary);
+  cursor: pointer !important;
 }
+
 
 /* ---------- Navegación del dashboard ---------- */
 .panel-nav {
@@ -103,3 +108,96 @@
 .panel-contenido {
   padding-block: var(--sp-7);
 }
+
+/* Todos los botones y controles del dashboard muestran el cursor de mano */
+:host button,
+:host .btn,
+:host [role="button"],
+:host .btn-close,
+:host .btn-cerrar,
+:host .chip-filtro,
+:host .btn-accion,
+:host .btn-copiar,
+:host select,
+:host .form-select,
+:host ::ng-deep button,
+:host ::ng-deep .btn,
+:host ::ng-deep [role="button"],
+:host ::ng-deep .btn-close,
+:host ::ng-deep .btn-cerrar,
+:host ::ng-deep .chip-filtro,
+:host ::ng-deep .btn-accion,
+:host ::ng-deep .btn-copiar,
+:host ::ng-deep select,
+:host ::ng-deep .form-select {
+  cursor: pointer !important;
+}
+
+:host button:hover,
+:host .btn:hover,
+:host [role="button"]:hover,
+:host .btn-close:hover,
+:host .btn-cerrar:hover,
+:host .chip-filtro:hover,
+:host .btn-accion:hover,
+:host .btn-copiar:hover,
+:host ::ng-deep button:hover,
+:host ::ng-deep .btn:hover,
+:host ::ng-deep [role="button"]:hover,
+:host ::ng-deep .btn-close:hover,
+:host ::ng-deep .btn-cerrar:hover,
+:host ::ng-deep .chip-filtro:hover,
+:host ::ng-deep .btn-accion:hover,
+:host ::ng-deep .btn-copiar:hover {
+  cursor: pointer !important;
+}
+
+:host button:disabled,
+:host .btn:disabled,
+:host ::ng-deep button:disabled,
+:host ::ng-deep .btn:disabled {
+  cursor: not-allowed !important;
+}
+
+/* Todos los botones de acción principal en el dashboard usan el fondo rgb(16, 29, 66) */
+:host .btn--primary,
+:host .btn-primary,
+:host .btn-secundary,
+:host .btn-nueva-membresia,
+:host button.btn--primary,
+:host button.btn-primary,
+:host button[type="submit"]:not(.btn--secundario):not(.btn-secondary):not(.btn-outline-danger):not(.btn-light):not(.btn-danger),
+:host ::ng-deep .btn--primary,
+:host ::ng-deep .btn-primary,
+:host ::ng-deep .btn-secundary,
+:host ::ng-deep .btn-nueva-membresia,
+:host ::ng-deep button.btn--primary,
+:host ::ng-deep button.btn-primary,
+:host ::ng-deep button[type="submit"]:not(.btn--secundario):not(.btn-secondary):not(.btn-outline-danger):not(.btn-light):not(.btn-danger) {
+  background-color: rgb(16, 29, 66) !important;
+  border-color: rgb(16, 29, 66) !important;
+  color: #ffffff !important;
+  cursor: pointer !important;
+}
+
+:host .btn--primary:hover:not(:disabled),
+:host .btn-primary:hover:not(:disabled),
+:host .btn-secundary:hover:not(:disabled),
+:host .btn-nueva-membresia:hover:not(:disabled),
+:host button.btn--primary:hover:not(:disabled),
+:host button.btn-primary:hover:not(:disabled),
+:host button[type="submit"]:not(.btn--secundario):not(.btn-secondary):not(.btn-outline-danger):not(.btn-light):not(.btn-danger):hover:not(:disabled),
+:host ::ng-deep .btn--primary:hover:not(:disabled),
+:host ::ng-deep .btn-primary:hover:not(:disabled),
+:host ::ng-deep .btn-secundary:hover:not(:disabled),
+:host ::ng-deep .btn-nueva-membresia:hover:not(:disabled),
+:host ::ng-deep button.btn--primary:hover:not(:disabled),
+:host ::ng-deep button.btn-primary:hover:not(:disabled),
+:host ::ng-deep button[type="submit"]:not(.btn--secundario):not(.btn-secondary):not(.btn-outline-danger):not(.btn-light):not(.btn-danger):hover:not(:disabled) {
+  background-color: rgb(28, 47, 102) !important;
+  border-color: rgb(28, 47, 102) !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 12px rgba(16, 29, 66, 0.25) !important;
+  cursor: pointer !important;
+}
+

@@ -21,20 +21,36 @@
           Asistencia
         </a>
       }
+      @if (puedeGestionarMembresias()) {
+        <a class="panel-nav__link" routerLink="/dashboard/membresias" routerLinkActive="panel-nav__link--activo">
+          Membresías
+        </a>
+      }
+      @if (puedeVerUsuarios()) {
+        <a class="panel-nav__link" routerLink="/dashboard/usuarios" routerLinkActive="panel-nav__link--activo">
+          Usuarios
+        </a>
+      }
     </nav>
 
     <div class="panel-header__usuario">
-      <span class="panel-header__avatar" aria-hidden="true">{{ iniciales() }}</span>
-      <span class="panel-header__datos">
-        <strong>{{ nombreCompleto() }}</strong>
-        <small>{{ etiquetaRol() }}</small>
-      </span>
+      <a routerLink="/dashboard/perfil" style="text-decoration: none; color: inherit; display: flex; align-items: center; gap: var(--sp-3);" title="Ir a Mi Perfil">
+        <span class="panel-header__avatar" aria-hidden="true">{{ iniciales() }}</span>
+        <span class="panel-header__datos">
+          <strong>{{ nombreCompleto() }}</strong>
+          <small>{{ etiquetaRol() }}</small>
+        </span>
+      </a>
+      <a routerLink="/dashboard/perfil" class="btn btn--outline btn--sm" title="Editar perfil y contraseña">
+        Mi Perfil
+      </a>
       <button type="button" class="btn btn--outline btn--sm" (click)="cerrarSesion()">
         Cerrar sesión
       </button>
     </div>
   </div>
 </header>
+
 
 <main class="container panel-contenido">
   <router-outlet />

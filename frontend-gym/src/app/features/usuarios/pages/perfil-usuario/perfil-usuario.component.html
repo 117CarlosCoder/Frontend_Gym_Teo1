@@ -1,0 +1,137 @@
+<div class="perfil-container">
+  <div class="header-perfil">
+    <h1 class="titulo">Mi Perfil</h1>
+    <p class="subtitulo">Consulta y actualiza tus datos personales y credenciales de acceso.</p>
+  </div>
+
+  @if (exitoMensaje()) {
+    <div class="alerta alerta--exito">
+      {{ exitoMensaje() }}
+    </div>
+  }
+
+  @if (errorMensaje()) {
+    <div class="alerta alerta--error">
+      {{ errorMensaje() }}
+    </div>
+  }
+
+  @if (cargando()) {
+    <div class="cargando-box">
+      <p>Cargando información del perfil...</p>
+    </div>
+  } @else {
+    <div class="perfil-grid">
+      <!-- Tarjeta Resumen del Usuario -->
+      <div class="card-resumen">
+        <div class="avatar-grande">
+          {{ usuario()?.nombres?.charAt(0) }}{{ usuario()?.apellidos?.charAt(0) }}
+        </div>
+        <h2 class="nombre-completo">{{ usuario()?.nombres }} {{ usuario()?.apellidos }}</h2>
+        <span class="badge badge--rol">{{ usuario()?.rol }}</span>
+
+        <div class="datos-meta">
+          <div class="dato-item">
+            <span class="etiqueta">DPI / Identificación</span>
+            <strong class="valor mono">{{ usuario()?.dpi }}</strong>
+          </div>
+          <div class="dato-item">
+            <span class="etiqueta">Estado</span>
+            <strong class="valor" [class.texto-verde]="usuario()?.estado" [class.texto-rojo]="!usuario()?.estado">
+              {{ usuario()?.estado ? 'Cuenta Activa' : 'Inactivo' }}
+            </strong>
+          </div>
+          <div class="dato-item">
+            <span class="etiqueta">Miembro desde</span>
+            <strong class="valor">{{ usuario()?.creadoEn ? (usuario()?.creadoEn | date:'dd/MM/yyyy') : 'Reciente' }}</strong>
+          </div>
+        </div>
+      </div>
+
+      <!-- Formularios de Edición -->
+      <div class="formularios-columna">
+        <!-- Tarjeta: Datos Personales -->
+        <div class="card-seccion">
+          <h3 class="seccion-titulo">Datos de Contacto</h3>
+          <form [formGroup]="formDatos" (ngSubmit)="guardarDatosPersonales()">
+            <div class="form-row">
+              <div class="form-group">
+                <label for="perf-nombres">Nombres *</label>
+                <input id="perf-nombres" type="text" class="form-control" formControlName="nombres" />
+                @if (formDatos.get('nombres')?.touched && formDatos.get('nombres')?.invalid) {
+                  <span class="error-texto">Nombres obligatorios.</span>
+                }
+              </div>
+              <div class="form-group">
+                <label for="perf-apellidos">Apellidos *</label>
+                <input id="perf-apellidos" type="text" class="form-control" formControlName="apellidos" />
+                @if (formDatos.get('apellidos')?.touched && formDatos.get('apellidos')?.invalid) {
+                  <span class="error-texto">Apellidos obligatorios.</span>
+                }
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="perf-correo">Correo Electrónico *</label>
+                <input id="perf-correo" type="email" class="form-control" formControlName="correo" />
+                @if (formDatos.get('correo')?.touched && formDatos.get('correo')?.invalid) {
+                  <span class="error-texto">Correo electrónico válido obligatorio.</span>
+                }
+              </div>
+              <div class="form-group">
+                <label for="perf-telefono">Teléfono</label>
+                <input id="perf-telefono" type="text" class="form-control" formControlName="telefono" placeholder="Ej. 55550001" />
+              </div>
+            </div>
+
+            <div class="form-acciones">
+              <button type="submit" class="btn btn--primary" [disabled]="guardando() || formDatos.invalid">
+                {{ guardando() ? 'Guardando...' : 'Actualizar Datos' }}
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Tarjeta: Seguridad / Cambiar Contraseña -->
+        <div class="card-seccion">
+          <h3 class="seccion-titulo">Seguridad y Contraseña</h3>
+          <p class="subtitulo-seccion">Para cambiar tu contraseña, ingresa tu clave actual y define la nueva.</p>
+          <form [formGroup]="formPassword" (ngSubmit)="cambiarContrasenia()">
+            <div class="form-group">
+              <label for="perf-pass-act">Contraseña Actual *</label>
+              <input id="perf-pass-act" type="password" class="form-control" formControlName="contraseniaActual" placeholder="Ingresa tu clave actual" />
+              @if (formPassword.get('contraseniaActual')?.touched && formPassword.get('contraseniaActual')?.invalid) {
+                <span class="error-texto">Contraseña actual obligatoria.</span>
+              }
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="perf-pass-new">Nueva Contraseña * (Mín. 6 caracteres)</label>
+                <input id="perf-pass-new" type="password" class="form-control" formControlName="nuevaContrasenia" placeholder="Mínimo 6 caracteres" />
+                @if (formPassword.get('nuevaContrasenia')?.touched && formPassword.get('nuevaContrasenia')?.invalid) {
+                  <span class="error-texto">Mínimo 6 caracteres requeridos.</span>
+                }
+              </div>
+              <div class="form-group">
+                <label for="perf-pass-conf">Confirmar Nueva Contraseña *</label>
+                <input id="perf-pass-conf" type="password" class="form-control" formControlName="confirmarContrasenia" placeholder="Repite la nueva clave" />
+                @if (formPassword.get('confirmarContrasenia')?.touched && formPassword.get('confirmarContrasenia')?.invalid) {
+                  <span class="error-texto">Confirmación de contraseña obligatoria.</span>
+                }
+              </div>
+            </div>
+
+            <div class="form-acciones">
+              <button type="submit" class="btn btn--primary" [disabled]="guardando() || formPassword.invalid">
+                {{ guardando() ? 'Modificando...' : 'Cambiar Contraseña' }}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  }
+</div>
+
