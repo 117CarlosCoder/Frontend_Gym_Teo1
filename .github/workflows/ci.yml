@@ -25,7 +25,7 @@ jobs:
           cache-dependency-path: frontend-gym/package-lock.json
 
       - name: Install dependencies
-        run: npm ci
+        run: npm install
 
       - name: Run unit tests
         run: npx ng test --no-watch --no-progress
