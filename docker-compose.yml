@@ -1,0 +1,81 @@
+name: gym-system
+
+services:
+  # -------------------------------------------------------------
+  # Base de Datos Relacional: MariaDB 11 con volumen persistente
+  # -------------------------------------------------------------
+  db:
+    image: mariadb:11
+    container_name: gym_db
+    restart: unless-stopped
+    environment:
+      MARIADB_ROOT_PASSWORD: ${DB_PASSWORD:-gympassword123}
+      MARIADB_DATABASE: ${DB_NAME:-gymdb}
+      MARIADB_USER: ${DB_USER:-gymuser}
+      MARIADB_PASSWORD: ${DB_PASSWORD:-gympassword123}
+    ports:
+      - "3306:3306"
+    volumes:
+      - mariadb_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - gym_network
+
+  # -------------------------------------------------------------
+  # Backend: Spring Boot 4 / Java 21 LTS
+  # -------------------------------------------------------------
+  backend:
+    build:
+      context: ../Backend_Gym_Teo1
+      dockerfile: Dockerfile
+    container_name: gym_backend
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      DB_URL: jdbc:mariadb://db:3306/${DB_NAME:-gymdb}
+      DB_NAME: ${DB_NAME:-gymdb}
+      DB_USER: ${DB_USER:-gymuser}
+      DB_PASSWORD: ${DB_PASSWORD:-gympassword123}
+      USER_SECURITY: ${USER_SECURITY:-admin}
+      PASSWORD_SECURITY: ${PASSWORD_SECURITY:-admin123}
+      JWT_SECRET: ${JWT_SECRET:-404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970}
+      JWT_EXPIRATION: ${JWT_EXPIRATION:-86400000}
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+      RESEND_FROM: ${RESEND_FROM:-Gimnasio <onboarding@resend.dev>}
+      DATA_INITIALIZER_ENABLED: ${DATA_INITIALIZER_ENABLED:-true}
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - gym_network
+
+  # -------------------------------------------------------------
+  # Frontend: Angular 21 servido por Nginx
+  # -------------------------------------------------------------
+  frontend:
+    build:
+      context: ./frontend-gym
+      dockerfile: Dockerfile
+    container_name: gym_frontend
+    restart: unless-stopped
+    ports:
+      - "4200:80"
+    depends_on:
+      - backend
+    networks:
+      - gym_network
+
+volumes:
+  mariadb_data:
+    name: gym_mariadb_data
+
+networks:
+  gym_network:
+    driver: bridge
+
