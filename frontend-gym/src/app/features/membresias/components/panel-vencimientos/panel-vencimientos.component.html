@@ -1,0 +1,104 @@
+<div class="card border-0 shadow-sm mb-4">
+  <div class="card-body">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3">
+      <div>
+        <h3 class="fs-5 fw-bold m-0">
+          <i class="bi bi-bell me-2"></i>Membresías por vencer
+          @if (membresias().length > 0) {
+            <span class="badge rounded-pill bg-danger ms-1">{{ membresias().length }}</span>
+          }
+        </h3>
+        <p class="text-muted small m-0">
+          Socios cuya membresía vence en los próximos {{ dias() }} días
+          @if (urgentes() > 0) {
+            · <strong class="text-danger">{{ urgentes() }} en 3 días o menos</strong>
+          }
+        </p>
+      </div>
+      <div class="d-flex align-items-center gap-2">
+        <div class="btn-group btn-group-sm" role="group" aria-label="Rango de días">
+          @for (opcion of opcionesDias; track opcion) {
+            <button
+              type="button"
+              class="btn"
+              [ngClass]="opcion === dias() ? 'btn-primary' : 'btn-outline-primary'"
+              (click)="cambiarDias(opcion)"
+            >
+              {{ opcion }} días
+            </button>
+          }
+        </div>
+        <button type="button" class="btn btn-sm btn-outline-secondary" [disabled]="cargando()" (click)="cargar()" title="Actualizar">
+          <i class="bi bi-arrow-clockwise"></i>
+        </button>
+      </div>
+    </div>
+
+    @if (cargando()) {
+      <div class="text-muted small py-3">
+        <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Consultando vencimientos...
+      </div>
+    } @else if (error()) {
+      <div class="alert alert-danger d-flex align-items-center justify-content-between gap-3 mb-0" role="alert">
+        <span><i class="bi bi-exclamation-octagon-fill me-2"></i>{{ error() }}</span>
+        <button type="button" class="btn btn-sm btn-outline-danger" (click)="cargar()">
+          <i class="bi bi-arrow-clockwise me-1"></i>Reintentar
+        </button>
+      </div>
+    } @else if (membresias().length === 0) {
+      <div class="text-center text-muted py-4">
+        <i class="bi bi-check2-circle fs-3 d-block mb-2 text-success"></i>
+        Ninguna membresía vence en los próximos {{ dias() }} días.
+      </div>
+    } @else {
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead>
+            <tr>
+              <th>Socio</th>
+              <th>Plan</th>
+              <th>Vence</th>
+              <th class="text-end">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (m of membresias(); track m.idMembresia) {
+              <tr>
+                <td>
+                  <span class="fw-semibold">{{ m.nombreSocio }}</span>
+                  <small class="text-muted d-block">{{ m.correo }}</small>
+                </td>
+                <td>{{ m.plan }}</td>
+                <td>
+                  {{ m.fechaVencimiento | date: 'dd/MM/yyyy' }}
+                  <span class="badge ms-1" [ngClass]="claseDias(m.diasRestantes)">{{ textoDias(m.diasRestantes) }}</span>
+                </td>
+                <td class="text-end text-nowrap">
+                  <button
+                    type="button"
+                    class="btn btn-sm btn-outline-secondary me-1"
+                    [disabled]="enviando() === m.idMembresia || !m.correo"
+                    (click)="enviarRecordatorio(m)"
+                    [title]="m.correo ? 'Enviar recordatorio por correo' : 'El socio no tiene correo registrado'"
+                  >
+                    @if (enviando() === m.idMembresia) {
+                      <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                    } @else if (enviados().has(m.idMembresia)) {
+                      <i class="bi bi-envelope-check"></i>
+                    } @else {
+                      <i class="bi bi-envelope"></i>
+                    }
+                    Recordar
+                  </button>
+                  <a class="btn btn-sm btn--primary" [routerLink]="RUTAS.dashboard.pagos" [queryParams]="{ socio: m.idSocio }">
+                    <i class="bi bi-cash-coin me-1"></i>Cobrar
+                  </a>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </div>
+</div>

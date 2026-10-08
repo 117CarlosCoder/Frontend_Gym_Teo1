@@ -32,7 +32,3 @@ jobs:
 
       - name: Build
         run: npm run build
-
-    concurrency:
-        group: deploy-ec2
-        cancel-in-progress: false

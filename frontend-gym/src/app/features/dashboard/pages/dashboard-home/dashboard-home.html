@@ -23,6 +23,12 @@
       }
     </div>
   </div>
+
+  <!-- Membresías próximas a vencer (M5) -->
+  @if (esAdmin() || esRecepcionista()) {
+    <app-panel-vencimientos />
+  }
+
   @if (esRecepcionista()) {
     <!-- Alertas de Asistencia -->
     @if (mensajeAsistencia()) {
@@ -235,14 +241,14 @@
               <p class="text-muted small">Control total de altas, edición, bajas y estados</p>
             </div>
             <a [routerLink]="RUTAS.dashboard.socios" class="btn btn-sm btn--primary">
-              Abrir Módulo →
+              Abrir Módulo <i class="bi bi-arrow-right"></i>
             </a>
           </div>
           <ul class="list-unstyled small text-muted mb-0">
-            <li class="mb-1">✓ Alta de nuevos miembros con validación de DPI</li>
-            <li class="mb-1">✓ Actualización de datos personales y teléfono</li>
-            <li class="mb-1">✓ Estados: Activo, Inactivo y Moroso</li>
-            <li>✓ Eliminación permanente de registros (Exclusivo Admin)</li>
+            <li class="mb-1"><i class="bi bi-check2 text-success me-1"></i>Alta de nuevos miembros con validación de DPI</li>
+            <li class="mb-1"><i class="bi bi-check2 text-success me-1"></i>Actualización de datos personales y teléfono</li>
+            <li class="mb-1"><i class="bi bi-check2 text-success me-1"></i>Estados: Activo, Inactivo y Moroso</li>
+            <li><i class="bi bi-check2 text-success me-1"></i>Eliminación permanente de registros (Exclusivo Admin)</li>
           </ul>
         </div>
       </div>
@@ -262,7 +268,7 @@
             <li class="mb-1">CRUD completo de planes: Mensual, Trimestral, Anual</li>
             <li class="mb-1">Configuración de duración en días y precio en Q</li>
             <li class="mb-1">Asignación de plan con vigencia calculada</li>
-            <li>✓ Edición y borrado del catálogo (Exclusivo Admin)</li>
+            <li><i class="bi bi-check2 text-success me-1"></i>Edición y borrado del catálogo (Exclusivo Admin)</li>
           </ul>
         </div>
       </div>

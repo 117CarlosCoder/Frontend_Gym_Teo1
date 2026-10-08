@@ -1,4 +1,4 @@
-name: CD
+name: CD Frontend
 
 on:
   workflow_run:
@@ -6,14 +6,95 @@ on:
     types: [completed]
     branches: [main]
 
+concurrency:
+  group: deploy-frontend-ec2
+  cancel-in-progress: false
+
 jobs:
-  deploy:
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+  build-and-push:
+    # Solo despliega cuando el CI pasó por un push a main (no por un PR)
+    if: ${{ github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push' }}
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      image: ${{ steps.vars.outputs.image }}
     steps:
-      - name: Deploy to EC2
+      - name: Checkout del código
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      - name: Nombre de la imagen (en minúsculas)
+        id: vars
+        run: echo "image=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/frontend-gym:latest" >> "$GITHUB_OUTPUT"
+
+      - name: Iniciar sesión en GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configurar Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Compilar y subir imagen
+        uses: docker/build-push-action@v5
+        with:
+          context: ./frontend-gym
+          file: ./frontend-gym/Dockerfile
+          push: true
+          tags: ${{ steps.vars.outputs.image }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  deploy:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    permissions:
+      packages: read
+    steps:
+      - name: Deploy to EC2 via SSH
         uses: appleboy/ssh-action@v1.0.3
+        env:
+          IMAGE: ${{ needs.build-and-push.outputs.image }}
+          GHCR_USER: ${{ github.actor }}
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
+          command_timeout: 30m
+          envs: IMAGE,GHCR_USER,GHCR_TOKEN
+          script: |
+            set -e
+
+            # Un deploy a la vez en el servidor (el CD del backend usa el mismo candado)
+            exec 9>/tmp/gym-deploy.lock
+            flock 9
+
+            # Swap de 1 GB para que la instancia de prueba no se congele por falta de RAM.
+            # Solo se crea una vez y solo si quedan al menos 1.8 GB libres en disco.
+            if ! swapon --show | grep -q . && [ "$(df --output=avail -m / | tail -1)" -ge 1800 ]; then
+              sudo fallocate -l 1G /swapfile && sudo chmod 600 /swapfile && sudo mkswap /swapfile && sudo swapon /swapfile || echo "AVISO: no se pudo activar el swap"
+              grep -q '^/swapfile' /etc/fstab || echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
+            fi
+
+            # Descargar la imagen compilada en GitHub (la EC2 no compila nada)
+            echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USER" --password-stdin
+            docker pull "$IMAGE"
+            docker logout ghcr.io
+            docker tag "$IMAGE" gym-system-frontend:latest
+
+            cd ~/app/Frontend_Gym_Teo1
+            git pull --ff-only || echo "AVISO: no se pudo actualizar el repo"
+
+            # Aplica cambios del docker-compose.yml (solo recrea los servicios cuya configuración cambió)
+            docker compose up -d --no-build
+            # nginx toma la IP del backend al arrancar: siempre se recrea al final
+            docker compose up -d --no-build --no-deps --force-recreate frontend
+
+            docker image prune -f
+            docker ps

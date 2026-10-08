@@ -8,6 +8,8 @@ services:
     image: mariadb:11
     container_name: gym_db
     restart: unless-stopped
+    # Configuración ligera para la instancia de prueba (poca RAM)
+    command: --innodb-buffer-pool-size=64M --performance-schema=OFF --max-connections=50
     environment:
       MARIADB_ROOT_PASSWORD: ${DB_PASSWORD:-gympassword123}
       MARIADB_DATABASE: ${DB_NAME:-gymdb}
@@ -38,6 +40,8 @@ services:
       - "8080:8080"
     environment:
       SPRING_PROFILES_ACTIVE: prod
+      # Limita la memoria de la JVM para que la EC2 de prueba no se quede sin RAM
+      JAVA_TOOL_OPTIONS: ${JAVA_TOOL_OPTIONS:--Xms128m -Xmx256m -XX:MaxMetaspaceSize=160m -XX:+UseSerialGC}
       DB_URL: jdbc:mariadb://db:3306/${DB_NAME:-gymdb}
       DB_NAME: ${DB_NAME:-gymdb}
       DB_USER: ${DB_USER:-gymuser}

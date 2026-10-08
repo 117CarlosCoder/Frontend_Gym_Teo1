@@ -26,6 +26,11 @@
           Membresías
         </a>
       }
+      @if (puedeVerPagos()) {
+        <a class="panel-nav__link" routerLink="/dashboard/pagos" routerLinkActive="panel-nav__link--activo">
+          Pagos
+        </a>
+      }
       @if (puedeVerUsuarios()) {
         <a class="panel-nav__link" routerLink="/dashboard/usuarios" routerLinkActive="panel-nav__link--activo">
           Usuarios

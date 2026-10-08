@@ -7,10 +7,12 @@ import { SociosService } from '../../../socios/services/socios.service';
 import { MembresiasService } from '../../services/membresias.service';
 import { AuditoriaMembresia, EstadoMembresia, EstadoMembresiaCatalogo, ESTADOS_MEMBRESIA, Membresia, MembresiaFormulario, PlanMembresia } from '../../models/membresia.model';
 import { Sucursal } from '../../../../core/models/sucursal.model';
+import { NotificacionService, mensajeDeError } from '../../../../core/services/notificacion.service';
+import { ModalComponent } from '../../../../shared/components/modal/modal.component';
 
 @Component({
   selector: 'app-gestion-membresias',
-  imports: [FormsModule, NgClass, DatePipe, DecimalPipe],
+  imports: [FormsModule, NgClass, DatePipe, DecimalPipe, ModalComponent],
   templateUrl: './gestion-membresias.component.html',
   styleUrl: './gestion-membresias.component.css',
 })
@@ -18,6 +20,7 @@ export class GestionMembresiasComponent implements OnInit {
   private readonly membresiasService = inject(MembresiasService);
   private readonly sociosService = inject(SociosService);
   protected readonly auth = inject(AuthService);
+  private readonly notificacion = inject(NotificacionService);
 
   protected readonly membresias = signal<Membresia[]>([]);
   protected readonly socios = signal<Array<{ id_socio: number; usuario: { nombre: string; apellido: string } }>>([]);
@@ -29,8 +32,8 @@ export class GestionMembresiasComponent implements OnInit {
   protected readonly vista = signal<'membresias' | 'historial' | 'historial-sucursales' | 'sucursales'>('membresias');
   protected readonly formularioAbierto = signal(false);
   protected readonly editando = signal<Membresia | null>(null);
-  protected readonly mensaje = signal('');
-  protected readonly error = signal('');
+  protected readonly errorModal = signal<string | null>(null);
+  protected readonly guardando = signal(false);
 
   protected formulario: MembresiaFormulario = this.formularioVacio();
 
@@ -61,13 +64,17 @@ export class GestionMembresiasComponent implements OnInit {
     this.membresiasService.getEstados().subscribe((items) => this.estados.set(items));
     this.membresiasService.getSucursales().subscribe((items) => this.sucursales.set(items));
     this.membresiasService.getAuditoria().subscribe((items) => this.auditoria.set(items));
-    this.sociosService.getSocios().subscribe((items) => this.socios.set(items.map((item) => ({ id_socio: item.id_socio, usuario: item.usuario }))));
+    this.sociosService.getSocios().subscribe({
+      next: (items) => this.socios.set(items.map((item) => ({ id_socio: item.id_socio, usuario: item.usuario }))),
+      error: (err) => this.notificacion.error(mensajeDeError(err, 'No se pudo cargar la lista de socios.')),
+    });
   }
 
   protected nueva(): void {
     this.editando.set(null);
     this.formulario = this.formularioVacio();
-    this.error.set('');
+    this.errorModal.set(null);
+    this.guardando.set(false);
     this.formularioAbierto.set(true);
   }
 
@@ -80,7 +87,8 @@ export class GestionMembresiasComponent implements OnInit {
       estado: membresia.estado, descripcionEstado: membresia.descripcionEstado,
       motivoCancelacion: membresia.motivoCancelacion ?? '',
     };
-    this.error.set('');
+    this.errorModal.set(null);
+    this.guardando.set(false);
     this.formularioAbierto.set(true);
   }
 
@@ -101,31 +109,39 @@ export class GestionMembresiasComponent implements OnInit {
   }
 
   protected guardar(): void {
-    this.error.set('');
+    this.errorModal.set(null);
     if (!this.esFormularioValido()) {
-      this.error.set('Por favor completa todos los campos requeridos antes de guardar.');
+      this.errorModal.set('Por favor completa todos los campos requeridos antes de guardar.');
       return;
     }
+    this.guardando.set(true);
     try {
       const operacion = this.editando()
         ? this.membresiasService.actualizar(this.editando()!.idMembresia, this.formulario, this.planes())
         : this.membresiasService.crear(this.formulario, this.planes());
       operacion.subscribe({
         next: () => {
+          this.guardando.set(false);
           this.formularioAbierto.set(false);
-          this.mensaje.set('Cambios guardados y auditados.');
+          this.notificacion.exito('Cambios guardados y auditados.');
           this.cargar();
         },
         error: (err) => {
-          this.error.set(err?.error?.message || err?.message || 'Error al guardar la membresía');
+          this.guardando.set(false);
+          this.errorModal.set(mensajeDeError(err, 'Error al guardar la membresía.'));
         }
       });
     } catch (exception) {
-      this.error.set(exception instanceof Error ? exception.message : 'No fue posible guardar la membresía.');
+      this.guardando.set(false);
+      this.errorModal.set(mensajeDeError(exception, 'No fue posible guardar la membresía.'));
     }
   }
 
-  protected cancelarFormulario(): void { this.formularioAbierto.set(false); }
+  protected cancelarFormulario(): void {
+    this.formularioAbierto.set(false);
+    this.errorModal.set(null);
+    this.guardando.set(false);
+  }
 
   protected cambiarSocio(idSocio: number): void {
     const socio = this.socios().find((item) => item.id_socio === Number(idSocio));
@@ -159,18 +175,24 @@ export class GestionMembresiasComponent implements OnInit {
 
   protected desactivarSucursal(sucursal: Sucursal): void {
     if (!this.auth.tieneRol('ADMIN')) return;
-    this.membresiasService.desactivarSucursal(sucursal.idSucursal).subscribe(() => { this.mensaje.set('Sucursal desactivada.'); this.cargar(); });
+    this.membresiasService.desactivarSucursal(sucursal.idSucursal).subscribe({
+      next: () => { this.notificacion.exito('Sucursal desactivada.'); this.cargar(); },
+      error: (err) => this.notificacion.error(mensajeDeError(err, 'No se pudo desactivar la sucursal.')),
+    });
   }
 
   protected reactivarSucursal(sucursal: Sucursal): void {
     if (!this.auth.tieneRol('ADMIN')) return;
-    this.membresiasService.reactivarSucursal(sucursal.idSucursal).subscribe(() => { this.mensaje.set('Sucursal reactivada.'); this.cargar(); });
+    this.membresiasService.reactivarSucursal(sucursal.idSucursal).subscribe({
+      next: () => { this.notificacion.exito('Sucursal reactivada.'); this.cargar(); },
+      error: (err) => this.notificacion.error(mensajeDeError(err, 'No se pudo reactivar la sucursal.')),
+    });
   }
 
   protected estiloEstado(estado: EstadoMembresia): string { return `membresias__status--${estado.toLowerCase()}`; }
   protected nombrePlan(idPlan: number): string { return this.planes().find((item) => item.idPlan === idPlan)?.tipo ?? ''; }
   protected actualizarBusqueda(event: Event): void { this.busqueda.set((event.target as HTMLInputElement).value); }
-  protected seleccionarVista(vista: 'membresias' | 'historial' | 'historial-sucursales' | 'sucursales'): void { this.vista.set(vista); this.mensaje.set(''); }
+  protected seleccionarVista(vista: 'membresias' | 'historial' | 'historial-sucursales' | 'sucursales'): void { this.vista.set(vista); }
 
   private esAccionSucursal(accion: AuditoriaMembresia['accion']): boolean {
     return accion === 'SUCURSAL_DESACTIVADA' || accion === 'SUCURSAL_REACTIVADA';

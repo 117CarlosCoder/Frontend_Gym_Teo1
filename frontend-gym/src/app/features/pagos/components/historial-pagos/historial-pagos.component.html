@@ -1,0 +1,87 @@
+@if (cargando()) {
+  <div class="historial__estado">
+    <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+    Cargando historial de pagos...
+  </div>
+} @else if (error()) {
+  <div class="alert alert-danger d-flex align-items-center justify-content-between gap-3 mb-0" role="alert">
+    <span><i class="bi bi-exclamation-octagon-fill me-2"></i>{{ error() }}</span>
+    <button type="button" class="btn btn-sm btn-outline-danger" (click)="cargar(pagina())">
+      <i class="bi bi-arrow-clockwise me-1"></i>Reintentar
+    </button>
+  </div>
+} @else if (pagos().length === 0) {
+  <div class="historial__estado">
+    <i class="bi bi-receipt fs-3 d-block mb-2"></i>
+    Este socio todavía no tiene pagos registrados.
+  </div>
+} @else {
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0 historial__tabla">
+      <thead>
+        <tr>
+          <th>No.</th>
+          <th>Fecha de pago</th>
+          <th>Plan</th>
+          <th>Método</th>
+          <th class="text-end">Monto</th>
+          <th>Vigente hasta</th>
+          <th>Atendió</th>
+          <th class="text-end">Comprobante</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (pago of pagos(); track pago.idComprobante) {
+          <tr>
+            <td class="fw-semibold">#{{ pago.idComprobante }}</td>
+            <td>{{ pago.fechaPago | date: 'dd/MM/yyyy HH:mm' }}</td>
+            <td>
+              {{ pago.nombrePlan }}
+              <small class="text-muted d-block">{{ pago.duracionPlan }} días</small>
+            </td>
+            <td>
+              {{ pago.metodoPago?.nombre ?? '-' }}
+              @if (pago.referencia) {
+                <small class="text-muted d-block">Ref. {{ pago.referencia }}</small>
+              }
+            </td>
+            <td class="text-end fw-semibold">Q {{ pago.montoPagado | number: '1.2-2' }}</td>
+            <td>{{ pago.nuevaFechaVencimiento | date: 'dd/MM/yyyy' }}</td>
+            <td>{{ pago.nombreRecepcionista || '-' }}</td>
+            <td class="text-end">
+              <button
+                type="button"
+                class="btn btn-sm btn-outline-primary"
+                [disabled]="descargando() === pago.idComprobante"
+                (click)="descargar(pago)"
+                title="Descargar comprobante en PDF"
+              >
+                @if (descargando() === pago.idComprobante) {
+                  <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                } @else {
+                  <i class="bi bi-file-earmark-pdf"></i>
+                }
+                PDF
+              </button>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  @if (totalPaginas() > 1) {
+    <div class="d-flex justify-content-between align-items-center mt-3">
+      <small class="text-muted">{{ totalPagos() }} pagos en total</small>
+      <div class="btn-group btn-group-sm">
+        <button type="button" class="btn btn-outline-secondary" [disabled]="pagina() === 0" (click)="cargar(pagina() - 1)">
+          <i class="bi bi-chevron-left"></i> Anterior
+        </button>
+        <span class="btn btn-outline-secondary disabled">{{ pagina() + 1 }} / {{ totalPaginas() }}</span>
+        <button type="button" class="btn btn-outline-secondary" [disabled]="pagina() + 1 >= totalPaginas()" (click)="cargar(pagina() + 1)">
+          Siguiente <i class="bi bi-chevron-right"></i>
+        </button>
+      </div>
+    </div>
+  }
+}
