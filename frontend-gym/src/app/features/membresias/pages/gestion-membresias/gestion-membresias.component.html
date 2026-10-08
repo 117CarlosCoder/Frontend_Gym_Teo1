@@ -75,8 +75,12 @@
             <span class="membresias__status" [ngClass]="estiloEstado(item.estado)">{{ item.estado }}</span>
             <small class="d-block">{{ item.descripcionEstado }}</small>
           </td>
-          <td>
+          <td class="d-flex gap-2">
             <button class="btn btn-primary membresias__btn-editar p-2" (click)="editar(item)">Editar</button>
+            <a class="btn btn-outline-primary p-2" [routerLink]="RUTAS.dashboard.pagos" [queryParams]="{ socio: item.idSocio }"
+              title="Ver historial de pagos de este socio">
+              <i class="bi bi-cash-coin"></i> Pagos
+            </a>
           </td>
         </tr> }
         @empty { <tr>
