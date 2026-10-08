@@ -17,6 +17,29 @@
         <p class="text-muted">Bienvenido, {{ datos.usuario.nombre }} {{ datos.usuario.apellido }}</p>
     </header>
 
+    <!-- Aviso de membresía próxima a vencer o vencida (M5) -->
+    @if (aviso(); as a) {
+        @if (!avisoCerrado()) {
+        <div
+            class="alert d-flex align-items-start gap-3 shadow-sm portal__aviso"
+            [class.alert-danger]="a.nivel === 'peligro'"
+            [class.alert-warning]="a.nivel === 'aviso'"
+            role="alert"
+        >
+            <i class="bi fs-3" [class.bi-exclamation-octagon-fill]="a.nivel === 'peligro'" [class.bi-bell-fill]="a.nivel === 'aviso'"></i>
+            <div class="flex-grow-1">
+                <strong class="d-block fs-5">{{ a.titulo }}</strong>
+                <span>{{ a.detalle }}</span>
+                <small class="d-block mt-1">
+                    Plan {{ miMembresia()?.plan }} · fecha de vencimiento
+                    <strong>{{ miMembresia()?.fechaVencimiento | date: 'dd/MM/yyyy' }}</strong>
+                </small>
+            </div>
+            <button type="button" class="btn-close" aria-label="Ocultar aviso" (click)="avisoCerrado.set(true)"></button>
+        </div>
+        }
+    }
+
     <div class="row g-4">
         <!-- Columna izquierda: Información personal -->
         <div class="col-lg-6">
@@ -142,15 +165,40 @@
                         <dd class="col-sm-8">{{ datos.membresia.beneficios?.join(' - ') || 'Pesas y Cardio' }}</dd>
                     </dl>
 
-                    @if (datos.membresia.fechaVencimiento) {
-                    <div class="alert portal__alert alert-warning mt-3 mb-0" role="alert">
-                        <i class="bi bi-exclamation-triangle me-2"></i>
-                        Su membresía vence el <strong>{{ datos.membresia.fechaVencimiento }}</strong>. ¡Renueve a tiempo!
+                    @if (miMembresia(); as m) {
+                    <div
+                        class="alert portal__alert mt-3 mb-0"
+                        [class.alert-success]="!aviso()"
+                        [class.alert-warning]="aviso()?.nivel === 'aviso'"
+                        [class.alert-danger]="aviso()?.nivel === 'peligro'"
+                        role="status"
+                    >
+                        <i class="bi me-2" [class.bi-check-circle]="!aviso()" [class.bi-exclamation-triangle]="aviso()"></i>
+                        @if (m.diasRestantes >= 0) {
+                        Vigente hasta el <strong>{{ m.fechaVencimiento | date: 'dd/MM/yyyy' }}</strong>
+                        ({{ m.diasRestantes }} {{ m.diasRestantes === 1 ? 'día restante' : 'días restantes' }}).
+                        } @else {
+                        Venció el <strong>{{ m.fechaVencimiento | date: 'dd/MM/yyyy' }}</strong>.
+                        }
                     </div>
                     }
                 </div>
             </div>
         </div>
+
+        <!-- Historial de pagos del socio (M4) -->
+        @if (idSocio()) {
+        <div class="col-12">
+            <div class="card portal__card">
+                <div class="card-header portal__card-header portal__card-header--info">
+                    <h5 class="mb-0"><i class="bi bi-receipt me-2"></i>Mis pagos</h5>
+                </div>
+                <div class="card-body">
+                    <app-historial-pagos [idSocio]="idSocio()" [tamanoPagina]="5" />
+                </div>
+            </div>
+        </div>
+        }
 
         <!-- Historial de asistencias (ancho completo) -->
         <div class="col-12">

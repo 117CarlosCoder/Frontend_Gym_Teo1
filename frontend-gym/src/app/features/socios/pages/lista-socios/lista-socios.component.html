@@ -12,20 +12,6 @@
     </div>
   </div>
 
-  <!-- Alertas de éxito / error -->
-  @if (mensajeExito()) {
-    <div class="alert alert-success d-flex align-items-center justify-content-between shadow-sm" role="alert">
-      <div><strong>✓ Éxito:</strong> {{ mensajeExito() }}</div>
-      <button type="button" class="btn-close" (click)="mensajeExito.set(null)" aria-label="Cerrar"></button>
-    </div>
-  }
-  @if (mensajeError()) {
-    <div class="alert alert-danger d-flex align-items-center justify-content-between shadow-sm" role="alert">
-      <div><strong>Error:</strong> {{ mensajeError() }}</div>
-      <button type="button" class="btn-close" (click)="mensajeError.set(null)" aria-label="Cerrar"></button>
-    </div>
-  }
-
   <!-- Barra de Búsqueda y Filtros por Estado (M2) -->
   <div class="card mb-4 border-0 shadow-sm p-3 filtro-card">
     <div class="row g-3 align-items-center">
@@ -108,7 +94,7 @@
                       {{ socio.usuario.nombre }} {{ socio.usuario.apellido }}
                     </div>
                     <div class="text-muted small">
-                      ✉ {{ socio.usuario.correo }}
+                      <i class="bi bi-envelope me-1"></i>{{ socio.usuario.correo }}
                     </div>
                     <div class="text-muted fs-xs">
                       <span class="badge bg-light text-dark border me-1">DPI: {{ socio.usuario.dpi || 'N/A' }}</span>
@@ -131,13 +117,13 @@
                     aria-expanded="false"
                     title="Clic para cambiar estado rápido"
                   >
-                    ● {{ socio.estado }}
+                    <i class="bi bi-circle-fill small me-1"></i>{{ socio.estado }}
                   </button>
                   <ul class="dropdown-menu shadow-sm">
                     <li><h6 class="dropdown-header">Cambiar estado del socio:</h6></li>
                     <li>
                       <button class="dropdown-item text-success" type="button" (click)="cambiarEstadoDirecto(socio, 'ACTIVO')">
-                        ✓ Activo
+                        <i class="bi bi-check2 me-1"></i>Activo
                       </button>
                     </li>
                     <li>
@@ -147,7 +133,7 @@
                     </li>
                     <li>
                       <button class="dropdown-item text-muted" type="button" (click)="cambiarEstadoDirecto(socio, 'INACTIVO')">
-                        ✕ Inactivo (Baja temporal)
+                        <i class="bi bi-x-lg me-1"></i>Inactivo (Baja temporal)
                       </button>
                     </li>
                   </ul>
@@ -257,12 +243,13 @@
 
   <!-- MODAL 1: ALTA DE SOCIO (NUEVO SOCIO) -->
   @if (modalCrear()) {
-    <div class="modal-backdrop-custom">
-      <div class="modal-card-custom shadow-lg">
-        <div class="modal-header-custom">
-          <h4 class="m-0 fw-bold">Nuevo Miembro del Gimnasio</h4>
-          <button type="button" class="btn-close" (click)="cerrarModalCrear()"></button>
-        </div>
+    <app-modal
+      titulo="Nuevo Miembro del Gimnasio"
+      icono="bi-person-plus"
+      [error]="errorModal()"
+      (cerrarError)="errorModal.set(null)"
+      [bloqueado]="guardando()"
+      (cerrar)="cerrarModalCrear()">
         <form [formGroup]="formSocio" (ngSubmit)="guardarNuevoSocio()">
           <div class="modal-body-custom">
             <div class="row g-3">
@@ -312,22 +299,29 @@
             </div>
           </div>
           <div class="modal-footer-custom">
-            <button type="button" class="btn btn-light" (click)="cerrarModalCrear()">Cancelar</button>
-            <button type="submit" class="btn btn--primary" [disabled]="formSocio.invalid">Registrar Miembro</button>
+            <button type="button" class="btn btn-light" (click)="cerrarModalCrear()" [disabled]="guardando()">Cancelar</button>
+            <button type="submit" class="btn btn--primary" [disabled]="formSocio.invalid || guardando()">
+              @if (guardando()) {
+                <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                Registrando...
+              } @else {
+                Registrar Miembro
+              }
+            </button>
           </div>
         </form>
-      </div>
-    </div>
+    </app-modal>
   }
 
   <!-- MODAL 2: EDICIÓN DE SOCIO -->
   @if (modalEditar()) {
-    <div class="modal-backdrop-custom">
-      <div class="modal-card-custom shadow-lg">
-        <div class="modal-header-custom">
-          <h4 class="m-0 fw-bold">Editar Datos del Miembro</h4>
-          <button type="button" class="btn-close" (click)="cerrarModalEditar()"></button>
-        </div>
+    <app-modal
+      titulo="Editar Datos del Miembro"
+      icono="bi-pencil-square"
+      [error]="errorModal()"
+      (cerrarError)="errorModal.set(null)"
+      [bloqueado]="guardando()"
+      (cerrar)="cerrarModalEditar()">
         <form [formGroup]="formSocio" (ngSubmit)="guardarEdicionSocio()">
           <div class="modal-body-custom">
             <div class="row g-3">
@@ -377,24 +371,30 @@
             </div>
           </div>
           <div class="modal-footer-custom">
-            <button type="button" class="btn btn-light" (click)="cerrarModalEditar()">Cancelar</button>
-            <button type="submit" class="btn btn--primary" [disabled]="formSocio.invalid">Guardar Cambios</button>
+            <button type="button" class="btn btn-light" (click)="cerrarModalEditar()" [disabled]="guardando()">Cancelar</button>
+            <button type="submit" class="btn btn--primary" [disabled]="formSocio.invalid || guardando()">
+              @if (guardando()) {
+                <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                Guardando...
+              } @else {
+                Guardar Cambios
+              }
+            </button>
           </div>
         </form>
-      </div>
-    </div>
+    </app-modal>
   }
 
   <!-- MODAL 3: CONFIRMACIÓN DE BAJA / ELIMINACIÓN -->
   @if (modalBaja()) {
-    <div class="modal-backdrop-custom">
-      <div class="modal-card-custom modal-card-sm shadow-lg">
-        <div class="modal-header-custom">
-          <h4 class="m-0 fw-bold text-danger">
-            {{ esAdmin() ? 'Eliminar Miembro' : 'Dar de Baja Miembro' }}
-          </h4>
-          <button type="button" class="btn-close" (click)="cerrarModalBaja()"></button>
-        </div>
+    <app-modal
+      [titulo]="esAdmin() ? 'Eliminar Miembro' : 'Dar de Baja Miembro'"
+      icono="bi-person-x"
+      tamano="sm"
+      [error]="errorModal()"
+      (cerrarError)="errorModal.set(null)"
+      [bloqueado]="guardando()"
+      (cerrar)="cerrarModalBaja()">
         <div class="modal-body-custom">
           <p class="mb-2">
             ¿Estás seguro de que deseas proceder con el miembro
@@ -411,23 +411,28 @@
           }
         </div>
         <div class="modal-footer-custom">
-          <button type="button" class="btn btn-light" (click)="cerrarModalBaja()">Cancelar</button>
-          <button type="button" class="btn btn-danger" (click)="confirmarBajaSocio()">
-            {{ esAdmin() ? 'Eliminar Definitivamente' : 'Confirmar Baja' }}
+          <button type="button" class="btn btn-light" (click)="cerrarModalBaja()" [disabled]="guardando()">Cancelar</button>
+          <button type="button" class="btn btn-danger" [disabled]="guardando()" (click)="confirmarBajaSocio()">
+            @if (guardando()) {
+              <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+              Procesando...
+            } @else {
+              {{ esAdmin() ? 'Eliminar Definitivamente' : 'Confirmar Baja' }}
+            }
           </button>
         </div>
-      </div>
-    </div>
+    </app-modal>
   }
 
   <!-- MODAL 4: ASIGNAR PLAN DE MEMBRESÍA (M3) -->
   @if (modalAsignarPlan()) {
-    <div class="modal-backdrop-custom">
-      <div class="modal-card-custom shadow-lg">
-        <div class="modal-header-custom">
-          <h4 class="m-0 fw-bold">Asignar Plan de Membresía</h4>
-          <button type="button" class="btn-close" (click)="cerrarModalAsignarPlan()"></button>
-        </div>
+    <app-modal
+      titulo="Asignar Plan de Membresía"
+      icono="bi-card-checklist"
+      [error]="errorModal()"
+      (cerrarError)="errorModal.set(null)"
+      [bloqueado]="guardando()"
+      (cerrar)="cerrarModalAsignarPlan()">
         <form [formGroup]="formAsignarPlan" (ngSubmit)="confirmarAsignacionPlan()">
           <div class="modal-body-custom">
             <!-- Destinatario -->
@@ -441,7 +446,8 @@
             @if (tieneMembresiaActiva()) {
               <div class="alert alert-warning py-2 px-3 mb-3">
                 <div class="d-flex align-items-center gap-2 mb-1">
-                  <strong>⚠️ Membresía activa vigente</strong>
+                  <i class="bi bi-exclamation-triangle-fill"></i>
+                  <strong>Membresía activa vigente</strong>
                 </div>
                 <div class="small">
                   Este socio ya cuenta con el plan <strong>{{ socioSeleccionado()?.tipoPlan }}</strong> ({{ socioSeleccionado()?.estadoMembresia }})
@@ -452,17 +458,6 @@
                     El backend no permite registrar una nueva membresía activa mientras exista una vigente.
                   </div>
                 </div>
-              </div>
-            }
-
-            <!-- Mensaje de error de la API -->
-            @if (errorModalAsignar()) {
-              <div class="alert alert-danger py-2 px-3 mb-3 d-flex align-items-start justify-content-between">
-                <div>
-                  <strong>Error al procesar la membresía:</strong>
-                  <div class="small">{{ errorModalAsignar() }}</div>
-                </div>
-                <button type="button" class="btn-close" (click)="errorModalAsignar.set(null)"></button>
               </div>
             }
 
@@ -499,9 +494,9 @@
             </div>
           </div>
           <div class="modal-footer-custom">
-            <button type="button" class="btn btn-light" (click)="cerrarModalAsignarPlan()" [disabled]="guardandoAsignacion()">Cancelar</button>
-            <button type="submit" class="btn btn--primary" [disabled]="formAsignarPlan.invalid || guardandoAsignacion()">
-              @if (guardandoAsignacion()) {
+            <button type="button" class="btn btn-light" (click)="cerrarModalAsignarPlan()" [disabled]="guardando()">Cancelar</button>
+            <button type="submit" class="btn btn--primary" [disabled]="formAsignarPlan.invalid || guardando()">
+              @if (guardando()) {
                 <span class="spinner-border spinner-border-sm me-1" role="status"></span>
                 Asignando...
               } @else {
@@ -510,7 +505,6 @@
             </button>
           </div>
         </form>
-      </div>
-    </div>
+    </app-modal>
   }
 </div>

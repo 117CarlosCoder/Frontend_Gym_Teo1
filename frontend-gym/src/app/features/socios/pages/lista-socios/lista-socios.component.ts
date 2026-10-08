@@ -7,11 +7,13 @@ import { PlanesService } from '../../../planes/services/planes.service';
 import { AuthService } from '../../../../core/services/auth.service';
 import { EstadoSocio, SocioTablaDTO } from '../../models/socio-tabla-dto.model';
 import { PlanMembresia } from '../../../../core/models/plan-membresia.model';
+import { NotificacionService, mensajeDeError } from '../../../../core/services/notificacion.service';
+import { ModalComponent } from '../../../../shared/components/modal/modal.component';
 
 @Component({
   selector: 'app-lista-socios',
   standalone: true,
-  imports: [CommonModule, NgClass, DatePipe, ReactiveFormsModule],
+  imports: [CommonModule, NgClass, DatePipe, ReactiveFormsModule, ModalComponent],
   templateUrl: './lista-socios.component.html',
   styleUrl: './lista-socios.component.css',
 })
@@ -20,6 +22,7 @@ export class ListaSocios implements OnInit {
   private readonly planesService = inject(PlanesService);
   private readonly authService = inject(AuthService);
   private readonly fb = inject(FormBuilder);
+  private readonly notificacion = inject(NotificacionService);
 
   // Permisos según Rol (M1)
   readonly esAdmin = computed(() => this.authService.tieneRol('ADMIN'));
@@ -43,9 +46,9 @@ export class ListaSocios implements OnInit {
 
   readonly socioSeleccionado = signal<SocioTablaDTO | null>(null);
 
-  // Notificaciones
-  readonly mensajeExito = signal<string | null>(null);
-  readonly mensajeError = signal<string | null>(null);
+  // Estado de la operación del modal abierto (solo hay uno abierto a la vez)
+  readonly errorModal = signal<string | null>(null);
+  readonly guardando = signal<boolean>(false);
 
   // Formularios
   formSocio: FormGroup = this.fb.group({
@@ -100,7 +103,9 @@ export class ListaSocios implements OnInit {
   }
 
   ngOnInit(): void {
-    this.sociosService.getSocios().subscribe({ error: () => {} });
+    this.sociosService.getSocios().subscribe({
+      error: (err) => this.notificacion.error(mensajeDeError(err, 'No se pudo cargar la lista de miembros.')),
+    });
   }
 
   // Búsqueda y Filtros
@@ -123,12 +128,13 @@ export class ListaSocios implements OnInit {
       telefono: '',
       estado: 'ACTIVO',
     });
-    this.mensajeError.set(null);
+    this.iniciarModal();
     this.modalCrear.set(true);
   }
 
   cerrarModalCrear(): void {
     this.modalCrear.set(false);
+    this.iniciarModal();
   }
 
   guardarNuevoSocio(): void {
@@ -138,14 +144,14 @@ export class ListaSocios implements OnInit {
     }
 
     const val = this.formSocio.getRawValue();
+    this.iniciarGuardado();
     this.sociosService.crearSocio(val).subscribe({
       next: (socio) => {
+        this.guardando.set(false);
         this.mostrarExito(`Socio "${socio.usuario.nombre} ${socio.usuario.apellido}" registrado exitosamente.`);
         this.cerrarModalCrear();
       },
-      error: (err) => {
-        this.mensajeError.set(err.message || 'Error al registrar el socio.');
-      },
+      error: (err) => this.mostrarErrorModal(err, 'Error al registrar el socio.'),
     });
   }
 
@@ -159,13 +165,14 @@ export class ListaSocios implements OnInit {
       telefono: socio.usuario.telefono || '',
       estado: socio.estado,
     });
-    this.mensajeError.set(null);
+    this.iniciarModal();
     this.modalEditar.set(true);
   }
 
   cerrarModalEditar(): void {
     this.modalEditar.set(false);
     this.socioSeleccionado.set(null);
+    this.iniciarModal();
   }
 
   guardarEdicionSocio(): void {
@@ -178,14 +185,14 @@ export class ListaSocios implements OnInit {
     }
 
     const val = this.formSocio.getRawValue();
+    this.iniciarGuardado();
     this.sociosService.actualizarSocio(socio.id_socio, val).subscribe({
       next: (actualizado) => {
+        this.guardando.set(false);
         this.mostrarExito(`Datos de "${actualizado.usuario.nombre} ${actualizado.usuario.apellido}" actualizados.`);
         this.cerrarModalEditar();
       },
-      error: (err) => {
-        this.mensajeError.set(err.message || 'Error al actualizar el socio.');
-      },
+      error: (err) => this.mostrarErrorModal(err, 'Error al actualizar el socio.'),
     });
   }
 
@@ -195,47 +202,46 @@ export class ListaSocios implements OnInit {
       next: () => {
         this.mostrarExito(`Estado de "${socio.usuario.nombre}" cambiado a ${nuevoEstado}.`);
       },
-      error: (err) => {
-        this.mensajeError.set(err.message || 'Error al cambiar estado.');
-      },
+      error: (err) => this.notificacion.error(mensajeDeError(err, 'Error al cambiar el estado.')),
     });
   }
 
   abrirModalBaja(socio: SocioTablaDTO): void {
     this.socioSeleccionado.set(socio);
+    this.iniciarModal();
     this.modalBaja.set(true);
   }
 
   cerrarModalBaja(): void {
     this.modalBaja.set(false);
     this.socioSeleccionado.set(null);
+    this.iniciarModal();
   }
 
   confirmarBajaSocio(): void {
     const socio = this.socioSeleccionado();
     if (!socio) return;
 
+    this.iniciarGuardado();
     if (this.esAdmin()) {
       // Si es Admin, puede eliminar definitivamente
       this.sociosService.eliminarSocio(socio.id_socio).subscribe({
         next: () => {
+          this.guardando.set(false);
           this.mostrarExito(`Socio "${socio.usuario.nombre} ${socio.usuario.apellido}" eliminado permanentemente.`);
           this.cerrarModalBaja();
         },
-        error: (err) => {
-          this.mensajeError.set(err.message || 'No se pudo eliminar el socio.');
-        },
+        error: (err) => this.mostrarErrorModal(err, 'No se pudo eliminar el socio.'),
       });
     } else {
       // Si es Recepción, se da de baja cambiando estado a INACTIVO
       this.sociosService.cambiarEstado(socio.id_socio, 'INACTIVO').subscribe({
         next: () => {
+          this.guardando.set(false);
           this.mostrarExito(`Socio "${socio.usuario.nombre}" dado de baja (marcado como Inactivo).`);
           this.cerrarModalBaja();
         },
-        error: (err) => {
-          this.mensajeError.set(err.message || 'No se pudo dar de baja el socio.');
-        },
+        error: (err) => this.mostrarErrorModal(err, 'No se pudo dar de baja el socio.'),
       });
     }
   }
@@ -245,14 +251,9 @@ export class ListaSocios implements OnInit {
       next: () => {
         this.mostrarExito(`Socio "${socio.usuario.nombre} ${socio.usuario.apellido}" reactivado exitosamente.`);
       },
-      error: (err) => {
-        this.mensajeError.set(err.message || 'No se pudo reactivar el socio.');
-      },
+      error: (err) => this.notificacion.error(mensajeDeError(err, 'No se pudo reactivar el socio.')),
     });
   }
-
-  readonly errorModalAsignar = signal<string | null>(null);
-  readonly guardandoAsignacion = signal<boolean>(false);
 
 
   readonly tieneMembresiaActiva = computed(() => {
@@ -272,8 +273,7 @@ export class ListaSocios implements OnInit {
   // Asignación de Plan de Membresía (M3)
   abrirModalAsignarPlan(socio: SocioTablaDTO): void {
     this.socioSeleccionado.set(socio);
-    this.errorModalAsignar.set(null);
-    this.guardandoAsignacion.set(false);
+    this.iniciarModal();
     const primerPlan = this.planesSignal()[0];
     const hoy = new Date().toISOString().split('T')[0];
 
@@ -287,8 +287,7 @@ export class ListaSocios implements OnInit {
 
   cerrarModalAsignarPlan(): void {
     this.modalAsignarPlan.set(false);
-    this.errorModalAsignar.set(null);
-    this.guardandoAsignacion.set(false);
+    this.iniciarModal();
     this.socioSeleccionado.set(null);
   }
 
@@ -318,26 +317,37 @@ export class ListaSocios implements OnInit {
 
     const fechaInicio = this.formAsignarPlan.get('fecha_inicio')?.value;
     const fechaVencimiento = this.formAsignarPlan.get('fecha_vencimiento')?.value;
-    this.errorModalAsignar.set(null);
-    this.guardandoAsignacion.set(true);
+    this.iniciarGuardado();
 
     this.sociosService.asignarPlan(socio.id_socio, plan.nombre, plan.id_plan, fechaInicio, fechaVencimiento).subscribe({
       next: (actualizado) => {
-        this.guardandoAsignacion.set(false);
+        this.guardando.set(false);
         this.mostrarExito(`Plan "${plan.nombre}" asignado exitosamente a ${actualizado.usuario.nombre}. Membresía activa hasta ${fechaVencimiento}.`);
         this.cerrarModalAsignarPlan();
       },
-      error: (err) => {
-        this.guardandoAsignacion.set(false);
-        this.errorModalAsignar.set(err.message || 'Error al asignar el plan.');
-      },
+      error: (err) => this.mostrarErrorModal(err, 'Error al asignar el plan.'),
     });
   }
 
-  // Notificaciones
+  // Estado del modal y notificaciones
+  private iniciarModal(): void {
+    this.errorModal.set(null);
+    this.guardando.set(false);
+  }
+
+  private iniciarGuardado(): void {
+    this.errorModal.set(null);
+    this.guardando.set(true);
+  }
+
+  /** El modal queda abierto con el error visible y los botones habilitados para corregir o cancelar. */
+  private mostrarErrorModal(err: unknown, porDefecto: string): void {
+    this.guardando.set(false);
+    this.errorModal.set(mensajeDeError(err, porDefecto));
+  }
+
   private mostrarExito(mensaje: string): void {
-    this.mensajeExito.set(mensaje);
-    setTimeout(() => this.mensajeExito.set(null), 4000);
+    this.notificacion.exito(mensaje);
   }
 
   // Estilos de badges

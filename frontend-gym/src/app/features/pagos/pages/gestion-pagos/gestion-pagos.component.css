@@ -1,0 +1,36 @@
+.pagos {
+  padding-top: var(--sp-4);
+}
+
+.pagos__titulo {
+  font-size: var(--fs-xl);
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+.pagos__subtitulo {
+  color: var(--color-text-muted);
+  font-size: var(--fs-sm);
+}
+
+.pagos__lista-socios {
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+.pagos__lista-socios .list-group-item.active {
+  background-color: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+.pagos__vista-previa {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  gap: 1rem;
+  padding: 0.85rem 1rem;
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  margin-bottom: 0.35rem;
+}

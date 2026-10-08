@@ -10,24 +10,26 @@ import {
   UpdateUserAdminDto,
   UserResponseDto,
 } from '../../../../core/models/usuario.model';
+import { NotificacionService, mensajeDeError } from '../../../../core/services/notificacion.service';
+import { ModalComponent } from '../../../../shared/components/modal/modal.component';
 
 @Component({
   selector: 'app-gestion-usuarios',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, ModalComponent],
   templateUrl: './gestion-usuarios.component.html',
   styleUrl: './gestion-usuarios.component.css',
 })
 export class GestionUsuariosComponent implements OnInit {
   private readonly usuariosService = inject(UsuariosService);
   private readonly fb = inject(FormBuilder);
+  private readonly notificacion = inject(NotificacionService);
 
   // Estados reactivos con Signals
   readonly usuarios = signal<UserResponseDto[]>([]);
   readonly roles = signal<RolDto[]>([]);
   readonly cargando = signal<boolean>(false);
   readonly errorMensaje = signal<string | null>(null);
-  readonly exitoMensaje = signal<string | null>(null);
   readonly credencialTemporal = signal<string | null>(null);
 
   // Filtros
@@ -40,6 +42,10 @@ export class GestionUsuariosComponent implements OnInit {
   readonly modalDesactivarAbierto = signal<boolean>(false);
 
   readonly usuarioSeleccionado = signal<UserResponseDto | null>(null);
+
+  // Estado de la operación del modal abierto (solo hay uno abierto a la vez)
+  readonly errorModal = signal<string | null>(null);
+  readonly guardando = signal<boolean>(false);
 
   // Formularios reactivos
   formCrear!: FormGroup;
@@ -111,7 +117,7 @@ export class GestionUsuariosComponent implements OnInit {
         this.cargando.set(false);
       },
       error: (err) => {
-        this.errorMensaje.set(err?.error?.message || 'No se pudo cargar la lista de usuarios.');
+        this.errorMensaje.set(mensajeDeError(err, 'No se pudo cargar la lista de usuarios.'));
         this.cargando.set(false);
       },
     });
@@ -143,12 +149,14 @@ export class GestionUsuariosComponent implements OnInit {
   abrirModalCrear(): void {
     this.formCrear.reset({ rol: 'RECEPCIONISTA' });
     this.credencialTemporal.set(null);
+    this.iniciarModal();
     this.modalCrearAbierto.set(true);
   }
 
   cerrarModalCrear(): void {
     this.modalCrearAbierto.set(false);
     this.formCrear.reset();
+    this.iniciarModal();
   }
 
   guardarNuevoUsuario(): void {
@@ -157,9 +165,7 @@ export class GestionUsuariosComponent implements OnInit {
       return;
     }
 
-    this.cargando.set(true);
-    this.errorMensaje.set(null);
-    this.exitoMensaje.set(null);
+    this.iniciarGuardado();
 
     const val = this.formCrear.value;
     const dto: CreateUserDto = {
@@ -173,18 +179,14 @@ export class GestionUsuariosComponent implements OnInit {
 
     this.usuariosService.crearUsuario(dto).subscribe({
       next: (creado) => {
-        this.cargando.set(false);
-        this.modalCrearAbierto.set(false);
-        this.exitoMensaje.set(`Usuario "${creado.nombres} ${creado.apellidos}" creado con éxito.`);
+        this.cerrarModalCrear();
+        this.notificacion.exito(`Usuario "${creado.nombres} ${creado.apellidos}" creado con éxito.`);
         if (creado.contraseniaTemporal) {
           this.credencialTemporal.set(creado.contraseniaTemporal);
         }
         this.cargarDatos();
       },
-      error: (err) => {
-        this.cargando.set(false);
-        this.errorMensaje.set(err?.error?.message || 'Error al registrar el usuario.');
-      },
+      error: (err) => this.mostrarErrorModal(err, 'Error al registrar el usuario.'),
     });
   }
 
@@ -201,12 +203,14 @@ export class GestionUsuariosComponent implements OnInit {
       estado: user.estado,
       contrasenia: '',
     });
+    this.iniciarModal();
     this.modalEditarAbierto.set(true);
   }
 
   cerrarModalEditar(): void {
     this.modalEditarAbierto.set(false);
     this.usuarioSeleccionado.set(null);
+    this.iniciarModal();
   }
 
   guardarEdicionUsuario(): void {
@@ -216,8 +220,7 @@ export class GestionUsuariosComponent implements OnInit {
       return;
     }
 
-    this.cargando.set(true);
-    this.errorMensaje.set(null);
+    this.iniciarGuardado();
 
     const formVal = this.formEditar.value;
     const dto: UpdateUserAdminDto = {
@@ -234,51 +237,64 @@ export class GestionUsuariosComponent implements OnInit {
 
     this.usuariosService.actualizarUsuarioAdmin(user.id, dto).subscribe({
       next: () => {
-        this.cargando.set(false);
-        this.modalEditarAbierto.set(false);
-        this.exitoMensaje.set(`Usuario actualizado correctamente.`);
+        this.cerrarModalEditar();
+        this.notificacion.exito('Usuario actualizado correctamente.');
         this.cargarDatos();
       },
-      error: (err) => {
-        this.cargando.set(false);
-        this.errorMensaje.set(err?.error?.message || 'Error al actualizar usuario.');
-      },
+      error: (err) => this.mostrarErrorModal(err, 'Error al actualizar el usuario.'),
     });
   }
 
   // --- Desactivar ---
   abrirModalDesactivar(user: UserResponseDto): void {
     this.usuarioSeleccionado.set(user);
+    this.iniciarModal();
     this.modalDesactivarAbierto.set(true);
   }
 
   cerrarModalDesactivar(): void {
     this.modalDesactivarAbierto.set(false);
     this.usuarioSeleccionado.set(null);
+    this.iniciarModal();
   }
 
   confirmarDesactivar(): void {
     const user = this.usuarioSeleccionado();
     if (!user) return;
 
-    this.cargando.set(true);
+    this.iniciarGuardado();
     this.usuariosService.desactivarUsuario(user.id).subscribe({
       next: () => {
-        this.cargando.set(false);
-        this.modalDesactivarAbierto.set(false);
-        this.exitoMensaje.set(`Usuario "${user.nombres} ${user.apellidos}" desactivado.`);
+        this.cerrarModalDesactivar();
+        this.notificacion.exito(`Usuario "${user.nombres} ${user.apellidos}" desactivado.`);
         this.cargarDatos();
       },
-      error: (err) => {
-        this.cargando.set(false);
-        this.errorMensaje.set(err?.error?.message || 'Error al desactivar el usuario.');
-      },
+      error: (err) => this.mostrarErrorModal(err, 'Error al desactivar el usuario.'),
     });
   }
 
   copiarContrasenia(texto: string): void {
-    navigator.clipboard.writeText(texto);
-    alert('Contraseña temporal copiada al portapapeles.');
+    navigator.clipboard
+      .writeText(texto)
+      .then(() => this.notificacion.exito('Contraseña temporal copiada al portapapeles.'))
+      .catch(() => this.notificacion.error('No se pudo copiar. Selecciona la contraseña y cópiala manualmente.'));
+  }
+
+  // Estado del modal
+  private iniciarModal(): void {
+    this.errorModal.set(null);
+    this.guardando.set(false);
+  }
+
+  private iniciarGuardado(): void {
+    this.errorModal.set(null);
+    this.guardando.set(true);
+  }
+
+  /** El modal queda abierto con el error visible y los botones habilitados para corregir o cancelar. */
+  private mostrarErrorModal(err: unknown, porDefecto: string): void {
+    this.guardando.set(false);
+    this.errorModal.set(mensajeDeError(err, porDefecto));
   }
 
   getNombreRol(rolKey: string): string {

@@ -11,11 +11,13 @@ import { PlanesService } from '../../../planes/services/planes.service';
 import { AsistenciaService } from '../../../asistencia/services/asistencia.service';
 import { AsistenciaRegistro } from '../../../asistencia/models/asistencia.model';
 import { RUTAS } from '../../../../core/constants/rutas.constants';
+import { NotificacionService, mensajeDeError } from '../../../../core/services/notificacion.service';
+import { PanelVencimientosComponent } from '../../../membresias/components/panel-vencimientos/panel-vencimientos.component';
 
 @Component({
   selector: 'app-dashboard-home',
   standalone: true,
-  imports: [CommonModule, RouterLink, ReactiveFormsModule, DatePipe],
+  imports: [CommonModule, RouterLink, ReactiveFormsModule, DatePipe, PanelVencimientosComponent],
   templateUrl: './dashboard-home.html',
   styleUrl: './dashboard-home.css',
 })
@@ -26,6 +28,7 @@ export class DashboardHome {
   private readonly asistenciaService = inject(AsistenciaService);
   private readonly router = inject(Router);
   private readonly fb = inject(FormBuilder);
+  private readonly notificacion = inject(NotificacionService);
 
   protected readonly RUTAS = RUTAS;
   protected readonly usuario = this.auth.usuario;
@@ -86,6 +89,7 @@ export class DashboardHome {
     // Cargar asistencias de hoy (sucursal 1 por defecto)
     this.asistenciaService.getAsistenciasHoy(1).subscribe({
       next: (registros) => this.asistencias.set(registros),
+      error: (err) => this.notificacion.error(mensajeDeError(err, 'No se pudieron cargar las asistencias de hoy.')),
     });
   }
 
@@ -102,11 +106,11 @@ export class DashboardHome {
 
     if (socio.estado === 'MOROSO') {
       this.errorAsistencia.set(
-        `⚠️ ADVERTENCIA: El socio ${socio.usuario.nombre} ${socio.usuario.apellido} está en estado MOROSO. Favor regularizar su suscripción en recepción.`
+        `ADVERTENCIA: El socio ${socio.usuario.nombre} ${socio.usuario.apellido} está en estado MOROSO. Favor regularizar su suscripción en recepción.`
       );
     } else if (socio.estado === 'INACTIVO') {
       this.errorAsistencia.set(
-        `⚠️ ADVERTENCIA: El socio ${socio.usuario.nombre} está INACTIVO (sin membresía vigente).`
+        `ADVERTENCIA: El socio ${socio.usuario.nombre} está INACTIVO (sin membresía vigente).`
       );
     } else {
       this.errorAsistencia.set(null);
@@ -122,11 +126,12 @@ export class DashboardHome {
         next: (registro) => {
           this.asistencias.update((prev) => [registro, ...prev]);
           this.mensajeAsistencia.set(
-            `✓ Entrada registrada para ${registro.nombreSocio} ${registro.apellidoSocio} a las ${registro.horaEntrada}.`
+            `Entrada registrada para ${registro.nombreSocio} ${registro.apellidoSocio} a las ${registro.horaEntrada}.`
           );
           this.formMarcaje.reset({ idSocio: '' });
           setTimeout(() => this.mensajeAsistencia.set(null), 4000);
         },
+        error: (err) => this.notificacion.error(mensajeDeError(err, 'No se pudo registrar la entrada.')),
       });
   }
 
@@ -137,10 +142,11 @@ export class DashboardHome {
           prev.map((a) => (a.idAsistencia === idAsistencia ? actualizada : a))
         );
         this.mensajeAsistencia.set(
-          `✓ Salida registrada para ${actualizada.nombreSocio} a las ${actualizada.horaSalida}.`
+          `Salida registrada para ${actualizada.nombreSocio} a las ${actualizada.horaSalida}.`
         );
         setTimeout(() => this.mensajeAsistencia.set(null), 4000);
       },
+      error: (err) => this.notificacion.error(mensajeDeError(err, 'No se pudo registrar la salida.')),
     });
   }
 

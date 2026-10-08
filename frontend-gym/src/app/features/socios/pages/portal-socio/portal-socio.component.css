@@ -75,3 +75,12 @@
 .portal__retry-btn {
     margin-left: var(--sp-3);
 }
+.portal__aviso {
+  border-left-width: 6px;
+  animation: avisoEntrada 0.3s ease-out;
+}
+
+@keyframes avisoEntrada {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: translateY(0); }
+}

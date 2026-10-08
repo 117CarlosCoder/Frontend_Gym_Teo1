@@ -51,6 +51,11 @@ export class DashboardLayout {
     this.auth.tieneRol('ADMIN', 'RECEPCION'),
   );
 
+  /** Registro de pagos y estado de cuenta (M4). */
+  protected readonly puedeVerPagos = computed(() =>
+    this.auth.tieneRol('ADMIN', 'RECEPCION', 'RECEPCIONISTA'),
+  );
+
   /** Determina si el usuario puede administrar usuarios (Solo ADMIN). */
   protected readonly puedeVerUsuarios = computed(() =>
     this.auth.tieneRol('ADMIN'),
