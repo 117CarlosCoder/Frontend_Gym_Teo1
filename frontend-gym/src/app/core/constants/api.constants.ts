@@ -15,6 +15,7 @@ export const API = {
   clases: `${environment.apiUrl}/clases`,
   entrenadores: `${environment.apiUrl}/entrenadores`,
   asistencias: `${environment.apiUrl}/asistencias`,
+  pagos: `${environment.apiUrl}/pagos`,
 } as const;
 
 /** Llaves usadas en localStorage. */

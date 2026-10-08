@@ -1,0 +1,14 @@
+.historial__estado {
+  padding: 2rem 1rem;
+  text-align: center;
+  color: var(--color-text-muted);
+}
+
+.historial__tabla thead th {
+  font-size: var(--fs-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-muted);
+  background: var(--color-surface);
+  white-space: nowrap;
+}

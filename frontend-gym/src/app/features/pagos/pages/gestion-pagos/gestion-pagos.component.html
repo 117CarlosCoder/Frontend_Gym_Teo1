@@ -1,0 +1,269 @@
+<section class="pagos">
+  <header class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+    <div>
+      <h2 class="pagos__titulo m-0">Pagos y estado de cuenta</h2>
+      <p class="pagos__subtitulo m-0">Registra pagos de membresía, consulta el historial y descarga comprobantes en PDF.</p>
+    </div>
+  </header>
+
+  <div class="row g-4">
+    <!-- Selección de socio -->
+    <aside class="col-12 col-lg-4">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body">
+          <h3 class="fs-6 fw-bold mb-3"><i class="bi bi-people me-2"></i>Socios</h3>
+          <div class="input-group mb-3">
+            <span class="input-group-text"><i class="bi bi-search"></i></span>
+            <input
+              type="search"
+              class="form-control"
+              placeholder="Nombre, DPI o correo"
+              [value]="busqueda()"
+              (input)="alBuscar($event)"
+              aria-label="Buscar socio"
+            />
+          </div>
+
+          <div class="list-group pagos__lista-socios">
+            @for (socio of sociosFiltrados(); track socio.id_socio) {
+              <button
+                type="button"
+                class="list-group-item list-group-item-action"
+                [class.active]="socio.id_socio === idSocioSeleccionado()"
+                (click)="seleccionarSocio(socio.id_socio)"
+              >
+                <div class="fw-semibold">{{ socio.usuario.nombre }} {{ socio.usuario.apellido }}</div>
+                <small [class.text-muted]="socio.id_socio !== idSocioSeleccionado()">
+                  DPI {{ socio.usuario.dpi }} · {{ socio.tipoPlan || 'Sin plan' }}
+                </small>
+              </button>
+            } @empty {
+              <div class="text-muted small text-center py-4">No hay socios que coincidan con la búsqueda.</div>
+            }
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Estado de cuenta -->
+    <div class="col-12 col-lg-8">
+      @if (!socioSeleccionado()) {
+        <div class="card border-0 shadow-sm">
+          <div class="card-body text-center text-muted py-5">
+            <i class="bi bi-wallet2 fs-1 d-block mb-3"></i>
+            Selecciona un socio para ver su estado de cuenta y registrar pagos.
+          </div>
+        </div>
+      } @else {
+        @if (ultimoPago(); as pago) {
+          <div class="alert alert-success d-flex flex-wrap align-items-center justify-content-between gap-3 shadow-sm" role="status">
+            <div>
+              <i class="bi bi-check-circle-fill me-2"></i>
+              <strong>Pago #{{ pago.idComprobante }} registrado</strong>
+              por Q {{ pago.montoPagado | number: '1.2-2' }}.
+              Vigente hasta el <strong>{{ pago.nuevaFechaVencimiento | date: 'dd/MM/yyyy' }}</strong>.
+            </div>
+            <div class="d-flex gap-2">
+              <button type="button" class="btn btn-sm btn-success" [disabled]="descargandoUltimo()" (click)="descargarUltimoComprobante()">
+                @if (descargandoUltimo()) {
+                  <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                } @else {
+                  <i class="bi bi-file-earmark-pdf me-1"></i>
+                }
+                Descargar comprobante
+              </button>
+              <button type="button" class="btn-close" aria-label="Cerrar" (click)="ultimoPago.set(null)"></button>
+            </div>
+          </div>
+        }
+
+        <div class="card border-0 shadow-sm mb-4">
+          <div class="card-body">
+            <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-3">
+              <div>
+                <h3 class="fs-5 fw-bold m-0">
+                  {{ socioSeleccionado()!.usuario.nombre }} {{ socioSeleccionado()!.usuario.apellido }}
+                </h3>
+                <small class="text-muted">
+                  <i class="bi bi-envelope me-1"></i>{{ socioSeleccionado()!.usuario.correo }}
+                  · DPI {{ socioSeleccionado()!.usuario.dpi }}
+                </small>
+              </div>
+              <button type="button" class="btn btn--primary" [disabled]="cargandoMembresias()" (click)="abrirModalPago()">
+                <i class="bi bi-cash-coin me-1"></i>Registrar pago
+              </button>
+            </div>
+
+            <h4 class="fs-6 fw-bold text-muted text-uppercase mb-2">Membresías</h4>
+            @if (cargandoMembresias()) {
+              <div class="text-muted small py-3">
+                <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Cargando membresías...
+              </div>
+            } @else if (errorMembresias()) {
+              <div class="alert alert-danger d-flex align-items-center justify-content-between gap-3 mb-0" role="alert">
+                <span><i class="bi bi-exclamation-octagon-fill me-2"></i>{{ errorMembresias() }}</span>
+                <button type="button" class="btn btn-sm btn-outline-danger" (click)="cargarMembresias()">
+                  <i class="bi bi-arrow-clockwise me-1"></i>Reintentar
+                </button>
+              </div>
+            } @else if (membresias().length === 0) {
+              <div class="alert alert-warning mb-0">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                Este socio no tiene membresías. Asígnale un plan desde <strong>Miembros</strong> o <strong>Planes</strong> para poder cobrarle.
+              </div>
+            } @else {
+              <div class="table-responsive">
+                <table class="table align-middle mb-0">
+                  <thead>
+                    <tr>
+                      <th>Plan</th>
+                      <th>Estado</th>
+                      <th>Inicio</th>
+                      <th>Vence</th>
+                      <th class="text-end">Precio</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (m of membresias(); track m.id) {
+                      <tr>
+                        <td>
+                          <span class="fw-semibold">{{ m.nombrePlan }}</span>
+                          <small class="text-muted d-block">{{ m.duracionDias }} días</small>
+                        </td>
+                        <td><span class="badge bg-light text-dark border">{{ m.estado }}</span></td>
+                        <td>{{ m.fechaInicio | date: 'dd/MM/yyyy' }}</td>
+                        <td>
+                          {{ m.fechaVencimiento ? (m.fechaVencimiento | date: 'dd/MM/yyyy') : '-' }}
+                          @if (diasRestantes(m.fechaVencimiento); as dias) {
+                            <span class="badge ms-1" [ngClass]="claseDias(dias)">
+                              {{ dias < 0 ? 'Vencida' : dias + ' días' }}
+                            </span>
+                          } @else if (m.fechaVencimiento) {
+                            <span class="badge ms-1 bg-warning text-dark">Vence hoy</span>
+                          }
+                        </td>
+                        <td class="text-end">Q {{ m.precio | number: '1.2-2' }}</td>
+                        <td class="text-end">
+                          <button type="button" class="btn btn-sm btn-outline-primary" (click)="abrirModalPago(m)">
+                            <i class="bi bi-cash-coin me-1"></i>Cobrar
+                          </button>
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            }
+          </div>
+        </div>
+
+        <div class="card border-0 shadow-sm">
+          <div class="card-body">
+            <h3 class="fs-6 fw-bold mb-3"><i class="bi bi-clock-history me-2"></i>Historial de pagos</h3>
+            <app-historial-pagos [idSocio]="idSocioSeleccionado()!" [recarga]="recargaHistorial()" />
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+</section>
+
+@if (modalPago()) {
+  <app-modal
+    titulo="Registrar pago"
+    [subtitulo]="(socioSeleccionado()?.usuario?.nombre ?? '') + ' ' + (socioSeleccionado()?.usuario?.apellido ?? '')"
+    icono="bi-cash-coin"
+    [error]="errorModal()"
+    (cerrarError)="errorModal.set(null)"
+    [bloqueado]="guardando()"
+    (cerrar)="cerrarModalPago()"
+  >
+    <form [formGroup]="formPago" (ngSubmit)="registrarPago()">
+      <div class="modal-body-custom">
+        <div class="row g-3">
+          <div class="col-12">
+            <label class="form-label fw-semibold" for="pago-membresia">Membresía *</label>
+            <select id="pago-membresia" class="form-select" formControlName="idMembresia" (change)="alCambiarMembresia()">
+              @for (m of membresias(); track m.id) {
+                <option [ngValue]="m.id">
+                  {{ m.nombrePlan }} ({{ m.duracionDias }} días) · {{ m.estado }} · vence {{ m.fechaVencimiento ? (m.fechaVencimiento | date: 'dd/MM/yyyy') : '-' }}
+                </option>
+              }
+            </select>
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label fw-semibold" for="pago-metodo">Método de pago *</label>
+            <select id="pago-metodo" class="form-select" formControlName="idMetodoPago">
+              <option [ngValue]="0" disabled>Seleccione...</option>
+              @for (metodo of metodosPago(); track metodo.id) {
+                <option [ngValue]="metodo.id">{{ metodo.nombre }}</option>
+              }
+            </select>
+            @if (formPago.controls.idMetodoPago.touched && formPago.controls.idMetodoPago.invalid) {
+              <small class="text-danger">Selecciona un método de pago.</small>
+            }
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label fw-semibold" for="pago-monto">Monto (Q) *</label>
+            <input id="pago-monto" type="number" min="0.01" step="0.01" class="form-control" formControlName="monto" />
+            @if (formPago.controls.monto.touched && formPago.controls.monto.invalid) {
+              <small class="text-danger">El monto debe ser mayor a cero.</small>
+            } @else if (montoInsuficiente()) {
+              <small class="text-danger">En efectivo debe cubrir el precio del plan (Q {{ membresiaEnFormulario()?.precio | number: '1.2-2' }}).</small>
+            }
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label fw-semibold" for="pago-referencia">Referencia</label>
+            <input
+              id="pago-referencia"
+              type="text"
+              class="form-control"
+              formControlName="referencia"
+              [placeholder]="esEfectivo() ? 'Opcional' : 'No. de voucher o transferencia'"
+            />
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label fw-semibold" for="pago-observacion">Observación</label>
+            <input id="pago-observacion" type="text" class="form-control" formControlName="observacion" placeholder="Opcional" />
+          </div>
+
+          @if (vistaPrevia(); as vp) {
+            <div class="col-12">
+              <div class="pagos__vista-previa">
+                <div>
+                  <small class="text-muted d-block">Vence actualmente</small>
+                  <strong>{{ vp.actual ? (vp.actual | date: 'dd/MM/yyyy') : 'Sin fecha' }}</strong>
+                </div>
+                <i class="bi bi-arrow-right fs-4 text-muted"></i>
+                <div>
+                  <small class="text-muted d-block">Nuevo vencimiento (+{{ vp.duracion }} días)</small>
+                  <strong class="text-success">{{ vp.nueva | date: 'dd/MM/yyyy' }}</strong>
+                </div>
+              </div>
+              <small class="text-muted">
+                Si la membresía sigue vigente se extiende desde su vencimiento; si ya venció, desde hoy.
+              </small>
+            </div>
+          }
+        </div>
+      </div>
+
+      <div class="modal-footer-custom">
+        <button type="button" class="btn btn-light" [disabled]="guardando()" (click)="cerrarModalPago()">Cancelar</button>
+        <button type="submit" class="btn btn--primary" [disabled]="formPago.invalid || montoInsuficiente() || guardando()">
+          @if (guardando()) {
+            <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+            Registrando...
+          } @else {
+            <i class="bi bi-check2-circle me-1"></i>Confirmar pago
+          }
+        </button>
+      </div>
+    </form>
+  </app-modal>
+}

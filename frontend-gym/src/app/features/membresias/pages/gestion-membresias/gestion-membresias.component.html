@@ -8,14 +8,12 @@
     @if (vista() === 'membresias') {
       <div class="col-auto">
         <button class="btn btn-nueva-membresia" type="button" (click)="nueva()">
-          + Nueva membresía
+          <i class="bi bi-plus-lg"></i> Nueva membresía
         </button>
       </div>
     }
   </header>
 
-  @if (mensaje()) { <div class="alert alert-success" role="status">{{ mensaje() }}</div> }
-  @if (error()) { <div class="alert alert-danger" role="alert">{{ error() }}</div> }
 
   <div class="membresias__stats row g-3">
     <div class="col-12 col-sm-4">
@@ -182,15 +180,19 @@
   }
 </section>
 
-@if (formularioAbierto()) { <div class="membresias__modal-backdrop">
-  <form class="membresias__modal" (ngSubmit)="guardar()">
-    <header>
-      <div>
-        <p class="membresias__eyebrow">{{ editando() ? 'Editar asignación' : 'Nueva asignación' }}</p>
-        <h2 class="membresias__modal-title">Membresía del socio</h2>
-      </div><button class="btn-close" type="button" aria-label="Cerrar" (click)="cancelarFormulario()"></button>
-    </header>
-    <div class="row g-3 mt-1">
+@if (formularioAbierto()) {
+<app-modal
+  titulo="Membresía del socio"
+  [subtitulo]="editando() ? 'Editar asignación' : 'Nueva asignación'"
+  icono="bi-card-checklist"
+  tamano="lg"
+  [error]="errorModal()"
+  (cerrarError)="errorModal.set(null)"
+  [bloqueado]="guardando()"
+  (cerrar)="cancelarFormulario()">
+  <form (ngSubmit)="guardar()">
+   <div class="modal-body-custom">
+    <div class="row g-3">
       @if (!editando()) {
         <label class="col-12 col-md-6">
           Socio *
@@ -268,9 +270,18 @@
         </label>
       }
     </div>
-    <footer>
-      <button class="btn btn-secondary" type="button" (click)="cancelarFormulario()">Cerrar</button>
-      <button class="btn btn-primary" type="submit" [disabled]="!esFormularioValido()">Guardar cambios</button>
-    </footer>
+   </div>
+    <div class="modal-footer-custom">
+      <button class="btn btn-secondary" type="button" [disabled]="guardando()" (click)="cancelarFormulario()">Cerrar</button>
+      <button class="btn btn-primary" type="submit" [disabled]="!esFormularioValido() || guardando()">
+        @if (guardando()) {
+          <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+          Guardando...
+        } @else {
+          Guardar cambios
+        }
+      </button>
+    </div>
   </form>
-</div> }
+</app-modal>
+}

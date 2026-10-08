@@ -7,11 +7,13 @@ import { SociosService } from '../../../socios/services/socios.service';
 import { AuthService } from '../../../../core/services/auth.service';
 import { PlanMembresia } from '../../../../core/models/plan-membresia.model';
 import { SocioTablaDTO } from '../../../socios/models/socio-tabla-dto.model';
+import { NotificacionService, mensajeDeError } from '../../../../core/services/notificacion.service';
+import { ModalComponent } from '../../../../shared/components/modal/modal.component';
 
 @Component({
   selector: 'app-lista-planes',
   standalone: true,
-  imports: [CommonModule, DatePipe, DecimalPipe, ReactiveFormsModule],
+  imports: [CommonModule, DatePipe, DecimalPipe, ReactiveFormsModule, ModalComponent],
   templateUrl: './lista-planes.component.html',
   styleUrl: './lista-planes.component.css',
 })
@@ -20,6 +22,7 @@ export class ListaPlanes implements OnInit {
   private readonly sociosService = inject(SociosService);
   private readonly authService = inject(AuthService);
   private readonly fb = inject(FormBuilder);
+  private readonly notificacion = inject(NotificacionService);
 
   // Verificación de roles (M1)
   readonly esAdmin = computed(() => this.authService.tieneRol('ADMIN'));
@@ -38,8 +41,9 @@ export class ListaPlanes implements OnInit {
   readonly modalAsignar = signal<boolean>(false);
 
   readonly planSeleccionado = signal<PlanMembresia | null>(null);
-  readonly errorModalAsignar = signal<string | null>(null);
-  readonly guardandoAsignacion = signal<boolean>(false);
+  // Estado de la operación del modal abierto (solo hay uno abierto a la vez)
+  readonly errorModal = signal<string | null>(null);
+  readonly guardando = signal<boolean>(false);
   readonly socioSeleccionadoId = signal<number | null>(null);
 
   readonly socioSeleccionadoEnModal = computed(() => {
@@ -62,9 +66,6 @@ export class ListaPlanes implements OnInit {
     return true;
   });
 
-  // Feedback
-  readonly mensajeExito = signal<string | null>(null);
-  readonly mensajeError = signal<string | null>(null);
 
   // Formularios
   formPlan: FormGroup = this.fb.group({
@@ -85,14 +86,16 @@ export class ListaPlanes implements OnInit {
   constructor() {
     this.formAsignar.get('id_socio')?.valueChanges.subscribe((val) => {
       this.socioSeleccionadoId.set(val ? Number(val) : null);
-      this.errorModalAsignar.set(null);
+      this.errorModal.set(null);
     });
     this.formAsignar.get('id_plan')?.valueChanges.subscribe(() => this.recalcularVencimiento());
     this.formAsignar.get('fecha_inicio')?.valueChanges.subscribe(() => this.recalcularVencimiento());
   }
 
   ngOnInit(): void {
-    this.sociosService.getSocios().subscribe({ error: () => {} });
+    this.sociosService.getSocios().subscribe({
+      error: (err) => this.notificacion.error(mensajeDeError(err, 'No se pudo cargar la lista de miembros.')),
+    });
   }
 
   // --- CRUD PLANES (M3) ---
@@ -105,12 +108,13 @@ export class ListaPlanes implements OnInit {
       descripcion: '',
       beneficiosTexto: 'Pesas y máquinas, Cardio libre',
     });
-    this.mensajeError.set(null);
+    this.iniciarModal();
     this.modalCrear.set(true);
   }
 
   cerrarModalCrear(): void {
     this.modalCrear.set(false);
+    this.iniciarModal();
   }
 
   guardarNuevoPlan(): void {
@@ -125,6 +129,7 @@ export class ListaPlanes implements OnInit {
       .map((b: string) => b.trim())
       .filter((b: string) => b.length > 0);
 
+    this.iniciarGuardado();
     this.planesService
       .crearPlan({
         nombre: val.nombre,
@@ -138,9 +143,7 @@ export class ListaPlanes implements OnInit {
           this.mostrarExito(`Plan "${nuevo.nombre}" creado exitosamente.`);
           this.cerrarModalCrear();
         },
-        error: (err) => {
-          this.mensajeError.set(err.message || 'Error al crear el plan.');
-        },
+        error: (err) => this.mostrarErrorModal(err, 'Error al crear el plan.'),
       });
   }
 
@@ -154,13 +157,14 @@ export class ListaPlanes implements OnInit {
       descripcion: plan.descripcion || '',
       beneficiosTexto: (plan.beneficios || []).join(', '),
     });
-    this.mensajeError.set(null);
+    this.iniciarModal();
     this.modalEditar.set(true);
   }
 
   cerrarModalEditar(): void {
     this.modalEditar.set(false);
     this.planSeleccionado.set(null);
+    this.iniciarModal();
   }
 
   guardarEdicionPlan(): void {
@@ -178,6 +182,7 @@ export class ListaPlanes implements OnInit {
       .map((b: string) => b.trim())
       .filter((b: string) => b.length > 0);
 
+    this.iniciarGuardado();
     this.planesService
       .actualizarPlan(plan.id_plan, {
         nombre: val.nombre,
@@ -191,35 +196,34 @@ export class ListaPlanes implements OnInit {
           this.mostrarExito(`Plan "${actualizado.nombre}" actualizado.`);
           this.cerrarModalEditar();
         },
-        error: (err) => {
-          this.mensajeError.set(err.message || 'Error al actualizar el plan.');
-        },
+        error: (err) => this.mostrarErrorModal(err, 'Error al actualizar el plan.'),
       });
   }
 
   abrirModalEliminar(plan: PlanMembresia): void {
     if (!this.esAdmin()) return;
     this.planSeleccionado.set(plan);
+    this.iniciarModal();
     this.modalEliminar.set(true);
   }
 
   cerrarModalEliminar(): void {
     this.modalEliminar.set(false);
     this.planSeleccionado.set(null);
+    this.iniciarModal();
   }
 
   confirmarEliminarPlan(): void {
     const plan = this.planSeleccionado();
     if (!plan) return;
 
+    this.iniciarGuardado();
     this.planesService.eliminarPlan(plan.id_plan).subscribe({
       next: () => {
         this.mostrarExito(`Plan "${plan.nombre}" eliminado del catálogo.`);
         this.cerrarModalEliminar();
       },
-      error: (err) => {
-        this.mensajeError.set(err.message || 'Error al eliminar el plan.');
-      },
+      error: (err) => this.mostrarErrorModal(err, 'Error al eliminar el plan.'),
     });
   }
 
@@ -229,8 +233,7 @@ export class ListaPlanes implements OnInit {
     const targetPlanId = plan ? plan.id_plan : this.planes()[0]?.id_plan || '';
     const hoy = new Date().toISOString().split('T')[0];
 
-    this.errorModalAsignar.set(null);
-    this.guardandoAsignacion.set(false);
+    this.iniciarModal();
     this.socioSeleccionadoId.set(primerSocio ? primerSocio.id_socio : null);
 
     this.formAsignar.reset({
@@ -244,8 +247,7 @@ export class ListaPlanes implements OnInit {
 
   cerrarModalAsignar(): void {
     this.modalAsignar.set(false);
-    this.errorModalAsignar.set(null);
-    this.guardandoAsignacion.set(false);
+    this.iniciarModal();
   }
 
   recalcularVencimiento(): void {
@@ -274,21 +276,17 @@ export class ListaPlanes implements OnInit {
 
     const fechaInicio = this.formAsignar.get('fecha_inicio')?.value;
     const fechaVencimiento = this.formAsignar.get('fecha_vencimiento')?.value;
-    this.errorModalAsignar.set(null);
-    this.guardandoAsignacion.set(true);
+    this.iniciarGuardado();
 
     this.sociosService.asignarPlan(socioId, plan.nombre, plan.id_plan, fechaInicio, fechaVencimiento).subscribe({
       next: () => {
-        this.guardandoAsignacion.set(false);
+        this.guardando.set(false);
         this.mostrarExito(
-          `¡Plan "${plan.nombre}" asignado a ${socio.usuario.nombre} ${socio.usuario.apellido}! Vigencia hasta: ${fechaVencimiento}`
+          `Plan "${plan.nombre}" asignado a ${socio.usuario.nombre} ${socio.usuario.apellido}. Vigencia hasta: ${fechaVencimiento}`
         );
         this.cerrarModalAsignar();
       },
-      error: (err) => {
-        this.guardandoAsignacion.set(false);
-        this.errorModalAsignar.set(err.message || 'Error al asignar el plan.');
-      },
+      error: (err) => this.mostrarErrorModal(err, 'Error al asignar el plan.'),
     });
   }
 
@@ -318,9 +316,25 @@ export class ListaPlanes implements OnInit {
     }).length;
   }
 
+  // Estado del modal y notificaciones
+  private iniciarModal(): void {
+    this.errorModal.set(null);
+    this.guardando.set(false);
+  }
+
+  private iniciarGuardado(): void {
+    this.errorModal.set(null);
+    this.guardando.set(true);
+  }
+
+  /** El modal queda abierto con el error visible y los botones habilitados para corregir o cancelar. */
+  private mostrarErrorModal(err: unknown, porDefecto: string): void {
+    this.guardando.set(false);
+    this.errorModal.set(mensajeDeError(err, porDefecto));
+  }
+
   private mostrarExito(mensaje: string): void {
-    this.mensajeExito.set(mensaje);
-    setTimeout(() => this.mensajeExito.set(null), 4000);
+    this.notificacion.exito(mensaje);
   }
 }
 

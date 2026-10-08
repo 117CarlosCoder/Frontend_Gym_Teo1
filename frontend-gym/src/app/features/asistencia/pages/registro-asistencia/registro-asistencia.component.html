@@ -14,14 +14,14 @@
 
     @if (mensajeError()) {
     <div class="alert alert-warning d-flex align-items-center shadow-sm" role="alert">
-        <div class="fw-bold me-2">⚠️ Acceso Denegado:</div>
+        <div class="fw-bold me-2"><i class="bi bi-exclamation-triangle-fill me-1"></i>Acceso Denegado:</div>
         <div>{{ mensajeError() }}</div>
     </div>
     }
 
     @if (mensajeExito()) {
     <div class="alert alert-success d-flex align-items-center shadow-sm" role="alert">
-        <div class="fw-bold me-2">✅ Ingreso Autorizado:</div>
+        <div class="fw-bold me-2"><i class="bi bi-check-circle-fill me-1"></i>Ingreso Autorizado:</div>
         <div>{{ mensajeExito() }}</div>
     </div>
     }

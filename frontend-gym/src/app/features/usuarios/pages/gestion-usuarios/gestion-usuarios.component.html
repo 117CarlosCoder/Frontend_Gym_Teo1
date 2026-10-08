@@ -32,12 +32,6 @@
   }
 
   <!-- Mensajes de feedback -->
-  @if (exitoMensaje() && !credencialTemporal()) {
-    <div class="alerta alerta--exito">
-      {{ exitoMensaje() }}
-    </div>
-  }
-
   @if (errorMensaje()) {
     <div class="alerta alerta--error">
       {{ errorMensaje() }}
@@ -194,12 +188,13 @@
 
   <!-- MODAL: CREAR USUARIO -->
   @if (modalCrearAbierto()) {
-    <div class="modal-overlay" (click)="cerrarModalCrear()">
-      <div class="modal-dialog" (click)="$event.stopPropagation()">
-        <div class="modal-header">
-          <h2>Nuevo Usuario Administrativo</h2>
-          <button type="button" class="btn-cerrar" (click)="cerrarModalCrear()">×</button>
-        </div>
+    <app-modal
+      titulo="Nuevo Usuario Administrativo"
+      icono="bi-person-plus"
+      [error]="errorModal()"
+      (cerrarError)="errorModal.set(null)"
+      [bloqueado]="guardando()"
+      (cerrar)="cerrarModalCrear()">
 
         <form [formGroup]="formCrear" (ngSubmit)="guardarNuevoUsuario()">
           <div class="modal-body">
@@ -291,24 +286,24 @@
           </div>
 
           <div class="modal-footer">
-            <button type="button" class="btn btn--secundario" (click)="cerrarModalCrear()">Cancelar</button>
-            <button type="submit" class="btn btn--primary" [disabled]="cargando()">
-              {{ cargando() ? 'Creando...' : 'Crear Usuario' }}
+            <button type="button" class="btn btn--secundario" (click)="cerrarModalCrear()" [disabled]="guardando()">Cancelar</button>
+            <button type="submit" class="btn btn--primary" [disabled]="guardando()">
+              {{ guardando() ? 'Creando...' : 'Crear Usuario' }}
             </button>
           </div>
         </form>
-      </div>
-    </div>
+    </app-modal>
   }
 
   <!-- MODAL: EDITAR USUARIO -->
   @if (modalEditarAbierto()) {
-    <div class="modal-overlay" (click)="cerrarModalEditar()">
-      <div class="modal-dialog" (click)="$event.stopPropagation()">
-        <div class="modal-header">
-          <h2>Editar Usuario #{{ usuarioSeleccionado()?.id }}</h2>
-          <button type="button" class="btn-cerrar" (click)="cerrarModalEditar()">×</button>
-        </div>
+    <app-modal
+      [titulo]="'Editar Usuario #' + (usuarioSeleccionado()?.id)"
+      icono="bi-pencil-square"
+      [error]="errorModal()"
+      (cerrarError)="errorModal.set(null)"
+      [bloqueado]="guardando()"
+      (cerrar)="cerrarModalEditar()">
 
         <form [formGroup]="formEditar" (ngSubmit)="guardarEdicionUsuario()">
           <div class="modal-body">
@@ -389,25 +384,25 @@
           </div>
 
           <div class="modal-footer">
-            <button type="button" class="btn btn--secundario" (click)="cerrarModalEditar()">Cancelar</button>
-            <button type="submit" class="btn btn--primary" [disabled]="cargando() || formEditar.invalid">
-              {{ cargando() ? 'Guardando...' : 'Guardar Cambios' }}
+            <button type="button" class="btn btn--secundario" (click)="cerrarModalEditar()" [disabled]="guardando()">Cancelar</button>
+            <button type="submit" class="btn btn--primary" [disabled]="guardando() || formEditar.invalid">
+              {{ guardando() ? 'Guardando...' : 'Guardar Cambios' }}
             </button>
           </div>
         </form>
-
-      </div>
-    </div>
+    </app-modal>
   }
 
   <!-- MODAL: CONFIRMAR DESACTIVAR -->
   @if (modalDesactivarAbierto()) {
-    <div class="modal-overlay" (click)="cerrarModalDesactivar()">
-      <div class="modal-dialog modal-dialog--sm" (click)="$event.stopPropagation()">
-        <div class="modal-header">
-          <h2>Desactivar Usuario</h2>
-          <button type="button" class="btn-cerrar" (click)="cerrarModalDesactivar()">×</button>
-        </div>
+    <app-modal
+      titulo="Desactivar Usuario"
+      icono="bi-person-lock"
+      tamano="sm"
+      [error]="errorModal()"
+      (cerrarError)="errorModal.set(null)"
+      [bloqueado]="guardando()"
+      (cerrar)="cerrarModalDesactivar()">
         <div class="modal-body">
           <p>
             ¿Estás seguro de que deseas desactivar la cuenta de
@@ -416,13 +411,12 @@
           <small class="texto-secundario">El usuario no podrá iniciar sesión en el gimnasio hasta ser reactivado.</small>
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn--secundario" (click)="cerrarModalDesactivar()">Cancelar</button>
-          <button type="button" class="btn btn--peligro" [disabled]="cargando()" (click)="confirmarDesactivar()">
-            {{ cargando() ? 'Desactivando...' : 'Sí, Desactivar' }}
+          <button type="button" class="btn btn--secundario" (click)="cerrarModalDesactivar()" [disabled]="guardando()">Cancelar</button>
+          <button type="button" class="btn btn--peligro" [disabled]="guardando()" (click)="confirmarDesactivar()">
+            {{ guardando() ? 'Desactivando...' : 'Sí, Desactivar' }}
           </button>
         </div>
-      </div>
-    </div>
+    </app-modal>
   }
 </div>
 
