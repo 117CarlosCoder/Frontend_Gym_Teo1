@@ -3,36 +3,47 @@
 export interface IngresoMensual {
   mes: number;
   nombreMes?: string;
-  anio: number;
+  anio?: number;
   total: number;
-  transacciones: number;
+  transacciones?: number;
+  cantidadPagos?: number;
 }
 
 export interface IngresoMetodoPago {
   metodoPago: string;
   total: number;
-  transacciones: number;
+  transacciones?: number;
+  cantidad?: number;
   porcentaje: number;
 }
 
 export interface PagoDetalleReporte {
-  idComprobante: number;
+  idComprobante?: number;
+  comprobanteId?: number;
   fechaPago: string;
   nombreSocio: string;
   nombrePlan: string;
   metodoPago: string;
   monto: number;
   referencia: string | null;
-  recepcionista: string;
+  recepcionista?: string;
+  nombreRecepcionista?: string;
 }
 
 export interface ReporteIngresos {
-  anioConsultado: number | null;
+  anio?: number | null;
+  anioConsultado?: number | null;
   ingresoTotal: number;
+  totalPeriodo?: number;
   totalTransacciones: number;
+  cantidadPagosPeriodo?: number;
+  ingresoPromedioMensual?: number;
+  mesMayorIngreso?: string;
+  montoMayorIngreso?: number;
   ingresosPorMes: IngresoMensual[];
   ingresosPorMetodoPago: IngresoMetodoPago[];
   pagosDetalle: PagoDetalleReporte[];
+  ultimosPagos?: PagoDetalleReporte[];
 }
 
 export interface DistribucionSucursal {
@@ -71,14 +82,20 @@ export interface ReporteMiembrosEstado {
 
 export interface RenovacionMes {
   mes: number;
-  anio: number;
+  anio?: number;
+  nombreMes?: string;
   renovaciones: number;
-  tasaRetencion: number;
+  nuevas?: number;
+  total?: number;
+  tasaRetencion?: number;
+  tasaRenovacion?: number;
 }
 
 export interface RenovacionDetalle {
-  idMembresia: number;
-  idSocio: number;
+  idMembresia?: number;
+  membresiaId?: number;
+  idSocio?: number;
+  socioId?: number;
   nombreSocio: string;
   planRenovado: string;
   fechaRenovacion: string;
@@ -86,44 +103,64 @@ export interface RenovacionDetalle {
 }
 
 export interface ReporteRenovaciones {
-  anioConsultado: number | null;
+  anio?: number | null;
+  anioConsultado?: number | null;
   totalRenovaciones: number;
+  totalMembresiasPeriodo?: number;
+  nuevasMembresias?: number;
   tasaRetencionPromedio: number;
+  tasaRenovacionGlobal?: number;
+  proximasAVencerSiguienteSemana?: number;
   renovacionesPorMes: RenovacionMes[];
   detalles: RenovacionDetalle[];
+  ultimasRenovaciones?: RenovacionDetalle[];
 }
 
 export interface DiaSemanaAsistencia {
+  numeroDia?: number;
+  nombreDia?: string;
   diaSemana: string;
   totalAsistencias: number;
+  cantidad?: number;
   porcentaje: number;
 }
 
 export interface HoraPico {
+  hora?: number;
+  etiquetaHora?: string;
   franjaHoraria: string;
   totalAsistencias: number;
+  cantidad?: number;
   porcentaje: number;
 }
 
 export interface TopSocioAsistencia {
   socioId: number;
   nombreSocio: string;
+  nombreCompleto?: string;
   totalVisitas: number;
+  asistencias?: number;
 }
 
 export interface SucursalAsistencia {
   sucursalId: number;
   nombreSucursal: string;
   totalAsistencias: number;
+  cantidad?: number;
 }
 
 export interface MetricaAsistencia {
   totalAsistenciasPeriodo: number;
+  asistenciasMesActual?: number;
+  asistenciasSemanaActual?: number;
+  asistenciasHoy?: number;
   promedioDiario: number;
+  promedioDiarioMes?: number;
   diaMayorAfluencia: string;
   horaPico: string;
-  asistenciasPorDiaSemana: DiaSemanaAsistencia[];
+  horasPico?: HoraPico[];
   distribucionHorasPico: HoraPico[];
+  asistenciasPorDiaSemana: DiaSemanaAsistencia[];
   topSociosAsistencia: TopSocioAsistencia[];
   asistenciasPorSucursal: SucursalAsistencia[];
 }

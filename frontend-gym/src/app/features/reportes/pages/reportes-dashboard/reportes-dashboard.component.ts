@@ -62,8 +62,62 @@ export class ReportesDashboardComponent implements OnInit {
   protected readonly anioFiltroAsistencias = signal<number>(new Date().getFullYear());
   protected readonly busquedaMiembro = signal<string>('');
 
+  // Fecha actual para reportes impresos
+  readonly fechaHoy = new Date();
+
   // Años disponibles para selección
   protected readonly aniosDisponibles: number[] = [2026, 2025, 2024];
+
+  // Año activo contextual según la pestaña seleccionada
+  readonly anioActivo = computed(() => {
+    const tab = this.tabActiva();
+    if (tab === 'ingresos') {
+      return this.reporteIngresos()?.anio || this.anioFiltroIngresos();
+    }
+    if (tab === 'renovaciones') {
+      return this.reporteRenovaciones()?.anio || this.anioFiltroRenovaciones();
+    }
+    if (tab === 'asistencias') {
+      return this.anioFiltroAsistencias();
+    }
+    return new Date().getFullYear();
+  });
+
+  readonly tituloReporteActivo = computed(() => {
+    switch (this.tabActiva()) {
+      case 'dashboard':
+        return 'Resumen Ejecutivo y Métricas Consolidadas';
+      case 'ingresos':
+        return `Reporte Financiero de Ingresos y Recaudación (${this.anioActivo()})`;
+      case 'miembros':
+        return 'Reporte de Miembros: Activos vs. Morosos';
+      case 'renovaciones':
+        return `Reporte Analítico de Renovaciones y Retención (${this.anioActivo()})`;
+      case 'asistencias':
+        return `Métricas de Afluencia y Horarios Pico (${this.obtenerNombreMes(this.mesFiltroAsistencias())} ${this.anioFiltroAsistencias()})`;
+    }
+  });
+
+  readonly descripcionReporteActivo = computed(() => {
+    switch (this.tabActiva()) {
+      case 'dashboard':
+        return 'Panel consolidado de indicadores clave de rendimiento (KPIs), ingresos y afluencia.';
+      case 'ingresos':
+        return 'Consolidado de ingresos agrupados por mes, método de pago y detalle de cobros auditados.';
+      case 'miembros':
+        return 'Estado de membresías, control de vencimientos, días de atraso y saldos pendientes.';
+      case 'renovaciones':
+        return 'Análisis de retención periódica de socios, suscripciones nuevas y membresías renovadas.';
+      case 'asistencias':
+        return 'Monitoreo de asistencia por hora, días de mayor concurrencia y socios recurrentes.';
+    }
+  });
+
+  readonly horarioPicoCalculado = computed(() => {
+    const rep = this.metricasAsistencia();
+    if (!rep) return '18:00 - 19:00 (Estándar)';
+    return rep.horaPico || '18:00 - 19:00 (Estándar)';
+  });
 
   // Nombres de los meses
   protected readonly meses = [

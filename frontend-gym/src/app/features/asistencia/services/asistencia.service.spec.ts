@@ -98,3 +98,4 @@ describe('AsistenciaService', () => {
     expect(lista[0].idAsistencia).toBe(10);
   });
 });
+

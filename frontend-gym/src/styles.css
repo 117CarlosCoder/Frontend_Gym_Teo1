@@ -1,0 +1,20 @@
+/* Reglas globales de impresión: Ocultar encabezados web durante impresión de reportes y comprobantes */
+@media print {
+  header.panel-header,
+  .panel-header,
+  .panel-nav,
+  .panel-header__usuario {
+    display: none !important;
+  }
+
+  body {
+    background-color: #ffffff !important;
+    color: #000000 !important;
+  }
+
+  .panel-contenido {
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+}

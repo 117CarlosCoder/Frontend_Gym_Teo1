@@ -1,22 +1,55 @@
 <section class="reportes">
-  <!-- ENCABEZADO -->
-  <header class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
-    <div>
-      <h2 class="reportes__titulo m-0"><i class="bi bi-graph-up-arrow me-2 text-primary"></i>Reportes y Métricas</h2>
-      <p class="reportes__subtitulo m-0">Consolidación de métricas financieras, estados de miembros, renovaciones y afluencia.</p>
-    </div>
-    <div class="d-flex gap-2">
-      <button type="button" class="btn btn-outline-secondary btn-sm" (click)="cargarTabActual()" [disabled]="cargando()" title="Actualizar datos">
-        <i class="bi bi-arrow-clockwise me-1"></i>Actualizar
-      </button>
-      <button type="button" class="btn btn--primary btn-sm" (click)="imprimirReporte()" title="Imprimir o exportar PDF">
-        <i class="bi bi-printer me-1"></i>Exportar / Imprimir
-      </button>
-    </div>
-  </header>
+  <!-- ENCABEZADO FORMAL ESTILO COMPROBANTE DE PAGO -->
+  <div class="reporte-document-header card border-0 shadow-sm mb-4">
+    <div class="reporte-document-banner d-flex flex-wrap justify-content-between align-items-center gap-3">
+      <div>
+        <div class="d-flex align-items-center gap-2 mb-1">
+          <span class="badge bg-secondary text-uppercase px-2 py-1">Gimnasio Teo &bull; Clauda Lovers</span>
+          <span class="badge bg-success-subtle text-success-emphasis border border-success-subtle px-2 py-1 d-none d-sm-inline">
+            <i class="bi bi-shield-check me-1"></i>Reporte Oficial
+          </span>
+        </div>
+        <h2 class="m-0 fw-bold fs-3 text-white text-uppercase tracking-wider">
+          <i class="bi bi-file-earmark-bar-graph me-2 text-info"></i>{{ tituloReporteActivo() }}
+        </h2>
+        <p class="m-0 text-light text-opacity-75 small mt-1">{{ descripcionReporteActivo() }}</p>
+      </div>
 
-  <!-- PESTAÑAS / TABS DE NAVEGACIÓN -->
-  <ul class="nav nav-pills reportes__nav mb-4 gap-2 border-bottom pb-2">
+      <!-- BOTONES DE ACCIÓN (SOLO EN PANTALLA) -->
+      <div class="d-flex gap-2 no-print">
+        <button
+          type="button"
+          class="btn btn-outline-light btn-sm"
+          (click)="cargarTabActual()"
+          [disabled]="cargando()"
+          title="Actualizar datos desde la base de datos"
+        >
+          <i class="bi bi-arrow-clockwise me-1"></i>Actualizar
+        </button>
+        <button
+          type="button"
+          class="btn btn-primary btn-sm fw-semibold shadow-sm"
+          (click)="imprimirReporte()"
+          title="Imprimir o exportar como documento PDF limpio"
+        >
+          <i class="bi bi-printer me-1"></i>Imprimir / Exportar PDF
+        </button>
+      </div>
+    </div>
+
+    <!-- METADATOS DEL REPORTE -->
+    <div class="card-footer bg-light border-0 py-2 px-4">
+      <div class="d-flex flex-wrap justify-content-between text-muted small align-items-center gap-2">
+        <span><i class="bi bi-calendar3 me-1 text-primary"></i><strong>Año / Período:</strong> {{ anioActivo() }}</span>
+        <span><i class="bi bi-person-badge me-1 text-primary"></i><strong>Generado por:</strong> {{ auth.usuario()?.nombre || 'Administrador' }} ({{ auth.usuario()?.rol || 'ADMIN' }})</span>
+        <span><i class="bi bi-geo-alt me-1 text-primary"></i><strong>Sede:</strong> Gimnasio Teo Central</span>
+        <span><i class="bi bi-clock-history me-1 text-primary"></i><strong>Emisión:</strong> {{ fechaHoy | date:'dd/MM/yyyy HH:mm:ss' }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- PESTAÑAS DE NAVEGACIÓN (OCULTAS AL IMPRIMIR) -->
+  <ul class="nav nav-pills reportes__nav mb-4 gap-2 border-bottom pb-2 no-print">
     <li class="nav-item">
       <button
         type="button"
@@ -75,7 +108,7 @@
 
   <!-- ALERTA DE ERROR -->
   @if (error()) {
-    <div class="alert alert-danger d-flex align-items-center justify-content-between mb-4 shadow-sm" role="alert">
+    <div class="alert alert-danger d-flex align-items-center justify-content-between mb-4 shadow-sm no-print" role="alert">
       <div>
         <i class="bi bi-exclamation-triangle-fill me-2"></i>
         <span>{{ error() }}</span>
@@ -88,11 +121,11 @@
 
   <!-- ESTADO DE CARGA -->
   @if (cargando()) {
-    <div class="text-center py-5 my-5">
+    <div class="text-center py-5 my-5 no-print">
       <div class="spinner-border text-primary" role="status">
         <span class="visually-hidden">Generando reporte...</span>
       </div>
-      <p class="mt-3 text-muted fw-semibold">Calculando reporte en tiempo real desde la base de datos...</p>
+      <p class="mt-3 text-muted fw-semibold">Cargando datos oficiales desde la base de datos...</p>
     </div>
   } @else {
 
@@ -138,27 +171,51 @@
           <div class="col-12 col-sm-6 col-lg-3">
             <div class="card border-0 shadow-sm reportes__kpi-card reportes__kpi-card--accent h-100">
               <div class="card-body">
-                <span class="text-muted small fw-semibold text-uppercase">Ingresos Mes Actual</span>
-                <h3 class="fs-2 fw-bold text-primary mt-2 mb-1">Q {{ data.ingresosMesActual | number:'1.2-2' }}</h3>
-                <small class="text-muted"><i class="bi bi-wallet2 me-1"></i>Recaudación del mes</small>
+                <span class="text-muted small fw-semibold text-uppercase">Ingresos del Mes</span>
+                <h3 class="fs-2 fw-bold text-dark mt-2 mb-1">Q {{ data.ingresosMesActual | number:'1.2-2' }}</h3>
+                <small class="text-muted"><i class="bi bi-calendar-event me-1"></i>Recaudación del mes en curso</small>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- GRÁFICOS Y DISTRIBUCIONES -->
         <div class="row g-4 mb-4">
+          <!-- Gráfica de ingresos de los últimos 6 meses -->
+          <div class="col-12 col-lg-8">
+            <div class="card border-0 shadow-sm h-100">
+              <div class="card-header bg-white py-3 border-0 d-flex justify-content-between align-items-center">
+                <h4 class="fs-6 fw-bold m-0"><i class="bi bi-bar-chart-line me-2 text-primary"></i>Ingresos Últimos Meses</h4>
+                <span class="badge bg-light text-dark border">Histórico Reciente</span>
+              </div>
+              <div class="card-body pt-0">
+                <div class="reportes__bar-chart d-flex align-items-end justify-content-between gap-3 pt-4">
+                  @for (mes of data.ingresosUltimos6Meses; track mes.mes) {
+                    <div class="reportes__bar-column text-center">
+                      <span class="reportes__bar-value text-muted">Q {{ mes.total | number:'1.0-0' }}</span>
+                      <div
+                        class="reportes__bar bg-primary rounded-top"
+                        [style.height.%]="calcularPorcentajeBarra(mes.total, calcularMaximoIngreso(data.ingresosUltimos6Meses))"
+                        title="{{ mes.nombreMes || obtenerNombreMes(mes.mes) }}: Q {{ mes.total | number:'1.2-2' }}"
+                      ></div>
+                      <span class="reportes__bar-label text-muted mt-2 fw-semibold">{{ (mes.nombreMes || obtenerNombreMes(mes.mes)).substring(0, 3) }}</span>
+                    </div>
+                  }
+                </div>
+              </div>
+            </div>
+          </div>
+
           <!-- Distribución de Planes -->
-          <div class="col-12 col-lg-6">
+          <div class="col-12 col-lg-4">
             <div class="card border-0 shadow-sm h-100">
               <div class="card-header bg-white py-3 border-0">
-                <h4 class="fs-6 fw-bold m-0"><i class="bi bi-pie-chart me-2 text-primary"></i>Distribución por Plan de Membresía</h4>
+                <h4 class="fs-6 fw-bold m-0"><i class="bi bi-pie-chart me-2 text-primary"></i>Planes más Contratados</h4>
               </div>
               <div class="card-body pt-0">
                 @for (plan of data.topPlanes; track plan.planId) {
                   <div class="mb-3">
                     <div class="d-flex justify-content-between align-items-center mb-1">
-                      <span class="fw-semibold">{{ plan.nombrePlan }}</span>
+                      <span class="fw-semibold small">{{ plan.nombrePlan }}</span>
                       <span class="text-muted small">{{ plan.cantidadSocios }} socios ({{ plan.porcentaje }}%)</span>
                     </div>
                     <div class="progress reportes__progress">
@@ -166,84 +223,52 @@
                         class="progress-bar bg-primary"
                         role="progressbar"
                         [style.width.%]="plan.porcentaje"
-                        [attr.aria-valuenow]="plan.porcentaje"
-                        aria-valuemin="0"
-                        aria-valuemax="100"
                       ></div>
                     </div>
                   </div>
-                } @empty {
-                  <p class="text-muted small text-center py-4">No hay datos de distribución de planes disponibles.</p>
                 }
-              </div>
-            </div>
-          </div>
-
-          <!-- Asistencias últimos 7 días -->
-          <div class="col-12 col-lg-6">
-            <div class="card border-0 shadow-sm h-100">
-              <div class="card-header bg-white py-3 border-0 d-flex justify-content-between align-items-center">
-                <h4 class="fs-6 fw-bold m-0"><i class="bi bi-bar-chart-line me-2 text-primary"></i>Asistencias Recientes (Últimos 7 Días)</h4>
-                <span class="badge bg-light text-dark border">Hoy: {{ data.asistenciasHoy }} entradas</span>
-              </div>
-              <div class="card-body pt-0">
-                <div class="reportes__bar-chart d-flex align-items-end justify-content-around pt-3">
-                  @for (visita of data.asistenciasUltimos7Dias; track visita.etiqueta) {
-                    <div class="reportes__bar-column text-center">
-                      <span class="reportes__bar-value fw-bold text-primary">{{ visita.visitas }}</span>
-                      <div
-                        class="reportes__bar bg-primary-subtle border border-primary rounded-top"
-                        [style.height.px]="Math.max(visita.visitas * 12, 12)"
-                        [title]="visita.visitas + ' asistencias'"
-                      ></div>
-                      <span class="reportes__bar-label text-muted fs-xs d-block mt-2">{{ visita.etiqueta }}</span>
-                    </div>
-                  } @empty {
-                    <p class="text-muted small text-center py-4 w-100">Sin asistencias en la última semana.</p>
-                  }
-                </div>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- MEMBRESÍAS PRÓXIMAS A VENCER -->
+        <!-- Socios próximos a vencer -->
         @if (data.membresiasPorVencer && data.membresiasPorVencer.length > 0) {
           <div class="card border-0 shadow-sm">
             <div class="card-header bg-white py-3 border-0 d-flex justify-content-between align-items-center">
-              <h4 class="fs-6 fw-bold m-0 text-warning">
-                <i class="bi bi-bell-fill me-2"></i>Membresías Próximas a Vencer (Próximos 7 Días)
+              <h4 class="fs-6 fw-bold m-0 text-warning-emphasis">
+                <i class="bi bi-hourglass-split me-2 text-warning"></i>Membresías Próximas a Vencer (Próximos 7 días)
               </h4>
-              <span class="badge bg-warning text-dark">{{ data.membresiasPorVencer.length }} membresías</span>
+              <span class="badge bg-warning text-dark">{{ data.membresiasPorVencer.length }} socios</span>
             </div>
             <div class="table-responsive">
               <table class="table table-hover align-middle mb-0">
                 <thead class="table-light fs-xs text-uppercase">
                   <tr>
                     <th class="ps-4">Socio</th>
-                    <th>Plan</th>
+                    <th>Plan Actual</th>
                     <th>Fecha Vencimiento</th>
                     <th>Días Restantes</th>
-                    <th class="text-end pe-4">Acción</th>
+                    <th class="text-end pe-4 no-print">Acción</th>
                   </tr>
                 </thead>
                 <tbody>
                   @for (item of data.membresiasPorVencer; track item.idMembresia) {
                     <tr>
                       <td class="ps-4">
-                        <div class="fw-semibold">{{ item.nombreSocio }}</div>
-                        <small class="text-muted">{{ item.correoSocio }}</small>
+                        <span class="fw-semibold">{{ item.nombreSocio }}</span>
+                        <small class="text-muted d-block">{{ item.correoSocio }}</small>
                       </td>
-                      <td>{{ item.nombrePlan }}</td>
-                      <td>{{ item.fechaVencimiento | date:'dd/MM/yyyy' }}</td>
+                      <td><span class="badge bg-light text-dark border">{{ item.nombrePlan }}</span></td>
+                      <td class="text-muted small">{{ item.fechaVencimiento | date:'dd/MM/yyyy' }}</td>
                       <td>
                         <span class="badge" [class.bg-danger]="item.diasRestantes <= 2" [class.bg-warning]="item.diasRestantes > 2" [class.text-dark]="item.diasRestantes > 2">
                           {{ item.diasRestantes === 0 ? 'Vence hoy' : item.diasRestantes + ' días' }}
                         </span>
                       </td>
-                      <td class="text-end pe-4">
+                      <td class="text-end pe-4 no-print">
                         <button type="button" class="btn btn-sm btn-outline-primary" (click)="irACobroSocio(item.idSocio)">
-                          <i class="bi bi-cash-coin me-1"></i>Renovar
+                          <i class="bi bi-cash-coin me-1"></i>Cobrar
                         </button>
                       </td>
                     </tr>
@@ -263,19 +288,22 @@
         <div class="card border-0 shadow-sm p-4 mb-4">
           <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
             <div>
-              <h3 class="fs-5 fw-bold m-0"><i class="bi bi-cash-coin me-2 text-success"></i>Reporte Financiero de Recaudación</h3>
-              <p class="text-muted small m-0">Ingresos agrupados por mes, método de pago y detalle de cobros</p>
+              <div class="d-flex align-items-center gap-2">
+                <h3 class="fs-5 fw-bold m-0"><i class="bi bi-cash-coin me-2 text-success"></i>Reporte Financiero de Recaudación</h3>
+                <span class="badge bg-primary fs-6">Año: {{ repIng.anio || anioFiltroIngresos() }}</span>
+              </div>
+              <p class="text-muted small m-0 mt-1">Ingresos detallados por mes y métodos de pago correspondientes al año <strong>{{ repIng.anio || anioFiltroIngresos() }}</strong></p>
             </div>
-            <div class="d-flex align-items-center gap-2">
-              <label class="form-label m-0 fw-semibold text-muted small">Año:</label>
+            <div class="d-flex align-items-center gap-2 no-print">
+              <label class="form-label m-0 fw-semibold text-muted small">Filtrar por Año:</label>
               <select
                 class="form-select form-select-sm"
-                style="width: 130px;"
+                style="width: 140px;"
                 [value]="anioFiltroIngresos()"
                 (change)="cambiarAnioIngresos($any($event.target).value)"
               >
                 @for (a of aniosDisponibles; track a) {
-                  <option [value]="a">{{ a }}</option>
+                  <option [value]="a">Año {{ a }}</option>
                 }
                 <option value="todos">Histórico Total</option>
               </select>
@@ -284,23 +312,26 @@
 
           <div class="row g-3 mt-3">
             <div class="col-md-4">
-              <div class="p-3 bg-light rounded text-center">
+              <div class="p-3 bg-light rounded text-center border">
                 <span class="text-muted small fw-semibold text-uppercase d-block">Ingreso Total Recaudado</span>
                 <span class="fs-3 fw-bold text-success">Q {{ repIng.ingresoTotal | number:'1.2-2' }}</span>
+                <small class="text-muted d-block">Año fiscal {{ repIng.anio || anioFiltroIngresos() }}</small>
               </div>
             </div>
             <div class="col-md-4">
-              <div class="p-3 bg-light rounded text-center">
+              <div class="p-3 bg-light rounded text-center border">
                 <span class="text-muted small fw-semibold text-uppercase d-block">Transacciones Registradas</span>
                 <span class="fs-3 fw-bold text-primary">{{ repIng.totalTransacciones }} pagos</span>
+                <small class="text-muted d-block">Comprobantes procesados</small>
               </div>
             </div>
             <div class="col-md-4">
-              <div class="p-3 bg-light rounded text-center">
+              <div class="p-3 bg-light rounded text-center border">
                 <span class="text-muted small fw-semibold text-uppercase d-block">Ticket Promedio por Cobro</span>
-                <span class="fs-3 fw-bold text-accent">
+                <span class="fs-3 fw-bold text-dark">
                   Q {{ (repIng.totalTransacciones > 0 ? repIng.ingresoTotal / repIng.totalTransacciones : 0) | number:'1.2-2' }}
                 </span>
+                <small class="text-muted d-block">Promedio por transacción</small>
               </div>
             </div>
           </div>
@@ -353,7 +384,7 @@
           <div class="col-12 col-lg-7">
             <div class="card border-0 shadow-sm h-100">
               <div class="card-header bg-white py-3 border-0">
-                <h4 class="fs-6 fw-bold m-0"><i class="bi bi-calendar3 me-2 text-primary"></i>Recaudación Mensual</h4>
+                <h4 class="fs-6 fw-bold m-0"><i class="bi bi-calendar3 me-2 text-primary"></i>Recaudación Mensual (Año {{ repIng.anio || anioFiltroIngresos() }})</h4>
               </div>
               <div class="card-body pt-0">
                 <div class="table-responsive">
@@ -364,17 +395,17 @@
                         <th>Año</th>
                         <th>Cobros</th>
                         <th class="text-end">Monto Total</th>
-                        <th style="width: 28%;">Gráfica</th>
+                        <th style="width: 28%;" class="no-print">Gráfica</th>
                       </tr>
                     </thead>
                     <tbody>
                       @for (mes of repIng.ingresosPorMes; track mes.mes) {
                         <tr>
                           <td class="fw-semibold">{{ mes.nombreMes || obtenerNombreMes(mes.mes) }}</td>
-                          <td class="text-muted small">{{ mes.anio }}</td>
+                          <td class="text-muted small fw-bold">{{ mes.anio || repIng.anio || anioFiltroIngresos() }}</td>
                           <td><span class="badge bg-light text-dark border">{{ mes.transacciones }}</span></td>
                           <td class="text-end fw-bold text-success">Q {{ mes.total | number:'1.2-2' }}</td>
-                          <td>
+                          <td class="no-print">
                             <div class="progress reportes__progress">
                               <div
                                 class="progress-bar bg-primary"
@@ -399,7 +430,7 @@
         <!-- LISTADO DETALLADO DE PAGOS / COMPROBANTES -->
         <div class="card border-0 shadow-sm">
           <div class="card-header bg-white py-3 border-0 d-flex justify-content-between align-items-center">
-            <h4 class="fs-6 fw-bold m-0"><i class="bi bi-receipt me-2 text-primary"></i>Auditoría Detallada de Pagos</h4>
+            <h4 class="fs-6 fw-bold m-0"><i class="bi bi-receipt me-2 text-primary"></i>Auditoría Detallada de Pagos (Año {{ repIng.anio || anioFiltroIngresos() }})</h4>
             <span class="badge bg-light text-dark border">{{ repIng.pagosDetalle.length }} transacciones</span>
           </div>
           <div class="table-responsive">
@@ -448,112 +479,64 @@
           <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3">
             <div>
               <h3 class="fs-5 fw-bold m-0"><i class="bi bi-person-lines-fill me-2 text-primary"></i>Reporte de Socios: Activos vs. Morosos</h3>
-              <p class="text-muted small m-0">Estado de membresías y cálculo de mora al corte: <strong>{{ repM.fechaCorte | date:'dd/MM/yyyy' }}</strong></p>
+              <p class="text-muted small m-0">Fecha de corte de auditoría: <strong>{{ repM.fechaCorte | date:'dd/MM/yyyy' }}</strong></p>
             </div>
-            <!-- FILTROS DE ESTADO Y SUCURSAL -->
-            <div class="d-flex flex-wrap align-items-center gap-2">
-              <div class="input-group input-group-sm" style="width: 220px;">
-                <span class="input-group-text"><i class="bi bi-search"></i></span>
-                <input
-                  type="search"
-                  class="form-control"
-                  placeholder="Buscar socio, DPI..."
-                  [value]="busquedaMiembro()"
-                  (input)="busquedaMiembro.set($any($event.target).value)"
-                />
-              </div>
-
+            <div class="d-flex flex-wrap align-items-center gap-2 no-print">
               <select
                 class="form-select form-select-sm"
-                style="width: 140px;"
+                style="width: 160px;"
                 [value]="estadoFiltroMiembros()"
                 (change)="cambiarFiltroEstadoMiembro($any($event.target).value)"
               >
-                <option value="TODOS">Todos los estados</option>
+                <option value="TODOS">Todos los Estados</option>
                 <option value="ACTIVO">Solo Activos</option>
                 <option value="MOROSO">Solo Morosos</option>
               </select>
 
-              <select
-                class="form-select form-select-sm"
-                style="width: 140px;"
-                (change)="cambiarFiltroSucursalMiembro($any($event.target).value)"
-              >
-                <option value="">Todas las sedes</option>
-                @for (suc of repM.distribucionPorSucursal; track suc.sucursalId) {
-                  <option [value]="suc.sucursalId">{{ suc.nombreSucursal }}</option>
-                }
-              </select>
+              <input
+                type="text"
+                class="form-control form-control-sm"
+                style="width: 220px;"
+                placeholder="Buscar socio por nombre, DPI..."
+                [value]="busquedaMiembro()"
+                (input)="busquedaMiembro.set($any($event.target).value)"
+              />
             </div>
           </div>
 
-          <!-- COMPARATIVA VISUAL -->
           <div class="row g-3">
-            <div class="col-md-4">
-              <div class="p-3 bg-light rounded text-center">
-                <span class="text-muted small fw-semibold text-uppercase d-block">Población Total</span>
+            <div class="col-md-3">
+              <div class="p-3 bg-light rounded text-center border">
+                <span class="text-muted small fw-semibold text-uppercase d-block">Padrón de Socios</span>
                 <span class="fs-3 fw-bold text-dark">{{ repM.totalSocios }}</span>
-                <small class="text-muted d-block">Socios registrados</small>
               </div>
             </div>
-            <div class="col-md-4">
+            <div class="col-md-3">
               <div class="p-3 bg-success-subtle rounded text-center border border-success-subtle">
-                <span class="text-success small fw-bold text-uppercase d-block">Socios Activos (Al Día)</span>
+                <span class="text-success small fw-bold text-uppercase d-block">Al Día / Activos</span>
                 <span class="fs-3 fw-bold text-success">{{ repM.activos }} ({{ repM.porcentajeActivos }}%)</span>
-                <small class="text-success d-block">Membresía activa y vigente</small>
               </div>
             </div>
-            <div class="col-md-4">
+            <div class="col-md-3">
               <div class="p-3 bg-danger-subtle rounded text-center border border-danger-subtle">
-                <span class="text-danger small fw-bold text-uppercase d-block">Socios Morosos (Vencidos)</span>
+                <span class="text-danger small fw-bold text-uppercase d-block">Morosos / Cuota Vencida</span>
                 <span class="fs-3 fw-bold text-danger">{{ repM.morosos }} ({{ repM.porcentajeMorosos }}%)</span>
-                <small class="text-danger d-block">Membresía vencida o sin pago</small>
               </div>
             </div>
-          </div>
-
-          <!-- BARRA COMPARATIVA PROPORCIONAL -->
-          <div class="mt-4">
-            <div class="d-flex justify-content-between text-muted small mb-1">
-              <span>Proporción: <strong>{{ repM.porcentajeActivos }}% Activos</strong></span>
-              <span><strong>{{ repM.porcentajeMorosos }}% Morosos</strong></span>
-            </div>
-            <div class="progress reportes__progress-large">
-              <div class="progress-bar bg-success" role="progressbar" [style.width.%]="repM.porcentajeActivos"></div>
-              <div class="progress-bar bg-danger" role="progressbar" [style.width.%]="repM.porcentajeMorosos"></div>
+            <div class="col-md-3">
+              <div class="p-3 bg-secondary-subtle rounded text-center border border-secondary-subtle">
+                <span class="text-muted small fw-bold text-uppercase d-block">Inactivos / Bajas</span>
+                <span class="fs-3 fw-bold text-secondary">{{ repM.inactivos }}</span>
+              </div>
             </div>
           </div>
         </div>
 
-        <!-- DISTRIBUCIÓN POR SUCURSAL -->
-        @if (repM.distribucionPorSucursal && repM.distribucionPorSucursal.length > 0) {
-          <div class="row g-3 mb-4">
-            @for (suc of repM.distribucionPorSucursal; track suc.sucursalId) {
-              <div class="col-md-6 col-lg-4">
-                <div class="card border-0 shadow-sm h-100">
-                  <div class="card-body">
-                    <h5 class="fs-6 fw-bold mb-2"><i class="bi bi-geo-alt-fill me-1 text-primary"></i>{{ suc.nombreSucursal }}</h5>
-                    <div class="d-flex justify-content-between small text-muted mb-2">
-                      <span>Total: <strong>{{ suc.total }}</strong></span>
-                      <span class="text-success fw-semibold">Activos: {{ suc.activos }}</span>
-                      <span class="text-danger fw-semibold">Morosos: {{ suc.morosos }}</span>
-                    </div>
-                    <div class="progress reportes__progress">
-                      <div class="progress-bar bg-success" [style.width.%]="(suc.activos * 100) / (suc.total || 1)"></div>
-                      <div class="progress-bar bg-danger" [style.width.%]="(suc.morosos * 100) / (suc.total || 1)"></div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            }
-          </div>
-        }
-
-        <!-- TABLA DETALLADA DE SOCIOS -->
+        <!-- TABLA DETALLADA DE MIEMBROS -->
         <div class="card border-0 shadow-sm">
           <div class="card-header bg-white py-3 border-0 d-flex justify-content-between align-items-center">
-            <h4 class="fs-6 fw-bold m-0"><i class="bi bi-table me-2 text-primary"></i>Listado Detallado de Socios</h4>
-            <span class="badge bg-light text-dark border">{{ miembrosFiltrados().length }} socios listados</span>
+            <h4 class="fs-6 fw-bold m-0"><i class="bi bi-people me-2 text-primary"></i>Listado Detallado de Socios</h4>
+            <span class="badge bg-light text-dark border">{{ miembrosFiltrados().length }} mostrados</span>
           </div>
           <div class="table-responsive">
             <table class="table table-hover align-middle mb-0">
@@ -561,64 +544,57 @@
                 <tr>
                   <th class="ps-4">Socio</th>
                   <th>DPI</th>
-                  <th>Sucursal</th>
                   <th>Plan Actual</th>
-                  <th>Fin Membresía</th>
+                  <th>Vencimiento</th>
                   <th>Estado</th>
                   <th>Días Mora</th>
-                  <th>Saldo Est.</th>
-                  <th class="text-end pe-4">Acción</th>
+                  <th>Sede</th>
+                  <th class="text-end pe-4 no-print">Acción</th>
                 </tr>
               </thead>
               <tbody>
                 @for (m of miembrosFiltrados(); track m.socioId) {
                   <tr>
                     <td class="ps-4">
-                      <div class="fw-semibold">{{ m.nombres }} {{ m.apellidos }}</div>
-                      <small class="text-muted">{{ m.correo }}</small>
+                      <span class="fw-semibold">{{ m.nombres }} {{ m.apellidos }}</span>
+                      <small class="text-muted d-block">{{ m.correo }}</small>
                     </td>
                     <td class="text-muted small">{{ m.dpi }}</td>
-                    <td>{{ m.sucursal || 'Central' }}</td>
                     <td><span class="badge bg-light text-dark border">{{ m.planActual || 'Sin plan' }}</span></td>
-                    <td>{{ m.fechaFinMembresia ? (m.fechaFinMembresia | date:'dd/MM/yyyy') : 'Nunca' }}</td>
+                    <td class="text-muted small">{{ m.fechaFinMembresia ? (m.fechaFinMembresia | date:'dd/MM/yyyy') : 'N/A' }}</td>
                     <td>
-                      @if (m.estadoSocio === 'ACTIVO') {
-                        <span class="badge bg-success-subtle text-success border border-success-subtle">ACTIVO</span>
-                      } @else if (m.estadoSocio === 'MOROSO') {
-                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle">MOROSO</span>
-                      } @else {
-                        <span class="badge bg-secondary-subtle text-secondary border">INACTIVO</span>
-                      }
+                      <span
+                        class="badge"
+                        [class.bg-success]="m.estadoSocio === 'ACTIVO'"
+                        [class.bg-danger]="m.estadoSocio === 'MOROSO'"
+                        [class.bg-secondary]="m.estadoSocio !== 'ACTIVO' && m.estadoSocio !== 'MOROSO'"
+                      >
+                        {{ m.estadoSocio }}
+                      </span>
                     </td>
                     <td>
                       @if (m.diasMora > 0) {
-                        <span class="badge bg-danger text-white">{{ m.diasMora }} días</span>
+                        <span class="badge bg-danger">{{ m.diasMora }} días de atraso</span>
                       } @else {
-                        <span class="text-muted small">-</span>
+                        <span class="text-success small fw-semibold"><i class="bi bi-check me-1"></i>Al día</span>
                       }
                     </td>
-                    <td>
-                      @if (m.saldoPendiente > 0) {
-                        <span class="text-danger fw-bold">Q {{ m.saldoPendiente | number:'1.2-2' }}</span>
-                      } @else {
-                        <span class="text-success small">Al día</span>
-                      }
-                    </td>
-                    <td class="text-end pe-4">
+                    <td class="text-muted small">{{ m.sucursal || 'Central' }}</td>
+                    <td class="text-end pe-4 no-print">
                       @if (m.estadoSocio === 'MOROSO') {
-                        <button type="button" class="btn btn-sm btn-outline-danger" (click)="irACobroSocio(m.socioId)">
-                          <i class="bi bi-cash-coin me-1"></i>Cobrar Mora
+                        <button type="button" class="btn btn-sm btn-outline-danger" (click)="irACobroSocio(m.socioId)" title="Cobrar cuota en Pagos">
+                          <i class="bi bi-credit-card me-1"></i>Cobrar
                         </button>
                       } @else {
-                        <button type="button" class="btn btn-sm btn-outline-primary" (click)="irACobroSocio(m.socioId)">
-                          <i class="bi bi-receipt me-1"></i>Cobrar
+                        <button type="button" class="btn btn-sm btn-outline-primary" (click)="irACobroSocio(m.socioId)" title="Renovar o anticipar pago">
+                          <i class="bi bi-cash-coin me-1"></i>Renovar
                         </button>
                       }
                     </td>
                   </tr>
                 } @empty {
                   <tr>
-                    <td colspan="9" class="text-center py-4 text-muted small">No se encontraron socios con los filtros aplicados.</td>
+                    <td colspan="8" class="text-center py-4 text-muted small">No se encontraron socios con los filtros aplicados.</td>
                   </tr>
                 }
               </tbody>
@@ -631,22 +607,26 @@
     <!-- TAB 4: RENOVACIONES Y RETENCIÓN -->
     @if (tabActiva() === 'renovaciones' && reporteRenovaciones(); as repRen) {
       <div class="reportes__tab-content">
+        <!-- RESUMEN DE RETENCIÓN -->
         <div class="card border-0 shadow-sm p-4 mb-4">
           <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
             <div>
-              <h3 class="fs-5 fw-bold m-0"><i class="bi bi-arrow-repeat me-2 text-primary"></i>Reporte de Renovaciones de Membresías</h3>
-              <p class="text-muted small m-0">Tasa de retención de clientes y renovaciones recurrentes</p>
+              <div class="d-flex align-items-center gap-2">
+                <h3 class="fs-5 fw-bold m-0"><i class="bi bi-arrow-repeat me-2 text-primary"></i>Reporte Analítico de Renovaciones y Retención</h3>
+                <span class="badge bg-primary fs-6">Año: {{ repRen.anio || anioFiltroRenovaciones() }}</span>
+              </div>
+              <p class="text-muted small m-0 mt-1">Evolución de renovaciones periódicas y tasa de retención de socios para el año <strong>{{ repRen.anio || anioFiltroRenovaciones() }}</strong></p>
             </div>
-            <div class="d-flex align-items-center gap-2">
-              <label class="form-label m-0 fw-semibold text-muted small">Año:</label>
+            <div class="d-flex align-items-center gap-2 no-print">
+              <label class="form-label m-0 fw-semibold text-muted small">Filtrar por Año:</label>
               <select
                 class="form-select form-select-sm"
-                style="width: 120px;"
+                style="width: 140px;"
                 [value]="anioFiltroRenovaciones()"
                 (change)="cambiarAnioRenovaciones($any($event.target).value)"
               >
                 @for (a of aniosDisponibles; track a) {
-                  <option [value]="a">{{ a }}</option>
+                  <option [value]="a">Año {{ a }}</option>
                 }
               </select>
             </div>
@@ -654,17 +634,17 @@
 
           <div class="row g-3 mt-3">
             <div class="col-md-6">
-              <div class="p-3 bg-light rounded text-center">
+              <div class="p-3 bg-light rounded text-center border">
                 <span class="text-muted small fw-semibold text-uppercase d-block">Total de Renovaciones</span>
                 <span class="fs-3 fw-bold text-primary">{{ repRen.totalRenovaciones }}</span>
-                <small class="text-muted d-block">Membresías extendidas en el año {{ repRen.anioConsultado }}</small>
+                <small class="text-muted d-block">Membresías extendidas en el año <strong>{{ repRen.anio || anioFiltroRenovaciones() }}</strong></small>
               </div>
             </div>
             <div class="col-md-6">
               <div class="p-3 bg-success-subtle rounded text-center border border-success-subtle">
                 <span class="text-success small fw-bold text-uppercase d-block">Tasa de Retención Promedio</span>
-                <span class="fs-3 fw-bold text-success">{{ repRen.tasaRetencionPromedio }}%</span>
-                <small class="text-success d-block">Porcentaje de socios que renuevan periódicamente</small>
+                <span class="fs-3 fw-bold text-success">{{ repRen.tasaRetencionPromedio | number:'1.1-2' }}%</span>
+                <small class="text-success d-block">Porcentaje de fidelización de miembros en el año {{ repRen.anio || anioFiltroRenovaciones() }}</small>
               </div>
             </div>
           </div>
@@ -675,7 +655,7 @@
           <div class="col-12 col-lg-6">
             <div class="card border-0 shadow-sm h-100">
               <div class="card-header bg-white py-3 border-0">
-                <h4 class="fs-6 fw-bold m-0"><i class="bi bi-calendar-check me-2 text-primary"></i>Renovaciones Mes a Mes</h4>
+                <h4 class="fs-6 fw-bold m-0"><i class="bi bi-calendar-check me-2 text-primary"></i>Renovaciones Mes a Mes (Año {{ repRen.anio || anioFiltroRenovaciones() }})</h4>
               </div>
               <div class="card-body pt-0">
                 <div class="table-responsive">
@@ -683,18 +663,20 @@
                     <thead class="table-light fs-xs text-uppercase">
                       <tr>
                         <th>Mes</th>
+                        <th>Año</th>
                         <th>Renovaciones</th>
                         <th>Tasa Retención</th>
-                        <th style="width: 30%;">Nivel</th>
+                        <th style="width: 25%;" class="no-print">Nivel</th>
                       </tr>
                     </thead>
                     <tbody>
                       @for (mes of repRen.renovacionesPorMes; track mes.mes) {
                         <tr>
-                          <td class="fw-semibold">{{ obtenerNombreMes(mes.mes) }}</td>
+                          <td class="fw-semibold">{{ mes.nombreMes || obtenerNombreMes(mes.mes) }}</td>
+                          <td class="text-muted small fw-bold">{{ mes.anio || repRen.anio || anioFiltroRenovaciones() }}</td>
                           <td><span class="badge bg-light text-dark border">{{ mes.renovaciones }}</span></td>
-                          <td class="fw-bold text-success">{{ mes.tasaRetencion }}%</td>
-                          <td>
+                          <td class="fw-bold text-success">{{ mes.tasaRetencion | number:'1.1-2' }}%</td>
+                          <td class="no-print">
                             <div class="progress reportes__progress">
                               <div
                                 class="progress-bar bg-success"
@@ -705,7 +687,7 @@
                         </tr>
                       } @empty {
                         <tr>
-                          <td colspan="4" class="text-center py-4 text-muted small">Sin datos de renovaciones en este año.</td>
+                          <td colspan="5" class="text-center py-4 text-muted small">Sin datos de renovaciones en este año.</td>
                         </tr>
                       }
                     </tbody>
@@ -743,7 +725,7 @@
                         </tr>
                       } @empty {
                         <tr>
-                          <td colspan="4" class="text-center py-4 text-muted small">No hay renovaciones recientes.</td>
+                          <td colspan="4" class="text-center py-4 text-muted small">No hay renovaciones registradas en este periodo.</td>
                         </tr>
                       }
                     </tbody>
@@ -762,14 +744,17 @@
         <div class="card border-0 shadow-sm p-4 mb-4">
           <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
             <div>
-              <h3 class="fs-5 fw-bold m-0"><i class="bi bi-clock-history me-2 text-primary"></i>Métricas de Afluencia y Horarios Pico</h3>
-              <p class="text-muted small m-0">Análisis de patrones de asistencia al gimnasio</p>
+              <div class="d-flex align-items-center gap-2">
+                <h3 class="fs-5 fw-bold m-0"><i class="bi bi-clock-history me-2 text-primary"></i>Métricas de Afluencia y Horarios Pico</h3>
+                <span class="badge bg-primary fs-6">{{ obtenerNombreMes(mesFiltroAsistencias()) }} {{ anioFiltroAsistencias() }}</span>
+              </div>
+              <p class="text-muted small m-0 mt-1">Análisis de concurrencia y flujo de clientes por franja horaria</p>
             </div>
-            <div class="d-flex align-items-center gap-2">
+            <div class="d-flex align-items-center gap-2 no-print">
               <label class="form-label m-0 fw-semibold text-muted small">Mes:</label>
               <select
                 class="form-select form-select-sm"
-                style="width: 130px;"
+                style="width: 140px;"
                 [value]="mesFiltroAsistencias()"
                 (change)="cambiarMesAsistencia($any($event.target).value)"
               >
@@ -782,27 +767,31 @@
 
           <div class="row g-3 mt-3">
             <div class="col-md-3">
-              <div class="p-3 bg-light rounded text-center">
+              <div class="p-3 bg-light rounded text-center border">
                 <span class="text-muted small fw-semibold text-uppercase d-block">Asistencias Totales</span>
                 <span class="fs-3 fw-bold text-primary">{{ repAsis.totalAsistenciasPeriodo }}</span>
+                <small class="text-muted d-block">Check-ins registrados</small>
               </div>
             </div>
             <div class="col-md-3">
-              <div class="p-3 bg-light rounded text-center">
+              <div class="p-3 bg-light rounded text-center border">
                 <span class="text-muted small fw-semibold text-uppercase d-block">Promedio Diario</span>
                 <span class="fs-3 fw-bold text-dark">{{ repAsis.promedioDiario | number:'1.1-1' }}</span>
+                <small class="text-muted d-block">Visitas por día</small>
               </div>
             </div>
             <div class="col-md-3">
               <div class="p-3 bg-primary-subtle rounded text-center border border-primary-subtle">
-                <span class="text-primary small fw-bold text-uppercase d-block">Día con Mayor Afluencia</span>
+                <span class="text-primary small fw-bold text-uppercase d-block">Día de Mayor Afluencia</span>
                 <span class="fs-4 fw-bold text-primary">{{ repAsis.diaMayorAfluencia || 'Lunes' }}</span>
+                <small class="text-primary d-block">Pico semanal</small>
               </div>
             </div>
             <div class="col-md-3">
               <div class="p-3 bg-warning-subtle rounded text-center border border-warning-subtle">
                 <span class="text-warning-emphasis small fw-bold text-uppercase d-block">Hora Pico Principal</span>
-                <span class="fs-4 fw-bold text-warning-emphasis">{{ repAsis.horaPico || '18:00 - 19:00' }}</span>
+                <span class="fs-5 fw-bold text-warning-emphasis d-block mt-1">{{ horarioPicoCalculado() }}</span>
+                <small class="text-muted d-block">Mayor afluencia de clientes</small>
               </div>
             </div>
           </div>
@@ -813,16 +802,18 @@
           <div class="col-12 col-lg-6">
             <div class="card border-0 shadow-sm h-100">
               <div class="card-header bg-white py-3 border-0">
-                <h4 class="fs-6 fw-bold m-0"><i class="bi bi-clock me-2 text-primary"></i>Distribución por Horarios</h4>
+                <h4 class="fs-6 fw-bold m-0"><i class="bi bi-clock me-2 text-primary"></i>Distribución de Clientes por Franja Horaria</h4>
               </div>
               <div class="card-body pt-0">
-                @for (hora of repAsis.distribucionHorasPico; track hora.franjaHoraria) {
+                @for (hora of repAsis.distribucionHorasPico; track (hora.franjaHoraria || hora.etiquetaHora)) {
                   <div class="mb-3">
                     <div class="d-flex justify-content-between align-items-center mb-1">
-                      <span class="fw-semibold">{{ hora.franjaHoraria }}</span>
-                      <span class="text-muted small">{{ hora.totalAsistencias }} visitas ({{ hora.porcentaje }}%)</span>
+                      <span class="fw-semibold">{{ hora.etiquetaHora || hora.franjaHoraria }}</span>
+                      <span class="text-muted small fw-bold">
+                        {{ hora.cantidad ?? hora.totalAsistencias }} clientes ({{ hora.porcentaje }}%)
+                      </span>
                     </div>
-                    <div class="progress reportes__progress">
+                    <div class="progress reportes__progress no-print">
                       <div
                         class="progress-bar bg-warning text-dark"
                         [style.width.%]="hora.porcentaje"
@@ -843,67 +834,77 @@
                 <h4 class="fs-6 fw-bold m-0"><i class="bi bi-calendar-week me-2 text-primary"></i>Afluencia por Día de la Semana</h4>
               </div>
               <div class="card-body pt-0">
-                @for (dia of repAsis.asistenciasPorDiaSemana; track dia.diaSemana) {
+                @for (dia of repAsis.asistenciasPorDiaSemana; track (dia.nombreDia || dia.diaSemana)) {
                   <div class="mb-3">
                     <div class="d-flex justify-content-between align-items-center mb-1">
-                      <span class="fw-semibold">{{ dia.diaSemana }}</span>
-                      <span class="text-muted small">{{ dia.totalAsistencias }} entradas ({{ dia.porcentaje }}%)</span>
+                      <span class="fw-semibold">{{ dia.nombreDia || dia.diaSemana }}</span>
+                      <span class="text-muted small fw-bold">{{ dia.cantidad ?? dia.totalAsistencias }} entradas ({{ dia.porcentaje }}%)</span>
                     </div>
-                    <div class="progress reportes__progress">
+                    <div class="progress reportes__progress no-print">
                       <div
-                        class="progress-bar bg-info"
+                        class="progress-bar bg-primary"
                         [style.width.%]="dia.porcentaje"
                       ></div>
                     </div>
                   </div>
                 } @empty {
-                  <p class="text-muted small text-center py-4">Sin registros de afluencia semanal.</p>
+                  <p class="text-muted small text-center py-4">Sin datos de días para este período.</p>
                 }
               </div>
             </div>
           </div>
         </div>
 
-        <!-- TOP SOCIOS MÁS CONSTANTES -->
-        @if (repAsis.topSociosAsistencia && repAsis.topSociosAsistencia.length > 0) {
-          <div class="card border-0 shadow-sm">
-            <div class="card-header bg-white py-3 border-0 d-flex justify-content-between align-items-center">
-              <h4 class="fs-6 fw-bold m-0"><i class="bi bi-trophy-fill me-2 text-warning"></i>Top 5 Socios Más Constantes</h4>
-              <span class="badge bg-light text-dark border">Reconocimiento a la constancia</span>
-            </div>
-            <div class="table-responsive">
-              <table class="table table-hover align-middle mb-0">
-                <thead class="table-light fs-xs text-uppercase">
-                  <tr>
-                    <th class="ps-4">Puesto</th>
-                    <th>Socio</th>
-                    <th class="text-end pe-4">Total de Entrenamientos</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  @for (top of repAsis.topSociosAsistencia; track top.socioId; let i = $index) {
-                    <tr>
-                      <td class="ps-4">
-                        @if (i === 0) {
-                          <span class="badge bg-warning text-dark"><i class="bi bi-award-fill me-1"></i>1º Lugar</span>
-                        } @else if (i === 1) {
-                          <span class="badge bg-secondary text-white"><i class="bi bi-award-fill me-1"></i>2º Lugar</span>
-                        } @else if (i === 2) {
-                          <span class="badge bg-danger-subtle text-danger"><i class="bi bi-award-fill me-1"></i>3º Lugar</span>
-                        } @else {
-                          <span class="badge bg-light text-dark border">{{ i + 1 }}º Lugar</span>
-                        }
-                      </td>
-                      <td class="fw-bold text-dark">{{ top.nombreSocio }}</td>
-                      <td class="text-end pe-4 fw-bold text-primary">{{ top.totalVisitas }} visitas</td>
-                    </tr>
-                  }
-                </tbody>
-              </table>
-            </div>
+        <!-- Top socios más constantes -->
+        <div class="card border-0 shadow-sm">
+          <div class="card-header bg-white py-3 border-0 d-flex justify-content-between align-items-center">
+            <h4 class="fs-6 fw-bold m-0"><i class="bi bi-trophy me-2 text-warning"></i>Socios más Constantes del Mes</h4>
+            <span class="badge bg-light text-dark border">{{ repAsis.topSociosAsistencia.length }} socios</span>
           </div>
-        }
+          <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+              <thead class="table-light fs-xs text-uppercase">
+                <tr>
+                  <th class="ps-4">Posición</th>
+                  <th>Socio</th>
+                  <th>ID Socio</th>
+                  <th class="text-end pe-4">Total Visitas</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (socio of repAsis.topSociosAsistencia; track socio.socioId; let idx = $index) {
+                  <tr>
+                    <td class="ps-4">
+                      @if (idx === 0) {
+                        <span class="badge bg-warning text-dark"><i class="bi bi-award-fill me-1"></i>1° Lugar</span>
+                      } @else if (idx === 1) {
+                        <span class="badge bg-secondary"><i class="bi bi-award me-1"></i>2° Lugar</span>
+                      } @else if (idx === 2) {
+                        <span class="badge bg-light text-dark border"><i class="bi bi-award me-1"></i>3° Lugar</span>
+                      } @else {
+                        <span class="text-muted fw-bold ps-2">{{ idx + 1 }}°</span>
+                      }
+                    </td>
+                    <td class="fw-semibold">{{ socio.nombreSocio || socio.nombreCompleto }}</td>
+                    <td class="text-muted small">#{{ socio.socioId }}</td>
+                    <td class="text-end pe-4 fw-bold text-primary">{{ socio.totalVisitas || socio.asistencias }} visitas</td>
+                  </tr>
+                } @empty {
+                  <tr>
+                    <td colspan="4" class="text-center py-4 text-muted small">No hay visitas registradas para este período.</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
     }
+
+    <!-- PIE DE PÁGINA IMPRESO OFICIAL (SOLO EN IMPRESIÓN / PDF) -->
+    <div class="reporte-print-footer d-none d-print-block">
+      <p class="m-0 fw-semibold">¡Reporte oficial emitido por el Sistema de Gestión Gimnasio Teo / Clauda Lovers!</p>
+      <small>Este documento es de carácter confidencial para uso administrativo y auditoría interna.</small>
+    </div>
   }
 </section>

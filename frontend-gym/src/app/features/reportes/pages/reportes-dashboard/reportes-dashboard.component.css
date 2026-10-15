@@ -33,9 +33,32 @@
 }
 
 .reportes__nav-link.active {
-  background-color: var(--color-primary) !important;
+  background-color: #1e293b !important;
   color: #ffffff !important;
   box-shadow: var(--shadow-sm);
+}
+
+/* Encabezado formal estilo Comprobante de Pago */
+.reporte-document-header {
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.reporte-document-banner {
+  background-color: #1e293b !important;
+  color: #ffffff;
+  padding: var(--sp-4) var(--sp-5);
+}
+
+.reporte-meta-table {
+  width: 100%;
+  font-size: var(--fs-sm);
+  margin-bottom: 0;
+}
+
+.reporte-meta-table td {
+  padding: var(--sp-2) var(--sp-3);
+  vertical-align: middle;
 }
 
 .reportes__kpi-card {
@@ -108,16 +131,105 @@
   font-size: 0.7rem;
 }
 
+/* ============================================================
+   ESTILOS DE IMPRESIÓN Y EXPORTACIÓN FORMAL (Estilo Comprobante)
+   ============================================================ */
 @media print {
+  /* Ocultar elementos de navegación y controles de pantalla */
+  .no-print,
   .reportes__nav,
   .btn,
+  button,
   .input-group,
-  select {
+  select,
+  .form-select,
+  .alert {
     display: none !important;
   }
+
+  /* Ajustar página para documento limpio */
+  body {
+    background: #ffffff !important;
+    color: #111827 !important;
+    font-size: 11pt !important;
+  }
+
+  .reportes {
+    padding: 0 !important;
+  }
+
+  .reporte-document-banner {
+    background-color: #1e293b !important;
+    color: #ffffff !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    padding: 16px !important;
+    margin-bottom: 12px !important;
+  }
+
+  .reporte-meta-table {
+    border: 1px solid #cbd5e1 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  .reporte-meta-table td {
+    border: 1px solid #cbd5e1 !important;
+  }
+
   .card {
-    border: 1px solid #ccc !important;
+    border: 1px solid #cbd5e1 !important;
     box-shadow: none !important;
     break-inside: avoid;
+    margin-bottom: 16px !important;
+  }
+
+  .card-header {
+    background-color: #f1f5f9 !important;
+    border-bottom: 1px solid #cbd5e1 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+  }
+
+  thead.table-light th {
+    background-color: #f1f5f9 !important;
+    color: #334155 !important;
+    border: 1px solid #cbd5e1 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  table td, table th {
+    border: 1px solid #cbd5e1 !important;
+    padding: 6px 8px !important;
+  }
+
+  .progress {
+    display: none !important;
+  }
+
+  .reportes__bar-chart {
+    display: none !important;
+  }
+
+  .badge {
+    border: 1px solid #334155 !important;
+    color: #111827 !important;
+    background: transparent !important;
+  }
+
+  .reporte-print-footer {
+    display: block !important;
+    margin-top: 24px;
+    padding-top: 12px;
+    border-top: 1px dashed #94a3b8;
+    text-align: center;
+    font-size: 9pt;
+    color: #64748b;
   }
 }

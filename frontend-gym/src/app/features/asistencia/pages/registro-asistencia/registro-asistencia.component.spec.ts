@@ -119,3 +119,4 @@ describe('RegistroAsistenciaComponent', () => {
     expect((component as any).sociosFiltrados()[0].idSocio).toBe(1);
   });
 });
+
