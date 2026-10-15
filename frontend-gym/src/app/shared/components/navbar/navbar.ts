@@ -24,7 +24,6 @@ export class Navbar {
     { etiqueta: 'Nosotros', ancla: 'nosotros' },
     { etiqueta: 'Servicios', ancla: 'servicios' },
     { etiqueta: 'Planes', ancla: 'planes' },
-    { etiqueta: 'Entrenadores', ancla: 'entrenadores' },
     { etiqueta: 'Contacto', ancla: 'contacto' },
   ];
 
