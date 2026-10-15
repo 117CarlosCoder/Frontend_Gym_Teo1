@@ -8,6 +8,7 @@ export const RUTAS = {
     planes: '/dashboard/planes',
     membresias: '/dashboard/membresias',
     pagos: '/dashboard/pagos',
+    reportes: '/dashboard/reportes',
     usuarios: '/dashboard/usuarios',
     perfil: '/dashboard/perfil',
   },

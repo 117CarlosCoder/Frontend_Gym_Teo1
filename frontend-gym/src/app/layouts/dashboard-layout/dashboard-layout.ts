@@ -56,6 +56,11 @@ export class DashboardLayout {
     this.auth.tieneRol('ADMIN', 'RECEPCION', 'RECEPCIONISTA'),
   );
 
+  /** Reportes financieros y operativos (Sprint 5). */
+  protected readonly puedeVerReportes = computed(() =>
+    this.auth.tieneRol('ADMIN', 'RECEPCION', 'RECEPCIONISTA'),
+  );
+
   /** Determina si el usuario puede administrar usuarios (Solo ADMIN). */
   protected readonly puedeVerUsuarios = computed(() =>
     this.auth.tieneRol('ADMIN'),

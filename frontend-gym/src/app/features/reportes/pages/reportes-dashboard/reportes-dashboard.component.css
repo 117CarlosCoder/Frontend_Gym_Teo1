@@ -1,0 +1,123 @@
+.reportes {
+  padding-bottom: var(--sp-6);
+}
+
+.reportes__titulo {
+  font-size: var(--fs-xl);
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+.reportes__subtitulo {
+  font-size: var(--fs-sm);
+  color: var(--color-text-muted);
+}
+
+.reportes__nav {
+  gap: var(--sp-2);
+}
+
+.reportes__nav-link {
+  color: var(--color-text-muted);
+  font-weight: 600;
+  font-size: var(--fs-sm);
+  border-radius: var(--radius-md);
+  padding: var(--sp-2) var(--sp-4);
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+}
+
+.reportes__nav-link:hover {
+  background-color: var(--color-surface);
+  color: var(--color-primary);
+}
+
+.reportes__nav-link.active {
+  background-color: var(--color-primary) !important;
+  color: #ffffff !important;
+  box-shadow: var(--shadow-sm);
+}
+
+.reportes__kpi-card {
+  border-radius: var(--radius-md);
+  border-left: 4px solid transparent !important;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.reportes__kpi-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md) !important;
+}
+
+.reportes__kpi-card--primary {
+  border-left-color: var(--color-primary) !important;
+}
+
+.reportes__kpi-card--success {
+  border-left-color: var(--color-success) !important;
+}
+
+.reportes__kpi-card--danger {
+  border-left-color: var(--color-danger) !important;
+}
+
+.reportes__kpi-card--accent {
+  border-left-color: var(--color-accent) !important;
+}
+
+.reportes__progress {
+  height: 8px;
+  border-radius: var(--radius-pill);
+  background-color: var(--color-surface-alt);
+}
+
+.reportes__progress-large {
+  height: 14px;
+  border-radius: var(--radius-pill);
+  background-color: var(--color-surface-alt);
+}
+
+/* Gráfico de barras simple en CSS */
+.reportes__bar-chart {
+  min-height: 160px;
+  border-bottom: 2px solid var(--color-border);
+  padding-bottom: var(--sp-2);
+}
+
+.reportes__bar-column {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  height: 100%;
+}
+
+.reportes__bar {
+  width: 28px;
+  min-height: 10px;
+  transition: height 0.3s ease-in-out;
+}
+
+.reportes__bar-value {
+  font-size: var(--fs-xs);
+  margin-bottom: var(--sp-1);
+}
+
+.reportes__bar-label {
+  font-size: 0.7rem;
+}
+
+@media print {
+  .reportes__nav,
+  .btn,
+  .input-group,
+  select {
+    display: none !important;
+  }
+  .card {
+    border: 1px solid #ccc !important;
+    box-shadow: none !important;
+    break-inside: avoid;
+  }
+}

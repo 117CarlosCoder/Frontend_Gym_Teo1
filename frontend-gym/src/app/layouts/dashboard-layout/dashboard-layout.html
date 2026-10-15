@@ -31,6 +31,11 @@
           Pagos
         </a>
       }
+      @if (puedeVerReportes()) {
+        <a class="panel-nav__link" routerLink="/dashboard/reportes" routerLinkActive="panel-nav__link--activo">
+          Reportes
+        </a>
+      }
       @if (puedeVerUsuarios()) {
         <a class="panel-nav__link" routerLink="/dashboard/usuarios" routerLinkActive="panel-nav__link--activo">
           Usuarios
