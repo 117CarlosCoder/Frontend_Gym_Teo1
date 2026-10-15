@@ -1,0 +1,322 @@
+.reportes {
+  padding-bottom: var(--sp-6);
+}
+
+.reportes__titulo {
+  font-size: var(--fs-xl);
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+.reportes__subtitulo {
+  font-size: var(--fs-sm);
+  color: var(--color-text-muted);
+}
+
+.reportes__nav {
+  gap: var(--sp-2);
+}
+
+.reportes__nav-link {
+  color: var(--color-text-muted);
+  font-weight: 600;
+  font-size: var(--fs-sm);
+  border-radius: var(--radius-md);
+  padding: var(--sp-2) var(--sp-4);
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+}
+
+.reportes__nav-link:hover {
+  background-color: var(--color-surface);
+  color: var(--color-primary);
+}
+
+.reportes__nav-link.active {
+  background-color: #1e293b !important;
+  color: #ffffff !important;
+  box-shadow: var(--shadow-sm);
+}
+
+/* Encabezado formal estilo Comprobante de Pago */
+.reporte-document-header {
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.reporte-document-banner {
+  background-color: #1e293b !important;
+  color: #ffffff;
+  padding: var(--sp-4) var(--sp-5);
+}
+
+.reporte-meta-table {
+  width: 100%;
+  font-size: var(--fs-sm);
+  margin-bottom: 0;
+}
+
+.reporte-meta-table td {
+  padding: var(--sp-2) var(--sp-3);
+  vertical-align: middle;
+}
+
+.reportes__kpi-card {
+  border-radius: var(--radius-md);
+  border-left: 4px solid transparent !important;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.reportes__kpi-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md) !important;
+}
+
+.reportes__kpi-card--primary {
+  border-left-color: var(--color-primary) !important;
+}
+
+.reportes__kpi-card--success {
+  border-left-color: var(--color-success) !important;
+}
+
+.reportes__kpi-card--danger {
+  border-left-color: var(--color-danger) !important;
+}
+
+.reportes__kpi-card--accent {
+  border-left-color: var(--color-accent) !important;
+}
+
+.reportes__progress {
+  height: 8px;
+  border-radius: var(--radius-pill);
+  background-color: var(--color-surface-alt);
+}
+
+.reportes__progress-large {
+  height: 14px;
+  border-radius: var(--radius-pill);
+  background-color: var(--color-surface-alt);
+}
+
+/* Gráfico de barras simple en CSS */
+.reportes__bar-chart {
+  min-height: 160px;
+  border-bottom: 2px solid var(--color-border);
+  padding-bottom: var(--sp-2);
+}
+
+.reportes__bar-column {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  height: 100%;
+}
+
+.reportes__bar {
+  width: 28px;
+  min-height: 10px;
+  transition: height 0.3s ease-in-out;
+}
+
+.reportes__bar-value {
+  font-size: var(--fs-xs);
+  margin-bottom: var(--sp-1);
+}
+
+.reportes__bar-label {
+  font-size: 0.7rem;
+}
+
+/* ============================================================
+   ESTILOS DE IMPRESIÓN Y EXPORTACIÓN FORMAL (Estilo Comprobante)
+   ============================================================ */
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 12mm 10mm 15mm 10mm;
+  }
+
+  /* 1. Ocultar elementos de navegación y controles de pantalla */
+  .no-print,
+  .reportes__nav,
+  .btn,
+  button,
+  .input-group,
+  select,
+  .form-select,
+  .alert,
+  header.panel-header,
+  .panel-header {
+    display: none !important;
+  }
+
+  /* 2. Ajustar página y contenedores principales */
+  html, body {
+    background: #ffffff !important;
+    color: #0f172a !important;
+    font-size: 10pt !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .panel-contenido,
+  .reportes,
+  .reportes__tab-content {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* 3. Desactivar Flexbox en el grid para corregir el bug de traslape/colapso en Chromium */
+  .row {
+    display: block !important;
+    width: 100% !important;
+    margin: 0 !important;
+  }
+
+  .col-12,
+  [class*="col-"] {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    flex: none !important;
+    float: none !important;
+    margin: 0 0 20px 0 !important;
+    padding: 0 !important;
+  }
+
+  /* 4. Anular alturas fijas o relativas que provocan colapso de coordenadas */
+  .h-100 {
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+  }
+
+  /* 5. Tarjetas en flujo de bloque secuencial */
+  .card {
+    display: block !important;
+    position: static !important;
+    float: none !important;
+    clear: both !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    transform: none !important;
+    margin-bottom: 20px !important;
+    padding: 14px !important;
+    border: 1px solid #cbd5e1 !important;
+    border-radius: 6px !important;
+    box-shadow: none !important;
+    background-color: #ffffff !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  .reporte-document-banner {
+    background-color: #1e293b !important;
+    color: #ffffff !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    padding: 16px !important;
+    margin-bottom: 12px !important;
+    border-radius: 4px !important;
+  }
+
+  .card-header {
+    background-color: #f1f5f9 !important;
+    border-bottom: 1px solid #cbd5e1 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    padding: 8px 12px !important;
+    margin-bottom: 10px !important;
+  }
+
+  .card-body {
+    display: block !important;
+    position: static !important;
+    width: 100% !important;
+    height: auto !important;
+    padding: 0 !important;
+    overflow: visible !important;
+  }
+
+  /* 6. Ítems internos de listas (ej. Ingresos por Método de Pago) */
+  .p-3.mb-3.border.rounded.bg-light {
+    display: block !important;
+    position: static !important;
+    width: 100% !important;
+    margin-bottom: 10px !important;
+    padding: 10px 14px !important;
+    background-color: #f8fafc !important;
+    border: 1px solid #cbd5e1 !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* 7. Tablas limpias y con salto de página adecuado */
+  .table-responsive {
+    display: block !important;
+    width: 100% !important;
+    overflow: visible !important;
+    max-height: none !important;
+  }
+
+  table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+  }
+
+  thead.table-light th {
+    background-color: #f1f5f9 !important;
+    color: #1e293b !important;
+    border: 1px solid #cbd5e1 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  table td, table th {
+    border: 1px solid #cbd5e1 !important;
+    padding: 6px 8px !important;
+    font-size: 9.5pt !important;
+  }
+
+  tr {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  .progress {
+    display: none !important;
+  }
+
+  .reportes__bar-chart {
+    display: none !important;
+  }
+
+  .badge {
+    border: 1px solid #64748b !important;
+    color: #0f172a !important;
+    background: transparent !important;
+  }
+
+  .reporte-print-footer {
+    display: block !important;
+    margin-top: 24px;
+    padding-top: 12px;
+    border-top: 1px dashed #94a3b8;
+    text-align: center;
+    font-size: 8.5pt;
+    color: #64748b;
+  }
+}

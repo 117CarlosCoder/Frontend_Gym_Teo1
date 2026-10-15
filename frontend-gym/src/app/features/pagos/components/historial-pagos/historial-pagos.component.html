@@ -36,8 +36,21 @@
             <td class="fw-semibold">#{{ pago.idComprobante }}</td>
             <td>{{ pago.fechaPago | date: 'dd/MM/yyyy HH:mm' }}</td>
             <td>
-              {{ pago.nombrePlan }}
+              <div class="fw-semibold">{{ pago.nombrePlan }}</div>
               <small class="text-muted d-block">{{ pago.duracionPlan }} días</small>
+              @if (tieneBeneficio(pago.observacion)) {
+                <span class="badge bg-success-subtle text-success border border-success-subtle fs-8 me-1 mt-1" title="Beneficio en precio aplicado">
+                  <i class="bi bi-tag-fill me-1"></i>Beneficio
+                </span>
+              }
+              @if (tieneRecargo(pago.observacion)) {
+                <span class="badge bg-danger-subtle text-danger border border-danger-subtle fs-8 mt-1" title="Recargo por mora / fuera de plazo">
+                  <i class="bi bi-exclamation-triangle-fill me-1"></i>Recargo tardío
+                </span>
+              }
+              @if (pago.observacion) {
+                <small class="text-muted d-block fst-italic mt-1" style="font-size: 0.75rem;">{{ pago.observacion }}</small>
+              }
             </td>
             <td>
               {{ pago.metodoPago?.nombre ?? '-' }}

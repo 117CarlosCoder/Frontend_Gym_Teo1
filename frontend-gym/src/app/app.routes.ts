@@ -105,6 +105,15 @@ export const routes: Routes = [
         title: 'Pagos | Claude Lovers Gym',
       },
       {
+        path: 'reportes',
+        canActivate: [rolGuard('ADMIN', 'RECEPCION', 'RECEPCIONISTA')],
+        loadComponent: () =>
+          import('./features/reportes/pages/reportes-dashboard/reportes-dashboard.component').then(
+            (m) => m.ReportesDashboardComponent,
+          ),
+        title: 'Reportes y Métricas | Claude Lovers Gym',
+      },
+      {
         path: 'usuarios',
         canActivate: [rolGuard('ADMIN')],
         loadComponent: () =>
