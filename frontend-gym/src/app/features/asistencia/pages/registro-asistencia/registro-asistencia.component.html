@@ -12,19 +12,94 @@
     </div>
     }
 
-    @if (mensajeError()) {
-    <div class="alert alert-warning d-flex align-items-center shadow-sm" role="alert">
-        <div class="fw-bold me-2"><i class="bi bi-exclamation-triangle-fill me-1"></i>Acceso Denegado:</div>
-        <div>{{ mensajeError() }}</div>
+    <!-- ALERTA CLARA DE BLOQUEO (REQUISITO M6 SPRINT 5) -->
+    @if (accesoBloqueado(); as b) {
+    <div class="alert alert-danger shadow-sm border-2 border-danger p-3 mb-4" role="alert">
+        <div class="d-flex align-items-start gap-3">
+            <i class="bi bi-shield-x fs-2 text-danger flex-shrink-0"></i>
+            <div class="flex-grow-1">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="alert-heading fw-bold text-danger mb-1">⛔ ACCESO BLOQUEADO — MEMBRESÍA VENCIDA O INACTIVA</h5>
+                    <button type="button" class="btn-close" (click)="accesoBloqueado.set(null)" aria-label="Cerrar"></button>
+                </div>
+                <p class="mb-1 text-dark">
+                    Se ha denegado el ingreso a: <strong>{{ b.socio }}</strong> (ID de socio: <strong>{{ b.idSocio }}</strong>).
+                </p>
+                <div class="p-2 bg-white rounded border border-danger-subtle small text-danger fw-semibold mb-2">
+                    <i class="bi bi-exclamation-octagon-fill me-1"></i>Motivo del sistema: {{ b.motivo }}
+                </div>
+                <div class="d-flex gap-2">
+                    <a [routerLink]="['/dashboard/pagos']" [queryParams]="{ socio: b.idSocio }" class="btn btn-sm btn-danger">
+                        <i class="bi bi-cash-coin me-1"></i>Regularizar Membresía / Cobrar en Pagos
+                    </a>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" (click)="accesoBloqueado.set(null)">
+                        Entendido
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
     }
 
-    @if (mensajeExito()) {
-    <div class="alert alert-success d-flex align-items-center shadow-sm" role="alert">
-        <div class="fw-bold me-2"><i class="bi bi-check-circle-fill me-1"></i>Ingreso Autorizado:</div>
-        <div>{{ mensajeExito() }}</div>
+    <!-- ALERTA DE INGRESO AUTORIZADO (M6) -->
+    @if (accesoAutorizado(); as a) {
+    <div class="alert alert-success shadow-sm border-2 border-success p-3 mb-4" role="alert">
+        <div class="d-flex align-items-center justify-content-between gap-3">
+            <div class="d-flex align-items-center gap-3">
+                <i class="bi bi-shield-check fs-2 text-success flex-shrink-0"></i>
+                <div>
+                    <h5 class="alert-heading fw-bold text-success mb-0">✅ INGRESO AUTORIZADO</h5>
+                    <span class="d-block text-dark">
+                        Bienvenido(a) <strong>{{ a.socio }}</strong> (ID: {{ a.idSocio }}). Ingreso registrado exitosamente a las <strong>{{ a.hora }}</strong> en <strong>{{ a.sucursal }}</strong>.
+                    </span>
+                </div>
+            </div>
+            <button type="button" class="btn-close" (click)="accesoAutorizado.set(null)" aria-label="Cerrar"></button>
+        </div>
     </div>
     }
+
+    <!-- CAJA DE ACCESO RÁPIDO / ESCÁNER QR O ID (M6) -->
+    <div class="card border-0 shadow-sm mb-4 bg-light">
+        <div class="card-body p-3">
+            <div class="row align-items-center g-3">
+                <div class="col-12 col-md-8">
+                    <label class="form-label fw-bold text-dark mb-1 small">
+                        <i class="bi bi-qr-code-scan me-1 text-primary"></i>Control de Acceso Inmediato (Escanear QR o Digitar ID de Socio)
+                    </label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-white"><i class="bi bi-person-badge"></i></span>
+                        <input
+                            type="number"
+                            class="form-control form-control-lg bg-white"
+                            placeholder="Ingrese ID del socio (ej. 1, 4, 10)..."
+                            [value]="idSocioRapido()"
+                            (input)="idSocioRapido.set($any($event.target).value)"
+                            (keyup.enter)="registrarEntradaRapida()"
+                        />
+                        <button
+                            type="button"
+                            class="btn btn-primary px-4 fw-bold"
+                            (click)="registrarEntradaRapida()"
+                            [disabled]="!idSocioRapido() || procesandoAcceso()"
+                        >
+                            @if (procesandoAcceso()) {
+                                <span class="spinner-border spinner-border-sm me-1"></span>Verificando...
+                            } @else {
+                                <i class="bi bi-door-open me-1"></i>Verificar e Ingresar
+                            }
+                        </button>
+                    </div>
+                </div>
+                <div class="col-12 col-md-4 text-md-end">
+                    <div class="p-2 bg-white rounded border d-inline-block text-start small">
+                        <span class="d-block text-success fw-bold"><i class="bi bi-check2-circle me-1"></i>Validación Activa</span>
+                        <span class="text-muted fs-xs">Bloqueo automático si membresía está vencida</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
 
     <div class="row mb-4 g-3 align-items-center">

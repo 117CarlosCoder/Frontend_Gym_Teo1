@@ -118,6 +118,13 @@
               </div>
             </a>
 
+            <a [routerLink]="RUTAS.dashboard.reportes" class="btn btn-outline-primary p-3 text-start d-flex align-items-center gap-3">
+              <div>
+                <strong class="d-block">Reportes y Métricas (Sprint 5)</strong>
+                <small class="text-muted">Consulta de socios morosos, afluencia y estadísticas</small>
+              </div>
+            </a>
+
             <div class="p-3 bg-light rounded d-flex justify-content-between align-items-center">
               <div>
                 <span class="text-muted small d-block">Socios con Cuota Pendiente:</span>
@@ -269,6 +276,46 @@
             <li class="mb-1">Configuración de duración en días y precio en Q</li>
             <li class="mb-1">Asignación de plan con vigencia calculada</li>
             <li><i class="bi bi-check2 text-success me-1"></i>Edición y borrado del catálogo (Exclusivo Admin)</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="col-12 col-md-6">
+        <div class="card h-100 border-0 shadow-sm p-4">
+          <div class="d-flex justify-content-between align-items-start mb-3">
+            <div>
+              <h3 class="fs-5 fw-bold text-dark mt-2 mb-1">Reportes y Métricas (Sprint 5)</h3>
+              <p class="text-muted small">Ingresos, miembros activos vs morosos, retención y afluencia</p>
+            </div>
+            <a [routerLink]="RUTAS.dashboard.reportes" class="btn btn-sm btn--primary">
+              Ver Reportes <i class="bi bi-arrow-right"></i>
+            </a>
+          </div>
+          <ul class="list-unstyled small text-muted mb-0">
+            <li class="mb-1"><i class="bi bi-check2 text-success me-1"></i>Reporte de ingresos anual y por método de pago</li>
+            <li class="mb-1"><i class="bi bi-check2 text-success me-1"></i>Cálculo en tiempo real de socios activos vs morosos</li>
+            <li class="mb-1"><i class="bi bi-check2 text-success me-1"></i>Tasa de retención y renovaciones por mes</li>
+            <li><i class="bi bi-check2 text-success me-1"></i>Métricas de horas pico y afluencia de asistencia</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="col-12 col-md-6">
+        <div class="card h-100 border-0 shadow-sm p-4">
+          <div class="d-flex justify-content-between align-items-start mb-3">
+            <div>
+              <h3 class="fs-5 fw-bold text-dark mt-2 mb-1">Cobros y Comprobantes (M4)</h3>
+              <p class="text-muted small">Registro de cobros, beneficios por tipo de socio y mora</p>
+            </div>
+            <a [routerLink]="RUTAS.dashboard.pagos" class="btn btn-sm btn--primary">
+              Ir a Pagos <i class="bi bi-arrow-right"></i>
+            </a>
+          </div>
+          <ul class="list-unstyled small text-muted mb-0">
+            <li class="mb-1"><i class="bi bi-check2 text-success me-1"></i>Cobro de membresías con comprobante oficial PDF</li>
+            <li class="mb-1"><i class="bi bi-check2 text-success me-1"></i>Beneficio en el precio por tipo de socio (Curva PO)</li>
+            <li class="mb-1"><i class="bi bi-check2 text-success me-1"></i>Recargo automático por pago tardío / mora (Curva PO)</li>
+            <li><i class="bi bi-check2 text-success me-1"></i>Historial de transacciones y estados de cuenta</li>
           </ul>
         </div>
       </div>

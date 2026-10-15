@@ -1,0 +1,910 @@
+<section class="reportes">
+  <!-- ENCABEZADO FORMAL ESTILO COMPROBANTE DE PAGO -->
+  <div class="reporte-document-header card border-0 shadow-sm mb-4">
+    <div class="reporte-document-banner d-flex flex-wrap justify-content-between align-items-center gap-3">
+      <div>
+        <div class="d-flex align-items-center gap-2 mb-1">
+          <span class="badge bg-secondary text-uppercase px-2 py-1">Gimnasio Teo &bull; Clauda Lovers</span>
+          <span class="badge bg-success-subtle text-success-emphasis border border-success-subtle px-2 py-1 d-none d-sm-inline">
+            <i class="bi bi-shield-check me-1"></i>Reporte Oficial
+          </span>
+        </div>
+        <h2 class="m-0 fw-bold fs-3 text-white text-uppercase tracking-wider">
+          <i class="bi bi-file-earmark-bar-graph me-2 text-info"></i>{{ tituloReporteActivo() }}
+        </h2>
+        <p class="m-0 text-light text-opacity-75 small mt-1">{{ descripcionReporteActivo() }}</p>
+      </div>
+
+      <!-- BOTONES DE ACCIÓN (SOLO EN PANTALLA) -->
+      <div class="d-flex gap-2 no-print">
+        <button
+          type="button"
+          class="btn btn-outline-light btn-sm"
+          (click)="cargarTabActual()"
+          [disabled]="cargando()"
+          title="Actualizar datos desde la base de datos"
+        >
+          <i class="bi bi-arrow-clockwise me-1"></i>Actualizar
+        </button>
+        <button
+          type="button"
+          class="btn btn-primary btn-sm fw-semibold shadow-sm"
+          (click)="imprimirReporte()"
+          title="Imprimir o exportar como documento PDF limpio"
+        >
+          <i class="bi bi-printer me-1"></i>Imprimir / Exportar PDF
+        </button>
+      </div>
+    </div>
+
+    <!-- METADATOS DEL REPORTE -->
+    <div class="card-footer bg-light border-0 py-2 px-4">
+      <div class="d-flex flex-wrap justify-content-between text-muted small align-items-center gap-2">
+        <span><i class="bi bi-calendar3 me-1 text-primary"></i><strong>Año / Período:</strong> {{ anioActivo() }}</span>
+        <span><i class="bi bi-person-badge me-1 text-primary"></i><strong>Generado por:</strong> {{ auth.usuario()?.nombre || 'Administrador' }} ({{ auth.usuario()?.rol || 'ADMIN' }})</span>
+        <span><i class="bi bi-geo-alt me-1 text-primary"></i><strong>Sede:</strong> Gimnasio Teo Central</span>
+        <span><i class="bi bi-clock-history me-1 text-primary"></i><strong>Emisión:</strong> {{ fechaHoy | date:'dd/MM/yyyy HH:mm:ss' }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- PESTAÑAS DE NAVEGACIÓN (OCULTAS AL IMPRIMIR) -->
+  <ul class="nav nav-pills reportes__nav mb-4 gap-2 border-bottom pb-2 no-print">
+    <li class="nav-item">
+      <button
+        type="button"
+        class="nav-link reportes__nav-link"
+        [class.active]="tabActiva() === 'dashboard'"
+        (click)="cambiarTab('dashboard')"
+      >
+        <i class="bi bi-speedometer2 me-1"></i>Resumen Ejecutivo
+      </button>
+    </li>
+    @if (esAdmin()) {
+      <li class="nav-item">
+        <button
+          type="button"
+          class="nav-link reportes__nav-link"
+          [class.active]="tabActiva() === 'ingresos'"
+          (click)="cambiarTab('ingresos')"
+        >
+          <i class="bi bi-cash-stack me-1"></i>Ingresos y Finanzas
+        </button>
+      </li>
+    }
+    <li class="nav-item">
+      <button
+        type="button"
+        class="nav-link reportes__nav-link"
+        [class.active]="tabActiva() === 'miembros'"
+        (click)="cambiarTab('miembros')"
+      >
+        <i class="bi bi-people me-1"></i>Miembros: Activos vs Morosos
+      </button>
+    </li>
+    @if (esAdmin()) {
+      <li class="nav-item">
+        <button
+          type="button"
+          class="nav-link reportes__nav-link"
+          [class.active]="tabActiva() === 'renovaciones'"
+          (click)="cambiarTab('renovaciones')"
+        >
+          <i class="bi bi-arrow-repeat me-1"></i>Renovaciones y Retención
+        </button>
+      </li>
+    }
+    <li class="nav-item">
+      <button
+        type="button"
+        class="nav-link reportes__nav-link"
+        [class.active]="tabActiva() === 'asistencias'"
+        (click)="cambiarTab('asistencias')"
+      >
+        <i class="bi bi-clock-history me-1"></i>Métricas de Asistencia
+      </button>
+    </li>
+  </ul>
+
+  <!-- ALERTA DE ERROR -->
+  @if (error()) {
+    <div class="alert alert-danger d-flex align-items-center justify-content-between mb-4 shadow-sm no-print" role="alert">
+      <div>
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+        <span>{{ error() }}</span>
+      </div>
+      <button type="button" class="btn btn-sm btn-outline-danger" (click)="cargarTabActual()">
+        Reintentar
+      </button>
+    </div>
+  }
+
+  <!-- ESTADO DE CARGA -->
+  @if (cargando()) {
+    <div class="text-center py-5 my-5 no-print">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Generando reporte...</span>
+      </div>
+      <p class="mt-3 text-muted fw-semibold">Cargando datos oficiales desde la base de datos...</p>
+    </div>
+  } @else {
+
+    <!-- TAB 1: RESUMEN EJECUTIVO (DASHBOARD) -->
+    @if (tabActiva() === 'dashboard' && resumen(); as data) {
+      <div class="reportes__tab-content">
+        <!-- TARJETAS DE INDICADORES PRINCIPALES -->
+        <div class="row g-3 mb-4">
+          <div class="col-12 col-sm-6 col-lg-3">
+            <div class="card border-0 shadow-sm reportes__kpi-card reportes__kpi-card--primary h-100">
+              <div class="card-body">
+                <span class="text-muted small fw-semibold text-uppercase">Total Miembros</span>
+                <h3 class="fs-2 fw-bold text-dark mt-2 mb-1">{{ data.totalSocios }}</h3>
+                <small class="text-muted"><i class="bi bi-person-check me-1"></i>Registrados en el sistema</small>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-12 col-sm-6 col-lg-3">
+            <div class="card border-0 shadow-sm reportes__kpi-card reportes__kpi-card--success h-100">
+              <div class="card-body">
+                <span class="text-muted small fw-semibold text-uppercase">Miembros Activos</span>
+                <h3 class="fs-2 fw-bold text-success mt-2 mb-1">{{ data.totalSociosActivos }}</h3>
+                <small class="text-success fw-semibold">
+                  <i class="bi bi-check-circle me-1"></i>{{ data.porcentajeActivos }}% del total
+                </small>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-12 col-sm-6 col-lg-3">
+            <div class="card border-0 shadow-sm reportes__kpi-card reportes__kpi-card--danger h-100">
+              <div class="card-body">
+                <span class="text-muted small fw-semibold text-uppercase">Miembros Morosos</span>
+                <h3 class="fs-2 fw-bold text-danger mt-2 mb-1">{{ data.totalSociosMorosos }}</h3>
+                <small class="text-danger fw-semibold">
+                  <i class="bi bi-exclamation-circle me-1"></i>{{ data.porcentajeMorosos }}% con cuota vencida
+                </small>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-12 col-sm-6 col-lg-3">
+            <div class="card border-0 shadow-sm reportes__kpi-card reportes__kpi-card--accent h-100">
+              <div class="card-body">
+                <span class="text-muted small fw-semibold text-uppercase">Ingresos del Mes</span>
+                <h3 class="fs-2 fw-bold text-dark mt-2 mb-1">Q {{ data.ingresosMesActual | number:'1.2-2' }}</h3>
+                <small class="text-muted"><i class="bi bi-calendar-event me-1"></i>Recaudación del mes en curso</small>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="row g-4 mb-4">
+          <!-- Gráfica de ingresos de los últimos 6 meses -->
+          <div class="col-12 col-lg-8">
+            <div class="card border-0 shadow-sm h-100">
+              <div class="card-header bg-white py-3 border-0 d-flex justify-content-between align-items-center">
+                <h4 class="fs-6 fw-bold m-0"><i class="bi bi-bar-chart-line me-2 text-primary"></i>Ingresos Últimos Meses</h4>
+                <span class="badge bg-light text-dark border">Histórico Reciente</span>
+              </div>
+              <div class="card-body pt-0">
+                <div class="reportes__bar-chart d-flex align-items-end justify-content-between gap-3 pt-4">
+                  @for (mes of data.ingresosUltimos6Meses; track mes.mes) {
+                    <div class="reportes__bar-column text-center">
+                      <span class="reportes__bar-value text-muted">Q {{ mes.total | number:'1.0-0' }}</span>
+                      <div
+                        class="reportes__bar bg-primary rounded-top"
+                        [style.height.%]="calcularPorcentajeBarra(mes.total, calcularMaximoIngreso(data.ingresosUltimos6Meses))"
+                        title="{{ mes.nombreMes || obtenerNombreMes(mes.mes) }}: Q {{ mes.total | number:'1.2-2' }}"
+                      ></div>
+                      <span class="reportes__bar-label text-muted mt-2 fw-semibold">{{ (mes.nombreMes || obtenerNombreMes(mes.mes)).substring(0, 3) }}</span>
+                    </div>
+                  }
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Distribución de Planes -->
+          <div class="col-12 col-lg-4">
+            <div class="card border-0 shadow-sm h-100">
+              <div class="card-header bg-white py-3 border-0">
+                <h4 class="fs-6 fw-bold m-0"><i class="bi bi-pie-chart me-2 text-primary"></i>Planes más Contratados</h4>
+              </div>
+              <div class="card-body pt-0">
+                @for (plan of data.topPlanes; track plan.planId) {
+                  <div class="mb-3">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                      <span class="fw-semibold small">{{ plan.nombrePlan }}</span>
+                      <span class="text-muted small">{{ plan.cantidadSocios }} socios ({{ plan.porcentaje }}%)</span>
+                    </div>
+                    <div class="progress reportes__progress">
+                      <div
+                        class="progress-bar bg-primary"
+                        role="progressbar"
+                        [style.width.%]="plan.porcentaje"
+                      ></div>
+                    </div>
+                  </div>
+                }
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Socios próximos a vencer -->
+        @if (data.membresiasPorVencer && data.membresiasPorVencer.length > 0) {
+          <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white py-3 border-0 d-flex justify-content-between align-items-center">
+              <h4 class="fs-6 fw-bold m-0 text-warning-emphasis">
+                <i class="bi bi-hourglass-split me-2 text-warning"></i>Membresías Próximas a Vencer (Próximos 7 días)
+              </h4>
+              <span class="badge bg-warning text-dark">{{ data.membresiasPorVencer.length }} socios</span>
+            </div>
+            <div class="table-responsive">
+              <table class="table table-hover align-middle mb-0">
+                <thead class="table-light fs-xs text-uppercase">
+                  <tr>
+                    <th class="ps-4">Socio</th>
+                    <th>Plan Actual</th>
+                    <th>Fecha Vencimiento</th>
+                    <th>Días Restantes</th>
+                    <th class="text-end pe-4 no-print">Acción</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (item of data.membresiasPorVencer; track item.idMembresia) {
+                    <tr>
+                      <td class="ps-4">
+                        <span class="fw-semibold">{{ item.nombreSocio }}</span>
+                        <small class="text-muted d-block">{{ item.correoSocio }}</small>
+                      </td>
+                      <td><span class="badge bg-light text-dark border">{{ item.nombrePlan }}</span></td>
+                      <td class="text-muted small">{{ item.fechaVencimiento | date:'dd/MM/yyyy' }}</td>
+                      <td>
+                        <span class="badge" [class.bg-danger]="item.diasRestantes <= 2" [class.bg-warning]="item.diasRestantes > 2" [class.text-dark]="item.diasRestantes > 2">
+                          {{ item.diasRestantes === 0 ? 'Vence hoy' : item.diasRestantes + ' días' }}
+                        </span>
+                      </td>
+                      <td class="text-end pe-4 no-print">
+                        <button type="button" class="btn btn-sm btn-outline-primary" (click)="irACobroSocio(item.idSocio)">
+                          <i class="bi bi-cash-coin me-1"></i>Cobrar
+                        </button>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          </div>
+        }
+      </div>
+    }
+
+    <!-- TAB 2: INGRESOS Y FINANZAS -->
+    @if (tabActiva() === 'ingresos' && reporteIngresos(); as repIng) {
+      <div class="reportes__tab-content">
+        <!-- FILTROS Y RESUMEN FINANCIERO -->
+        <div class="card border-0 shadow-sm p-4 mb-4">
+          <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+            <div>
+              <div class="d-flex align-items-center gap-2">
+                <h3 class="fs-5 fw-bold m-0"><i class="bi bi-cash-coin me-2 text-success"></i>Reporte Financiero de Recaudación</h3>
+                <span class="badge bg-primary fs-6">Año: {{ repIng.anio || anioFiltroIngresos() }}</span>
+              </div>
+              <p class="text-muted small m-0 mt-1">Ingresos detallados por mes y métodos de pago correspondientes al año <strong>{{ repIng.anio || anioFiltroIngresos() }}</strong></p>
+            </div>
+            <div class="d-flex align-items-center gap-2 no-print">
+              <label class="form-label m-0 fw-semibold text-muted small">Filtrar por Año:</label>
+              <select
+                class="form-select form-select-sm"
+                style="width: 140px;"
+                [ngModel]="anioFiltroIngresos()"
+                (ngModelChange)="cambiarAnioIngresos($event)"
+              >
+                @for (a of aniosDisponibles; track a) {
+                  <option [ngValue]="a">Año {{ a }}</option>
+                }
+                <option [ngValue]="'todos'">Histórico Total</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="row g-3 mt-3">
+            <div class="col-md-4">
+              <div class="p-3 bg-light rounded text-center border">
+                <span class="text-muted small fw-semibold text-uppercase d-block">Ingreso Total Recaudado</span>
+                <span class="fs-3 fw-bold text-success">Q {{ repIng.ingresoTotal | number:'1.2-2' }}</span>
+                <small class="text-muted d-block">Año fiscal {{ repIng.anio || anioFiltroIngresos() }}</small>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="p-3 bg-light rounded text-center border">
+                <span class="text-muted small fw-semibold text-uppercase d-block">Transacciones Registradas</span>
+                <span class="fs-3 fw-bold text-primary">{{ repIng.totalTransacciones }} pagos</span>
+                <small class="text-muted d-block">Comprobantes procesados</small>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="p-3 bg-light rounded text-center border">
+                <span class="text-muted small fw-semibold text-uppercase d-block">Ticket Promedio por Cobro</span>
+                <span class="fs-3 fw-bold text-dark">
+                  Q {{ (repIng.totalTransacciones > 0 ? repIng.ingresoTotal / repIng.totalTransacciones : 0) | number:'1.2-2' }}
+                </span>
+                <small class="text-muted d-block">Promedio por transacción</small>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- MÉTODOS DE PAGO Y EVOLUCIÓN MENSUAL -->
+        <div class="row g-4 mb-4">
+          <!-- Desglose por Método de Pago -->
+          <div class="col-12 col-lg-5">
+            <div class="card border-0 shadow-sm h-100">
+              <div class="card-header bg-white py-3 border-0">
+                <h4 class="fs-6 fw-bold m-0"><i class="bi bi-credit-card me-2 text-primary"></i>Ingresos por Método de Pago</h4>
+              </div>
+              <div class="card-body pt-0">
+                @for (metodo of repIng.ingresosPorMetodoPago; track metodo.metodoPago) {
+                  <div class="p-3 mb-3 border rounded bg-light">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                      <span class="fw-bold fs-6">
+                        @if (metodo.metodoPago.toUpperCase().includes('EFECTIVO')) {
+                          <i class="bi bi-cash me-2 text-success"></i>
+                        } @else if (metodo.metodoPago.toUpperCase().includes('TARJETA')) {
+                          <i class="bi bi-credit-card-2-front me-2 text-info"></i>
+                        } @else {
+                          <i class="bi bi-bank me-2 text-warning"></i>
+                        }
+                        {{ metodo.metodoPago }}
+                      </span>
+                      <strong class="text-success">Q {{ metodo.total | number:'1.2-2' }}</strong>
+                    </div>
+                    <div class="d-flex justify-content-between text-muted small mb-2">
+                      <span>{{ metodo.transacciones }} cobros</span>
+                      <span>{{ metodo.porcentaje }}% del total</span>
+                    </div>
+                    <div class="progress reportes__progress">
+                      <div
+                        class="progress-bar bg-success"
+                        role="progressbar"
+                        [style.width.%]="metodo.porcentaje"
+                      ></div>
+                    </div>
+                  </div>
+                } @empty {
+                  <p class="text-muted small text-center py-4">No se han registrado cobros en el periodo seleccionado.</p>
+                }
+              </div>
+            </div>
+          </div>
+
+          <!-- Evolución Mensual -->
+          <div class="col-12 col-lg-7">
+            <div class="card border-0 shadow-sm h-100">
+              <div class="card-header bg-white py-3 border-0">
+                <h4 class="fs-6 fw-bold m-0"><i class="bi bi-calendar3 me-2 text-primary"></i>Recaudación Mensual (Año {{ repIng.anio || anioFiltroIngresos() }})</h4>
+              </div>
+              <div class="card-body pt-0">
+                <div class="table-responsive">
+                  <table class="table table-sm align-middle mb-0">
+                    <thead class="table-light fs-xs text-uppercase">
+                      <tr>
+                        <th>Mes</th>
+                        <th>Año</th>
+                        <th>Cobros</th>
+                        <th class="text-end">Monto Total</th>
+                        <th style="width: 28%;" class="no-print">Gráfica</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (mes of repIng.ingresosPorMes; track mes.mes) {
+                        <tr>
+                          <td class="fw-semibold">{{ mes.nombreMes || obtenerNombreMes(mes.mes) }}</td>
+                          <td class="text-muted small fw-bold">{{ mes.anio || repIng.anio || anioFiltroIngresos() }}</td>
+                          <td><span class="badge bg-light text-dark border">{{ mes.transacciones }}</span></td>
+                          <td class="text-end fw-bold text-success">Q {{ mes.total | number:'1.2-2' }}</td>
+                          <td class="no-print">
+                            <div class="progress reportes__progress">
+                              <div
+                                class="progress-bar bg-primary"
+                                [style.width.%]="calcularPorcentajeBarra(mes.total, calcularMaximoIngreso(repIng.ingresosPorMes))"
+                              ></div>
+                            </div>
+                          </td>
+                        </tr>
+                      } @empty {
+                        <tr>
+                          <td colspan="5" class="text-center py-4 text-muted small">Sin ingresos registrados en este año.</td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- LISTADO DETALLADO DE PAGOS / COMPROBANTES -->
+        <div class="card border-0 shadow-sm">
+          <div class="card-header bg-white py-3 border-0 d-flex justify-content-between align-items-center">
+            <h4 class="fs-6 fw-bold m-0"><i class="bi bi-receipt me-2 text-primary"></i>Auditoría Detallada de Pagos (Año {{ repIng.anio || anioFiltroIngresos() }})</h4>
+            <span class="badge bg-light text-dark border">{{ repIng.pagosDetalle.length }} transacciones</span>
+          </div>
+          <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+              <thead class="table-light fs-xs text-uppercase">
+                <tr>
+                  <th class="ps-4">No. Comprobante</th>
+                  <th>Fecha Pago</th>
+                  <th>Socio</th>
+                  <th>Plan Pagado</th>
+                  <th>Método</th>
+                  <th>Referencia</th>
+                  <th>Atendido Por</th>
+                  <th class="text-end pe-4">Monto Cobrado</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (pago of repIng.pagosDetalle; track pago.idComprobante) {
+                  <tr>
+                    <td class="ps-4 fw-bold text-primary">#{{ pago.idComprobante }}</td>
+                    <td class="text-muted small">{{ pago.fechaPago | date:'dd/MM/yyyy HH:mm' }}</td>
+                    <td class="fw-semibold">{{ pago.nombreSocio }}</td>
+                    <td><span class="badge bg-light text-dark border">{{ pago.nombrePlan }}</span></td>
+                    <td>{{ pago.metodoPago }}</td>
+                    <td class="text-muted small">{{ pago.referencia || '-' }}</td>
+                    <td class="text-muted small">{{ pago.recepcionista }}</td>
+                    <td class="text-end pe-4 fw-bold text-success">Q {{ pago.monto | number:'1.2-2' }}</td>
+                  </tr>
+                } @empty {
+                  <tr>
+                    <td colspan="8" class="text-center py-4 text-muted small">No se registraron pagos con los filtros seleccionados.</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- TAB 3: MIEMBROS ACTIVOS VS MOROSOS -->
+    @if (tabActiva() === 'miembros' && reporteMiembros(); as repM) {
+      <div class="reportes__tab-content">
+        <!-- TARJETAS COMPARATIVAS Y FILTROS -->
+        <div class="card border-0 shadow-sm p-4 mb-4">
+          <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3">
+            <div>
+              <h3 class="fs-5 fw-bold m-0"><i class="bi bi-person-lines-fill me-2 text-primary"></i>Reporte de Socios: Activos vs. Morosos</h3>
+              <p class="text-muted small m-0">Fecha de corte de auditoría: <strong>{{ repM.fechaCorte | date:'dd/MM/yyyy' }}</strong></p>
+            </div>
+            <div class="d-flex flex-wrap align-items-center gap-2 no-print">
+              <select
+                class="form-select form-select-sm"
+                style="width: 160px;"
+                [ngModel]="estadoFiltroMiembros()"
+                (ngModelChange)="cambiarFiltroEstadoMiembro($event)"
+              >
+                <option [ngValue]="'TODOS'">Todos los Estados</option>
+                <option [ngValue]="'ACTIVO'">Solo Activos</option>
+                <option [ngValue]="'MOROSO'">Solo Morosos</option>
+              </select>
+
+              <input
+                type="text"
+                class="form-control form-control-sm"
+                style="width: 220px;"
+                placeholder="Buscar socio por nombre, DPI..."
+                [value]="busquedaMiembro()"
+                (input)="busquedaMiembro.set($any($event.target).value)"
+              />
+            </div>
+          </div>
+
+          <div class="row g-3">
+            <div class="col-md-3">
+              <div class="p-3 bg-light rounded text-center border">
+                <span class="text-muted small fw-semibold text-uppercase d-block">Padrón de Socios</span>
+                <span class="fs-3 fw-bold text-dark">{{ repM.totalSocios }}</span>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="p-3 bg-success-subtle rounded text-center border border-success-subtle">
+                <span class="text-success small fw-bold text-uppercase d-block">Al Día / Activos</span>
+                <span class="fs-3 fw-bold text-success">{{ repM.activos }} ({{ repM.porcentajeActivos }}%)</span>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="p-3 bg-danger-subtle rounded text-center border border-danger-subtle">
+                <span class="text-danger small fw-bold text-uppercase d-block">Morosos / Cuota Vencida</span>
+                <span class="fs-3 fw-bold text-danger">{{ repM.morosos }} ({{ repM.porcentajeMorosos }}%)</span>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="p-3 bg-secondary-subtle rounded text-center border border-secondary-subtle">
+                <span class="text-muted small fw-bold text-uppercase d-block">Inactivos / Bajas</span>
+                <span class="fs-3 fw-bold text-secondary">{{ repM.inactivos }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TABLA DETALLADA DE MIEMBROS -->
+        <div class="card border-0 shadow-sm">
+          <div class="card-header bg-white py-3 border-0 d-flex justify-content-between align-items-center">
+            <h4 class="fs-6 fw-bold m-0"><i class="bi bi-people me-2 text-primary"></i>Listado Detallado de Socios</h4>
+            <span class="badge bg-light text-dark border">{{ miembrosFiltrados().length }} mostrados</span>
+          </div>
+          <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+              <thead class="table-light fs-xs text-uppercase">
+                <tr>
+                  <th class="ps-4">Socio</th>
+                  <th>DPI</th>
+                  <th>Plan Actual</th>
+                  <th>Vencimiento</th>
+                  <th>Estado</th>
+                  <th>Días Mora</th>
+                  <th>Sede</th>
+                  <th class="text-end pe-4 no-print">Acción</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (m of miembrosFiltrados(); track m.socioId) {
+                  <tr>
+                    <td class="ps-4">
+                      <span class="fw-semibold">{{ m.nombres }} {{ m.apellidos }}</span>
+                      <small class="text-muted d-block">{{ m.correo }}</small>
+                    </td>
+                    <td class="text-muted small">{{ m.dpi }}</td>
+                    <td><span class="badge bg-light text-dark border">{{ m.planActual || 'Sin plan' }}</span></td>
+                    <td class="text-muted small">{{ m.fechaFinMembresia ? (m.fechaFinMembresia | date:'dd/MM/yyyy') : 'N/A' }}</td>
+                    <td>
+                      <span
+                        class="badge"
+                        [class.bg-success]="m.estadoSocio === 'ACTIVO'"
+                        [class.bg-danger]="m.estadoSocio === 'MOROSO'"
+                        [class.bg-secondary]="m.estadoSocio !== 'ACTIVO' && m.estadoSocio !== 'MOROSO'"
+                      >
+                        {{ m.estadoSocio }}
+                      </span>
+                    </td>
+                    <td>
+                      @if (m.diasMora > 0) {
+                        <span class="badge bg-danger">{{ m.diasMora }} días de atraso</span>
+                      } @else {
+                        <span class="text-success small fw-semibold"><i class="bi bi-check me-1"></i>Al día</span>
+                      }
+                    </td>
+                    <td class="text-muted small">{{ m.sucursal || 'Central' }}</td>
+                    <td class="text-end pe-4 no-print">
+                      @if (m.estadoSocio === 'MOROSO') {
+                        <button type="button" class="btn btn-sm btn-outline-danger" (click)="irACobroSocio(m.socioId)" title="Cobrar cuota en Pagos">
+                          <i class="bi bi-credit-card me-1"></i>Cobrar
+                        </button>
+                      } @else {
+                        <button type="button" class="btn btn-sm btn-outline-primary" (click)="irACobroSocio(m.socioId)" title="Renovar o anticipar pago">
+                          <i class="bi bi-cash-coin me-1"></i>Renovar
+                        </button>
+                      }
+                    </td>
+                  </tr>
+                } @empty {
+                  <tr>
+                    <td colspan="8" class="text-center py-4 text-muted small">No se encontraron socios con los filtros aplicados.</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- TAB 4: RENOVACIONES Y RETENCIÓN -->
+    @if (tabActiva() === 'renovaciones' && reporteRenovaciones(); as repRen) {
+      <div class="reportes__tab-content">
+        <!-- RESUMEN DE RETENCIÓN -->
+        <div class="card border-0 shadow-sm p-4 mb-4">
+          <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+            <div>
+              <div class="d-flex align-items-center gap-2">
+                <h3 class="fs-5 fw-bold m-0"><i class="bi bi-arrow-repeat me-2 text-primary"></i>Reporte Analítico de Renovaciones y Retención</h3>
+                <span class="badge bg-primary fs-6">Año: {{ repRen.anio || anioFiltroRenovaciones() }}</span>
+              </div>
+              <p class="text-muted small m-0 mt-1">Evolución de renovaciones periódicas y tasa de retención de socios para el año <strong>{{ repRen.anio || anioFiltroRenovaciones() }}</strong></p>
+            </div>
+            <div class="d-flex align-items-center gap-2 no-print">
+              <label class="form-label m-0 fw-semibold text-muted small">Filtrar por Año:</label>
+              <select
+                class="form-select form-select-sm"
+                style="width: 140px;"
+                [ngModel]="anioFiltroRenovaciones()"
+                (ngModelChange)="cambiarAnioRenovaciones($event)"
+              >
+                @for (a of aniosDisponibles; track a) {
+                  <option [ngValue]="a">Año {{ a }}</option>
+                }
+              </select>
+            </div>
+          </div>
+
+          <div class="row g-3 mt-3">
+            <div class="col-md-6">
+              <div class="p-3 bg-light rounded text-center border">
+                <span class="text-muted small fw-semibold text-uppercase d-block">Total de Renovaciones</span>
+                <span class="fs-3 fw-bold text-primary">{{ repRen.totalRenovaciones }}</span>
+                <small class="text-muted d-block">Membresías extendidas en el año <strong>{{ repRen.anio || anioFiltroRenovaciones() }}</strong></small>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="p-3 bg-success-subtle rounded text-center border border-success-subtle">
+                <span class="text-success small fw-bold text-uppercase d-block">Tasa de Retención Promedio</span>
+                <span class="fs-3 fw-bold text-success">{{ repRen.tasaRetencionPromedio | number:'1.1-2' }}%</span>
+                <small class="text-success d-block">Porcentaje de fidelización de miembros en el año {{ repRen.anio || anioFiltroRenovaciones() }}</small>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TABLA MENSUAL DE RENOVACIONES -->
+        <div class="row g-4 mb-4">
+          <div class="col-12 col-lg-6">
+            <div class="card border-0 shadow-sm h-100">
+              <div class="card-header bg-white py-3 border-0">
+                <h4 class="fs-6 fw-bold m-0"><i class="bi bi-calendar-check me-2 text-primary"></i>Renovaciones Mes a Mes (Año {{ repRen.anio || anioFiltroRenovaciones() }})</h4>
+              </div>
+              <div class="card-body pt-0">
+                <div class="table-responsive">
+                  <table class="table table-sm align-middle mb-0">
+                    <thead class="table-light fs-xs text-uppercase">
+                      <tr>
+                        <th>Mes</th>
+                        <th>Año</th>
+                        <th>Renovaciones</th>
+                        <th>Tasa Retención</th>
+                        <th style="width: 25%;" class="no-print">Nivel</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (mes of repRen.renovacionesPorMes; track mes.mes) {
+                        <tr>
+                          <td class="fw-semibold">{{ mes.nombreMes || obtenerNombreMes(mes.mes) }}</td>
+                          <td class="text-muted small fw-bold">{{ mes.anio || repRen.anio || anioFiltroRenovaciones() }}</td>
+                          <td><span class="badge bg-light text-dark border">{{ mes.renovaciones }}</span></td>
+                          <td class="fw-bold text-success">{{ mes.tasaRetencion | number:'1.1-2' }}%</td>
+                          <td class="no-print">
+                            <div class="progress reportes__progress">
+                              <div
+                                class="progress-bar bg-success"
+                                [style.width.%]="mes.tasaRetencion"
+                              ></div>
+                            </div>
+                          </td>
+                        </tr>
+                      } @empty {
+                        <tr>
+                          <td colspan="5" class="text-center py-4 text-muted small">Sin datos de renovaciones en este año.</td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- LISTADO DE AUDITORÍA DE RENOVACIONES -->
+          <div class="col-12 col-lg-6">
+            <div class="card border-0 shadow-sm h-100">
+              <div class="card-header bg-white py-3 border-0 d-flex justify-content-between align-items-center">
+                <h4 class="fs-6 fw-bold m-0"><i class="bi bi-list-check me-2 text-primary"></i>Detalle de Socios Renovados</h4>
+                <span class="badge bg-light text-dark border">{{ repRen.detalles.length }} registros</span>
+              </div>
+              <div class="card-body pt-0">
+                <div class="table-responsive" style="max-height: 380px; overflow-y: auto;">
+                  <table class="table table-sm table-hover align-middle mb-0">
+                    <thead class="table-light fs-xs text-uppercase sticky-top">
+                      <tr>
+                        <th>Socio</th>
+                        <th>Plan</th>
+                        <th>Fecha Renovación</th>
+                        <th>Nuevo Vencimiento</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (det of repRen.detalles; track det.idMembresia) {
+                        <tr>
+                          <td class="fw-semibold">{{ det.nombreSocio }}</td>
+                          <td><span class="badge bg-light text-dark border">{{ det.planRenovado }}</span></td>
+                          <td class="text-muted small">{{ det.fechaRenovacion | date:'dd/MM/yyyy' }}</td>
+                          <td class="fw-bold text-success">{{ det.nuevaFechaVencimiento | date:'dd/MM/yyyy' }}</td>
+                        </tr>
+                      } @empty {
+                        <tr>
+                          <td colspan="4" class="text-center py-4 text-muted small">No hay renovaciones registradas en este periodo.</td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- TAB 5: MÉTRICAS DE ASISTENCIA Y AFLUENCIA -->
+    @if (tabActiva() === 'asistencias' && metricasAsistencia(); as repAsis) {
+      <div class="reportes__tab-content">
+        <div class="card border-0 shadow-sm p-4 mb-4">
+          <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+            <div>
+              <div class="d-flex align-items-center gap-2">
+                <h3 class="fs-5 fw-bold m-0"><i class="bi bi-clock-history me-2 text-primary"></i>Métricas de Afluencia y Horarios Pico</h3>
+                <span class="badge bg-primary fs-6">{{ obtenerNombreMes(mesFiltroAsistencias()) }} {{ anioFiltroAsistencias() }}</span>
+              </div>
+              <p class="text-muted small m-0 mt-1">Análisis de concurrencia y flujo de clientes por franja horaria</p>
+            </div>
+            <div class="d-flex align-items-center gap-2 no-print">
+              <label class="form-label m-0 fw-semibold text-muted small">Mes:</label>
+              <select
+                class="form-select form-select-sm"
+                style="width: 140px;"
+                [ngModel]="mesFiltroAsistencias()"
+                (ngModelChange)="cambiarMesAsistencia($event)"
+              >
+                @for (m of meses; track m.valor) {
+                  <option [ngValue]="m.valor">{{ m.nombre }}</option>
+                }
+              </select>
+            </div>
+          </div>
+
+          <div class="row g-3 mt-3">
+            <div class="col-md-3">
+              <div class="p-3 bg-light rounded text-center border">
+                <span class="text-muted small fw-semibold text-uppercase d-block">Asistencias Totales</span>
+                <span class="fs-3 fw-bold text-primary">{{ repAsis.totalAsistenciasPeriodo }}</span>
+                <small class="text-muted d-block">Check-ins registrados</small>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="p-3 bg-light rounded text-center border">
+                <span class="text-muted small fw-semibold text-uppercase d-block">Promedio Diario</span>
+                <span class="fs-3 fw-bold text-dark">{{ repAsis.promedioDiario | number:'1.1-1' }}</span>
+                <small class="text-muted d-block">Visitas por día</small>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="p-3 bg-primary-subtle rounded text-center border border-primary-subtle">
+                <span class="text-primary small fw-bold text-uppercase d-block">Día de Mayor Afluencia</span>
+                <span class="fs-4 fw-bold text-primary">{{ repAsis.diaMayorAfluencia || 'Lunes' }}</span>
+                <small class="text-primary d-block">Pico semanal</small>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="p-3 bg-warning-subtle rounded text-center border border-warning-subtle">
+                <span class="text-warning-emphasis small fw-bold text-uppercase d-block">Hora Pico Principal</span>
+                <span class="fs-5 fw-bold text-warning-emphasis d-block mt-1">{{ horarioPicoCalculado() }}</span>
+                <small class="text-muted d-block">Mayor afluencia de clientes</small>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="row g-4 mb-4">
+          <!-- Horas Pico -->
+          <div class="col-12 col-lg-6">
+            <div class="card border-0 shadow-sm h-100">
+              <div class="card-header bg-white py-3 border-0">
+                <h4 class="fs-6 fw-bold m-0"><i class="bi bi-clock me-2 text-primary"></i>Distribución de Clientes por Franja Horaria</h4>
+              </div>
+              <div class="card-body pt-0">
+                @for (hora of repAsis.distribucionHorasPico; track (hora.franjaHoraria || hora.etiquetaHora)) {
+                  <div class="mb-3">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                      <span class="fw-semibold">{{ hora.etiquetaHora || hora.franjaHoraria }}</span>
+                      <span class="text-muted small fw-bold">
+                        {{ hora.cantidad ?? hora.totalAsistencias }} clientes ({{ hora.porcentaje }}%)
+                      </span>
+                    </div>
+                    <div class="progress reportes__progress no-print">
+                      <div
+                        class="progress-bar bg-warning text-dark"
+                        [style.width.%]="hora.porcentaje"
+                      ></div>
+                    </div>
+                  </div>
+                } @empty {
+                  <p class="text-muted small text-center py-4">Sin datos de horas pico para este mes.</p>
+                }
+              </div>
+            </div>
+          </div>
+
+          <!-- Días de la semana -->
+          <div class="col-12 col-lg-6">
+            <div class="card border-0 shadow-sm h-100">
+              <div class="card-header bg-white py-3 border-0">
+                <h4 class="fs-6 fw-bold m-0"><i class="bi bi-calendar-week me-2 text-primary"></i>Afluencia por Día de la Semana</h4>
+              </div>
+              <div class="card-body pt-0">
+                @for (dia of repAsis.asistenciasPorDiaSemana; track (dia.nombreDia || dia.diaSemana)) {
+                  <div class="mb-3">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                      <span class="fw-semibold">{{ dia.nombreDia || dia.diaSemana }}</span>
+                      <span class="text-muted small fw-bold">{{ dia.cantidad ?? dia.totalAsistencias }} entradas ({{ dia.porcentaje }}%)</span>
+                    </div>
+                    <div class="progress reportes__progress no-print">
+                      <div
+                        class="progress-bar bg-primary"
+                        [style.width.%]="dia.porcentaje"
+                      ></div>
+                    </div>
+                  </div>
+                } @empty {
+                  <p class="text-muted small text-center py-4">Sin datos de días para este período.</p>
+                }
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Top socios más constantes -->
+        <div class="card border-0 shadow-sm">
+          <div class="card-header bg-white py-3 border-0 d-flex justify-content-between align-items-center">
+            <h4 class="fs-6 fw-bold m-0"><i class="bi bi-trophy me-2 text-warning"></i>Socios más Constantes del Mes</h4>
+            <span class="badge bg-light text-dark border">{{ repAsis.topSociosAsistencia.length }} socios</span>
+          </div>
+          <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+              <thead class="table-light fs-xs text-uppercase">
+                <tr>
+                  <th class="ps-4">Posición</th>
+                  <th>Socio</th>
+                  <th>ID Socio</th>
+                  <th class="text-end pe-4">Total Visitas</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (socio of repAsis.topSociosAsistencia; track socio.socioId; let idx = $index) {
+                  <tr>
+                    <td class="ps-4">
+                      @if (idx === 0) {
+                        <span class="badge bg-warning text-dark"><i class="bi bi-award-fill me-1"></i>1° Lugar</span>
+                      } @else if (idx === 1) {
+                        <span class="badge bg-secondary"><i class="bi bi-award me-1"></i>2° Lugar</span>
+                      } @else if (idx === 2) {
+                        <span class="badge bg-light text-dark border"><i class="bi bi-award me-1"></i>3° Lugar</span>
+                      } @else {
+                        <span class="text-muted fw-bold ps-2">{{ idx + 1 }}°</span>
+                      }
+                    </td>
+                    <td class="fw-semibold">{{ socio.nombreSocio || socio.nombreCompleto }}</td>
+                    <td class="text-muted small">#{{ socio.socioId }}</td>
+                    <td class="text-end pe-4 fw-bold text-primary">{{ socio.totalVisitas || socio.asistencias }} visitas</td>
+                  </tr>
+                } @empty {
+                  <tr>
+                    <td colspan="4" class="text-center py-4 text-muted small">No hay visitas registradas para este período.</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- PIE DE PÁGINA IMPRESO OFICIAL (SOLO EN IMPRESIÓN / PDF) -->
+    <div class="reporte-print-footer d-none d-print-block">
+      <p class="m-0 fw-semibold">¡Reporte oficial emitido por el Sistema de Gestión Gimnasio Teo / Clauda Lovers!</p>
+      <small>Este documento es de carácter confidencial para uso administrativo y auditoría interna.</small>
+    </div>
+  }
+</section>

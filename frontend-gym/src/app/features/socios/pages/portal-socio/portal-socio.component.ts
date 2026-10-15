@@ -65,6 +65,7 @@ export class PortalSocioComponent implements OnInit {
   protected readonly avisoCerrado = signal(false);
   protected readonly aviso = computed(() => construirAviso(this.miMembresia()));
   protected readonly idSocio = computed(() => this.auth.usuario()?.id ?? 0);
+  readonly mostrarCarne = signal<boolean>(false);
 
   ngOnInit(): void {
     this.cargarDatos();

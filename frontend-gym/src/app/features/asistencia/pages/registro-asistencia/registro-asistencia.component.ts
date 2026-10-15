@@ -1,5 +1,6 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { NgClass } from '@angular/common';
+import { RouterLink } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { catchError } from 'rxjs/internal/operators/catchError';
 import { of } from 'rxjs';
@@ -7,7 +8,7 @@ import { AsistenciaService } from '../../services/asistencia.service';
 
 @Component({
   selector: 'app-registro-asistencia',
-  imports: [NgClass],
+  imports: [NgClass, RouterLink],
   templateUrl: './registro-asistencia.component.html',
   styleUrl: './registro-asistencia.component.css'
 })
@@ -65,6 +66,11 @@ export class RegistroAsistenciaComponent {
     });
   }
 
+  protected readonly idSocioRapido = signal<string>('');
+  protected readonly procesandoAcceso = signal<boolean>(false);
+  protected readonly accesoBloqueado = signal<{ idSocio: number; socio: string; motivo: string } | null>(null);
+  protected readonly accesoAutorizado = signal<{ idSocio: number; socio: string; hora: string; sucursal: string } | null>(null);
+
   protected sociosFiltrados = computed(() => {
     const listaOriginal = this.sociosSignal() || [];
     const textoBusqueda = this.query().toLowerCase().trim();
@@ -75,7 +81,8 @@ export class RegistroAsistenciaComponent {
 
     return listaOriginal.filter(socio =>
       socio.nombre.toLowerCase().includes(textoBusqueda) ||
-      socio.apellido.toLowerCase().includes(textoBusqueda)
+      socio.apellido.toLowerCase().includes(textoBusqueda) ||
+      socio.idSocio.toString().includes(textoBusqueda)
     );
   });
 
@@ -99,6 +106,54 @@ export class RegistroAsistenciaComponent {
     this.cargarAsistencias(val);
   }
 
+  protected registrarEntradaRapida(): void {
+    const id = Number(this.idSocioRapido().trim());
+    if (!id || isNaN(id)) return;
+    this.registrarEntrada(id);
+  }
+
+  protected registrarEntrada(idSocio: number): void {
+    this.mensajeError.set(null);
+    this.mensajeExito.set(null);
+    this.accesoBloqueado.set(null);
+    this.accesoAutorizado.set(null);
+    this.procesandoAcceso.set(true);
+
+    this.asistenciaService.registrarEntrada({
+      idSocio,
+      idSucursal: this.idSucursal(),
+      tipo: 'ENTRADA'
+    }).subscribe({
+      next: (nueva) => {
+        const current = this.asistencias() || [];
+        this.asistencias.set([nueva, ...current]);
+        this.accesoAutorizado.set({
+          idSocio,
+          socio: `${nueva.nombreSocio} ${nueva.apellidoSocio}`,
+          hora: nueva.horaEntrada,
+          sucursal: nueva.sucursal,
+        });
+        this.mensajeExito.set(`Entrada registrada con éxito para ${nueva.nombreSocio} ${nueva.apellidoSocio}.`);
+        this.idSocioRapido.set('');
+        this.procesandoAcceso.set(false);
+      },
+      error: (err) => {
+        const socioEncontrado = (this.sociosSignal() || []).find(s => s.idSocio === idSocio);
+        const nombre = socioEncontrado ? `${socioEncontrado.nombre} ${socioEncontrado.apellido}` : `Socio #${idSocio}`;
+        const motivo = err.message || 'Membresía no activa o vencida.';
+        
+        this.accesoBloqueado.set({
+          idSocio,
+          socio: nombre,
+          motivo,
+        });
+        this.mensajeError.set(motivo);
+        this.procesandoAcceso.set(false);
+      }
+    });
+  }
+
+
   protected obtenerEstiloBadge(estado: string): string {
     const normalizado = estado.toLowerCase().trim();
     if (normalizado.includes('activa')) return 'asistencia__badge--activo';
@@ -114,27 +169,6 @@ export class RegistroAsistenciaComponent {
     const asis = this.asistencias() || [];
     return asis.find(a => a.idSocio === idSocio && a.horaSalida === null);
   }
-
-  protected registrarEntrada(idSocio: number): void {
-    this.mensajeError.set(null);
-    this.mensajeExito.set(null);
-
-    this.asistenciaService.registrarEntrada({
-      idSocio,
-      idSucursal: this.idSucursal(),
-      tipo: 'ENTRADA'
-    }).subscribe({
-      next: (nueva) => {
-        const current = this.asistencias() || [];
-        this.asistencias.set([nueva, ...current]);
-        this.mensajeExito.set(`Entrada registrada con éxito para ${nueva.nombreSocio} ${nueva.apellidoSocio}.`);
-      },
-      error: (err) => {
-        this.mensajeError.set(err.message || 'No se pudo registrar la entrada.');
-      }
-    });
-  }
-
 
   protected registrarSalida(idAsistencia: number): void {
     this.asistenciaService.registrarSalida(idAsistencia).subscribe(actualizada => {
