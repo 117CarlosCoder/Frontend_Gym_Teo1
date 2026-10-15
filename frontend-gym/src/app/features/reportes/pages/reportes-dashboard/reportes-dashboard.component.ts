@@ -1,6 +1,7 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule, DatePipe, DecimalPipe } from '@angular/common';
-import { Router, RouterLink } from '@angular/router';
+import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 
 import { ReportesService } from '../../services/reportes.service';
 import {
@@ -20,7 +21,7 @@ export type ReporteTab = 'dashboard' | 'ingresos' | 'miembros' | 'renovaciones' 
 @Component({
   selector: 'app-reportes-dashboard',
   standalone: true,
-  imports: [CommonModule, DatePipe, DecimalPipe],
+  imports: [CommonModule, FormsModule, DatePipe, DecimalPipe],
   templateUrl: './reportes-dashboard.component.html',
   styleUrl: './reportes-dashboard.component.css',
 })
@@ -209,8 +210,8 @@ export class ReportesDashboardComponent implements OnInit {
     });
   }
 
-  cambiarAnioIngresos(anioStr: string): void {
-    const anio = anioStr === 'todos' ? undefined : Number(anioStr);
+  cambiarAnioIngresos(val: any): void {
+    const anio = val === 'todos' ? undefined : Number(val);
     this.anioFiltroIngresos.set(anio as any);
     this.cargarReporteIngresos();
   }
@@ -258,8 +259,10 @@ export class ReportesDashboardComponent implements OnInit {
     });
   }
 
-  cambiarAnioRenovaciones(anioStr: string): void {
-    this.anioFiltroRenovaciones.set(Number(anioStr));
+  cambiarAnioRenovaciones(val: any): void {
+    const anio = Number(val);
+    if (!anio || isNaN(anio)) return;
+    this.anioFiltroRenovaciones.set(anio);
     this.cargarReporteRenovaciones();
   }
 
@@ -280,8 +283,10 @@ export class ReportesDashboardComponent implements OnInit {
       });
   }
 
-  cambiarMesAsistencia(mesStr: string): void {
-    this.mesFiltroAsistencias.set(Number(mesStr));
+  cambiarMesAsistencia(val: any): void {
+    const mes = Number(val);
+    if (!mes || isNaN(mes)) return;
+    this.mesFiltroAsistencias.set(mes);
     this.cargarMetricasAsistencia();
   }
 

@@ -299,13 +299,13 @@
               <select
                 class="form-select form-select-sm"
                 style="width: 140px;"
-                [value]="anioFiltroIngresos()"
-                (change)="cambiarAnioIngresos($any($event.target).value)"
+                [ngModel]="anioFiltroIngresos()"
+                (ngModelChange)="cambiarAnioIngresos($event)"
               >
                 @for (a of aniosDisponibles; track a) {
-                  <option [value]="a">Año {{ a }}</option>
+                  <option [ngValue]="a">Año {{ a }}</option>
                 }
-                <option value="todos">Histórico Total</option>
+                <option [ngValue]="'todos'">Histórico Total</option>
               </select>
             </div>
           </div>
@@ -485,12 +485,12 @@
               <select
                 class="form-select form-select-sm"
                 style="width: 160px;"
-                [value]="estadoFiltroMiembros()"
-                (change)="cambiarFiltroEstadoMiembro($any($event.target).value)"
+                [ngModel]="estadoFiltroMiembros()"
+                (ngModelChange)="cambiarFiltroEstadoMiembro($event)"
               >
-                <option value="TODOS">Todos los Estados</option>
-                <option value="ACTIVO">Solo Activos</option>
-                <option value="MOROSO">Solo Morosos</option>
+                <option [ngValue]="'TODOS'">Todos los Estados</option>
+                <option [ngValue]="'ACTIVO'">Solo Activos</option>
+                <option [ngValue]="'MOROSO'">Solo Morosos</option>
               </select>
 
               <input
@@ -622,11 +622,11 @@
               <select
                 class="form-select form-select-sm"
                 style="width: 140px;"
-                [value]="anioFiltroRenovaciones()"
-                (change)="cambiarAnioRenovaciones($any($event.target).value)"
+                [ngModel]="anioFiltroRenovaciones()"
+                (ngModelChange)="cambiarAnioRenovaciones($event)"
               >
                 @for (a of aniosDisponibles; track a) {
-                  <option [value]="a">Año {{ a }}</option>
+                  <option [ngValue]="a">Año {{ a }}</option>
                 }
               </select>
             </div>
@@ -755,11 +755,11 @@
               <select
                 class="form-select form-select-sm"
                 style="width: 140px;"
-                [value]="mesFiltroAsistencias()"
-                (change)="cambiarMesAsistencia($any($event.target).value)"
+                [ngModel]="mesFiltroAsistencias()"
+                (ngModelChange)="cambiarMesAsistencia($event)"
               >
                 @for (m of meses; track m.valor) {
-                  <option [value]="m.valor">{{ m.nombre }}</option>
+                  <option [ngValue]="m.valor">{{ m.nombre }}</option>
                 }
               </select>
             </div>

@@ -135,7 +135,12 @@
    ESTILOS DE IMPRESIÓN Y EXPORTACIÓN FORMAL (Estilo Comprobante)
    ============================================================ */
 @media print {
-  /* Ocultar elementos de navegación y controles de pantalla */
+  @page {
+    size: A4 portrait;
+    margin: 12mm 10mm 15mm 10mm;
+  }
+
+  /* 1. Ocultar elementos de navegación y controles de pantalla */
   .no-print,
   .reportes__nav,
   .btn,
@@ -143,19 +148,77 @@
   .input-group,
   select,
   .form-select,
-  .alert {
+  .alert,
+  header.panel-header,
+  .panel-header {
     display: none !important;
   }
 
-  /* Ajustar página para documento limpio */
-  body {
+  /* 2. Ajustar página y contenedores principales */
+  html, body {
     background: #ffffff !important;
-    color: #111827 !important;
-    font-size: 11pt !important;
+    color: #0f172a !important;
+    font-size: 10pt !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
   }
 
-  .reportes {
+  .panel-contenido,
+  .reportes,
+  .reportes__tab-content {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
     padding: 0 !important;
+  }
+
+  /* 3. Desactivar Flexbox en el grid para corregir el bug de traslape/colapso en Chromium */
+  .row {
+    display: block !important;
+    width: 100% !important;
+    margin: 0 !important;
+  }
+
+  .col-12,
+  [class*="col-"] {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    flex: none !important;
+    float: none !important;
+    margin: 0 0 20px 0 !important;
+    padding: 0 !important;
+  }
+
+  /* 4. Anular alturas fijas o relativas que provocan colapso de coordenadas */
+  .h-100 {
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+  }
+
+  /* 5. Tarjetas en flujo de bloque secuencial */
+  .card {
+    display: block !important;
+    position: static !important;
+    float: none !important;
+    clear: both !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    transform: none !important;
+    margin-bottom: 20px !important;
+    padding: 14px !important;
+    border: 1px solid #cbd5e1 !important;
+    border-radius: 6px !important;
+    box-shadow: none !important;
+    background-color: #ffffff !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
   }
 
   .reporte-document-banner {
@@ -165,23 +228,7 @@
     print-color-adjust: exact !important;
     padding: 16px !important;
     margin-bottom: 12px !important;
-  }
-
-  .reporte-meta-table {
-    border: 1px solid #cbd5e1 !important;
-    -webkit-print-color-adjust: exact !important;
-    print-color-adjust: exact !important;
-  }
-
-  .reporte-meta-table td {
-    border: 1px solid #cbd5e1 !important;
-  }
-
-  .card {
-    border: 1px solid #cbd5e1 !important;
-    box-shadow: none !important;
-    break-inside: avoid;
-    margin-bottom: 16px !important;
+    border-radius: 4px !important;
   }
 
   .card-header {
@@ -189,6 +236,40 @@
     border-bottom: 1px solid #cbd5e1 !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
+    padding: 8px 12px !important;
+    margin-bottom: 10px !important;
+  }
+
+  .card-body {
+    display: block !important;
+    position: static !important;
+    width: 100% !important;
+    height: auto !important;
+    padding: 0 !important;
+    overflow: visible !important;
+  }
+
+  /* 6. Ítems internos de listas (ej. Ingresos por Método de Pago) */
+  .p-3.mb-3.border.rounded.bg-light {
+    display: block !important;
+    position: static !important;
+    width: 100% !important;
+    margin-bottom: 10px !important;
+    padding: 10px 14px !important;
+    background-color: #f8fafc !important;
+    border: 1px solid #cbd5e1 !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* 7. Tablas limpias y con salto de página adecuado */
+  .table-responsive {
+    display: block !important;
+    width: 100% !important;
+    overflow: visible !important;
+    max-height: none !important;
   }
 
   table {
@@ -198,7 +279,7 @@
 
   thead.table-light th {
     background-color: #f1f5f9 !important;
-    color: #334155 !important;
+    color: #1e293b !important;
     border: 1px solid #cbd5e1 !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
@@ -207,6 +288,12 @@
   table td, table th {
     border: 1px solid #cbd5e1 !important;
     padding: 6px 8px !important;
+    font-size: 9.5pt !important;
+  }
+
+  tr {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
   }
 
   .progress {
@@ -218,8 +305,8 @@
   }
 
   .badge {
-    border: 1px solid #334155 !important;
-    color: #111827 !important;
+    border: 1px solid #64748b !important;
+    color: #0f172a !important;
     background: transparent !important;
   }
 
@@ -229,7 +316,7 @@
     padding-top: 12px;
     border-top: 1px dashed #94a3b8;
     text-align: center;
-    font-size: 9pt;
+    font-size: 8.5pt;
     color: #64748b;
   }
 }
