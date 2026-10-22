@@ -1,8 +1,10 @@
 import { DatePipe, DecimalPipe, NgClass } from '@angular/common';
 import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 
 import { AuthService } from '../../../../core/services/auth.service';
+import { RUTAS } from '../../../../core/constants/rutas.constants';
 import { SociosService } from '../../../socios/services/socios.service';
 import { MembresiasService } from '../../services/membresias.service';
 import { AuditoriaMembresia, EstadoMembresia, EstadoMembresiaCatalogo, ESTADOS_MEMBRESIA, Membresia, MembresiaFormulario, PlanMembresia } from '../../models/membresia.model';
@@ -12,7 +14,7 @@ import { ModalComponent } from '../../../../shared/components/modal/modal.compon
 
 @Component({
   selector: 'app-gestion-membresias',
-  imports: [FormsModule, NgClass, DatePipe, DecimalPipe, ModalComponent],
+  imports: [FormsModule, NgClass, DatePipe, DecimalPipe, ModalComponent, RouterLink],
   templateUrl: './gestion-membresias.component.html',
   styleUrl: './gestion-membresias.component.css',
 })
@@ -21,6 +23,8 @@ export class GestionMembresiasComponent implements OnInit {
   private readonly sociosService = inject(SociosService);
   protected readonly auth = inject(AuthService);
   private readonly notificacion = inject(NotificacionService);
+
+  protected readonly RUTAS = RUTAS;
 
   protected readonly membresias = signal<Membresia[]>([]);
   protected readonly socios = signal<Array<{ id_socio: number; usuario: { nombre: string; apellido: string } }>>([]);
