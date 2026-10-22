@@ -77,7 +77,20 @@ export interface ReporteMiembrosEstado {
   porcentajeActivos: number;
   porcentajeMorosos: number;
   distribucionPorSucursal: DistribucionSucursal[];
+  distribucionPorPlan?: DistribucionPlan[];
   miembros: MiembroEstadoDetalle[];
+}
+
+/** Respuesta de GET /asistencias/metricas: serie de asistencias por día, semana o mes. */
+export interface MetricasAsistenciaRango {
+  desde: string;
+  hasta: string;
+  agrupacion: 'DIA' | 'SEMANA' | 'MES';
+  totalAsistencias: number;
+  sociosUnicos: number;
+  promedioDiario: number;
+  serie: { periodo: string; total: number }[];
+  porSucursal: { idSucursal: number | null; nombreSucursal: string; total: number }[];
 }
 
 export interface RenovacionMes {

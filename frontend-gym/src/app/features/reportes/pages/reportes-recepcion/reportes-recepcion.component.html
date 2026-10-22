@@ -1,0 +1,172 @@
+<section class="reportes-recepcion">
+  <header class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+    <div>
+      <h2 class="reportes-recepcion__titulo m-0">Reportes de Recepción</h2>
+      <p class="text-muted small m-0">
+        Afluencia del gimnasio, estado de los miembros y cobros pendientes · {{ fechaHoy | date: 'dd/MM/yyyy' }}
+      </p>
+    </div>
+    <button type="button" class="btn btn-outline-secondary btn-sm no-imprimir" (click)="imprimir()">
+      <i class="bi bi-printer me-1"></i>Imprimir
+    </button>
+  </header>
+
+  <!-- Indicadores del día -->
+  <div class="row g-3 mb-4">
+    <div class="col-6 col-lg">
+      <div class="indicador">
+        <span class="indicador__etiqueta"><i class="bi bi-door-open me-1"></i>Visitas hoy</span>
+        <strong class="indicador__valor">{{ visitasHoy() }}</strong>
+      </div>
+    </div>
+    <div class="col-6 col-lg">
+      <div class="indicador">
+        <span class="indicador__etiqueta"><i class="bi bi-person-check me-1"></i>Dentro ahora</span>
+        <strong class="indicador__valor text-success">{{ sociosDentro() }}</strong>
+      </div>
+    </div>
+    <div class="col-6 col-lg">
+      <div class="indicador">
+        <span class="indicador__etiqueta"><i class="bi bi-people me-1"></i>Socios activos</span>
+        <strong class="indicador__valor">{{ miembros()?.activos ?? '-' }}</strong>
+      </div>
+    </div>
+    <div class="col-6 col-lg">
+      <div class="indicador">
+        <span class="indicador__etiqueta"><i class="bi bi-exclamation-triangle me-1"></i>Morosos</span>
+        <strong class="indicador__valor text-danger">{{ miembros()?.morosos ?? '-' }}</strong>
+      </div>
+    </div>
+    <div class="col-12 col-lg">
+      <div class="indicador">
+        <span class="indicador__etiqueta"><i class="bi bi-bell me-1"></i>Vencen en 7 días</span>
+        <strong class="indicador__valor text-warning">{{ porVencer().length }}</strong>
+      </div>
+    </div>
+  </div>
+
+  <!-- Afluencia diaria -->
+  <div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+      <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+        <div>
+          <h3 class="fs-6 fw-bold m-0"><i class="bi bi-graph-up me-2 text-primary"></i>Afluencia de los últimos {{ rangoDias() }} días</h3>
+          @if (metricas(); as m) {
+            <small class="text-muted">
+              {{ m.totalAsistencias }} visitas · {{ m.sociosUnicos }} socios distintos · promedio {{ m.promedioDiario | number: '1.0-1' }} por día
+              @if (diaMasConcurrido(); as d) {
+                · día más concurrido: {{ d.fecha | date: 'dd/MM' }} ({{ d.total }})
+              }
+            </small>
+          }
+        </div>
+        <div class="btn-group btn-group-sm no-imprimir" role="group" aria-label="Rango de días">
+          @for (opcion of opcionesRango; track opcion) {
+            <button
+              type="button"
+              class="btn"
+              [class.btn-primary]="opcion === rangoDias()"
+              [class.btn-outline-primary]="opcion !== rangoDias()"
+              (click)="cambiarRango(opcion)"
+            >
+              {{ opcion }} días
+            </button>
+          }
+        </div>
+      </div>
+
+      @if (cargandoMetricas()) {
+        <div class="estado"><span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Cargando afluencia...</div>
+      } @else if (errorMetricas()) {
+        <div class="alert alert-danger d-flex align-items-center justify-content-between gap-3 mb-0" role="alert">
+          <span><i class="bi bi-exclamation-octagon-fill me-2"></i>{{ errorMetricas() }}</span>
+          <button type="button" class="btn btn-sm btn-outline-danger" (click)="cargarMetricas()">Reintentar</button>
+        </div>
+      } @else {
+        <app-grafico [opciones]="graficoAfluencia()" [alto]="280" descripcion="Visitas al gimnasio por día" />
+      }
+    </div>
+  </div>
+
+  <div class="row g-4 mb-4">
+    <!-- Estado de miembros -->
+    <div class="col-12 col-lg-5">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body">
+          <h3 class="fs-6 fw-bold mb-2"><i class="bi bi-pie-chart me-2 text-primary"></i>Activos frente a morosos</h3>
+          @if (cargandoMiembros()) {
+            <div class="estado"><span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Cargando miembros...</div>
+          } @else if (errorMiembros()) {
+            <div class="alert alert-danger d-flex align-items-center justify-content-between gap-3 mb-0" role="alert">
+              <span>{{ errorMiembros() }}</span>
+              <button type="button" class="btn btn-sm btn-outline-danger" (click)="cargarMiembros()">Reintentar</button>
+            </div>
+          } @else {
+            <app-grafico [opciones]="graficoEstado()" [alto]="260" descripcion="Socios activos frente a socios morosos" />
+          }
+        </div>
+      </div>
+    </div>
+
+    <!-- Socios por plan -->
+    <div class="col-12 col-lg-7">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body">
+          <h3 class="fs-6 fw-bold mb-2"><i class="bi bi-bar-chart-steps me-2 text-primary"></i>Socios por plan</h3>
+          @if (!cargandoMiembros() && !errorMiembros()) {
+            @if ((miembros()?.distribucionPorPlan?.length ?? 0) > 0) {
+              <app-grafico [opciones]="graficoPlanes()" [alto]="260" descripcion="Cantidad de socios por plan de membresía" />
+            } @else {
+              <div class="estado">Todavía no hay socios con plan asignado.</div>
+            }
+          }
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Morosos para cobrar -->
+  <div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+      <h3 class="fs-6 fw-bold mb-1"><i class="bi bi-cash-coin me-2 text-danger"></i>Socios morosos para cobrar</h3>
+      <p class="text-muted small mb-3">Ordenados por días de atraso. "Cobrar" abre Pagos con el socio seleccionado.</p>
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead>
+            <tr>
+              <th>Socio</th>
+              <th>Plan</th>
+              <th>Venció</th>
+              <th class="text-end">Días de atraso</th>
+              <th class="text-end no-imprimir"></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (m of morosos(); track m.socioId) {
+              <tr>
+                <td>
+                  <span class="fw-semibold">{{ m.nombres }} {{ m.apellidos }}</span>
+                  <small class="text-muted d-block">{{ m.correo }}</small>
+                </td>
+                <td>{{ m.planActual || 'Sin plan' }}</td>
+                <td>{{ m.fechaFinMembresia ? (m.fechaFinMembresia | date: 'dd/MM/yyyy') : '-' }}</td>
+                <td class="text-end"><span class="badge bg-danger">{{ m.diasMora }}</span></td>
+                <td class="text-end no-imprimir">
+                  <a class="btn btn-sm btn--primary" [routerLink]="RUTAS.dashboard.pagos" [queryParams]="{ socio: m.socioId }">
+                    <i class="bi bi-cash-coin me-1"></i>Cobrar
+                  </a>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="5" class="text-center text-muted py-4">
+                  <i class="bi bi-check2-circle text-success me-1"></i>No hay socios morosos.
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>

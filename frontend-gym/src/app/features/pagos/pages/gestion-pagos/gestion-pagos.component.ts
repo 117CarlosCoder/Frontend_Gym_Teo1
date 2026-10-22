@@ -10,18 +10,14 @@ import { ModalComponent } from '../../../../shared/components/modal/modal.compon
 import { SocioTablaDTO } from '../../../socios/models/socio-tabla-dto.model';
 import { SociosService } from '../../../socios/services/socios.service';
 import { HistorialPagosComponent } from '../../components/historial-pagos/historial-pagos.component';
-import {
-  BENEFICIOS_MIEMBRO,
-  BeneficioMiembro,
-  MembresiaPagable,
-  MetodoPago,
-  Pago,
-  RECARGOS_PAGO_TARDIO,
-  RecargoPagoTardio,
-} from '../../models/pago.model';
+import { CotizacionPago, MembresiaPagable, MetodoPago, Pago } from '../../models/pago.model';
 import { PagosService } from '../../services/pagos.service';
 
-/** Registro de pagos y estado de cuenta del socio (M4) con Curva PO: beneficios y recargo por mora. */
+/**
+ * Registro de pagos y estado de cuenta del socio (M4).
+ * Curva del PO: el descuento (promoción vigente) y el recargo por pago tardío los calcula el backend
+ * en la cotización; aquí solo se muestran, así pantalla, historial y comprobante PDF coinciden.
+ */
 @Component({
   selector: 'app-gestion-pagos',
   imports: [ReactiveFormsModule, DatePipe, DecimalPipe, NgClass, ModalComponent, HistorialPagosComponent],
@@ -44,9 +40,10 @@ export class GestionPagosComponent implements OnInit {
   protected readonly cargandoMembresias = signal(false);
   protected readonly errorMembresias = signal<string | null>(null);
 
-  // Catálogos Curva del PO (Sprint 5)
-  readonly catalogoBeneficios: BeneficioMiembro[] = BENEFICIOS_MIEMBRO;
-  readonly catalogoRecargos: RecargoPagoTardio[] = RECARGOS_PAGO_TARDIO;
+  // Cotización del cobro calculada por el backend (precio, descuento, recargo y total)
+  protected readonly cotizacion = signal<CotizacionPago | null>(null);
+  protected readonly cargandoCotizacion = signal(false);
+  protected readonly errorCotizacion = signal<string | null>(null);
 
   /** Se incrementa para recargar el historial después de registrar un pago. */
   protected readonly recargaHistorial = signal(0);
@@ -61,8 +58,6 @@ export class GestionPagosComponent implements OnInit {
   protected readonly formPago = this.fb.nonNullable.group({
     idMembresia: [0, [Validators.required, Validators.min(1)]],
     idMetodoPago: [0, [Validators.required, Validators.min(1)]],
-    idBeneficio: ['REGULAR', [Validators.required]],
-    idRecargo: ['NINGUNO', [Validators.required]],
     monto: [0, [Validators.required, Validators.min(0.01)]],
     referencia: ['', [Validators.maxLength(100)]],
     observacion: ['', [Validators.maxLength(255)]],
@@ -93,69 +88,15 @@ export class GestionPagosComponent implements OnInit {
     return this.metodosPago().find((m) => m.id === id) ?? null;
   });
 
-  protected readonly beneficioEnFormulario = computed(() => {
-    const id = this.valoresPago().idBeneficio || 'REGULAR';
-    return this.catalogoBeneficios.find((b) => b.id === id) ?? this.catalogoBeneficios[0];
-  });
-
-  protected readonly recargoEnFormulario = computed(() => {
-    const id = this.valoresPago().idRecargo || 'NINGUNO';
-    return this.catalogoRecargos.find((r) => r.id === id) ?? this.catalogoRecargos[0];
-  });
-
-  protected readonly esFueraDePlazo = computed(() => {
-    const m = this.membresiaEnFormulario();
-    if (!m || !m.fechaVencimiento) return false;
-    return diasHasta(m.fechaVencimiento) < 0;
-  });
-
-  protected readonly diasAtraso = computed(() => {
-    const m = this.membresiaEnFormulario();
-    if (!m || !m.fechaVencimiento) return 0;
-    const d = diasHasta(m.fechaVencimiento);
-    return d < 0 ? Math.abs(d) : 0;
-  });
-
-  protected readonly descuentoMonto = computed(() => {
-    const m = this.membresiaEnFormulario();
-    if (!m) return 0;
-    const b = this.beneficioEnFormulario();
-    if (b.tipo === 'PORCENTAJE') {
-      return Number(((m.precio * b.valor) / 100).toFixed(2));
-    }
-    return Math.min(m.precio, b.valor);
-  });
-
-  protected readonly recargoMonto = computed(() => {
-    const m = this.membresiaEnFormulario();
-    if (!m) return 0;
-    const r = this.recargoEnFormulario();
-    if (r.tipo === 'PORCENTAJE') {
-      return Number(((m.precio * r.valor) / 100).toFixed(2));
-    }
-    return r.valor;
-  });
-
-  protected readonly montoSugeridoFinal = computed(() => {
-    const m = this.membresiaEnFormulario();
-    if (!m) return 0;
-    const final = m.precio - this.descuentoMonto() + this.recargoMonto();
-    return Math.max(0.01, Number(final.toFixed(2)));
-  });
-
   protected readonly esEfectivo = computed(
     () => (this.metodoEnFormulario()?.nombre ?? '').trim().toUpperCase() === 'EFECTIVO',
   );
 
+  /** El backend rechaza montos menores al total cotizado. */
   protected readonly montoInsuficiente = computed(() => {
-    const membresia = this.membresiaEnFormulario();
-    if (!membresia) return false;
-    const montoIngresado = Number(this.valoresPago().monto);
-    if (montoIngresado <= 0) return true;
-    const minimo = this.esEfectivo()
-      ? (this.descuentoMonto() > 0 ? this.montoSugeridoFinal() : membresia.precio)
-      : 0.01;
-    return montoIngresado < minimo;
+    const c = this.cotizacion();
+    if (!c) return false;
+    return Number(this.valoresPago().monto) < c.total;
   });
 
   protected readonly vistaPrevia = computed(() => {
@@ -230,20 +171,15 @@ export class GestionPagosComponent implements OnInit {
       return;
     }
     const efectivo = this.metodosPago().find((m) => m.nombre.toUpperCase() === 'EFECTIVO') ?? this.metodosPago()[0];
-    const estaVencida = elegida.fechaVencimiento ? diasHasta(elegida.fechaVencimiento) < 0 : false;
-    const recargoInicial = estaVencida ? 'MORA_FIJA' : 'NINGUNO';
-    const recargoObj = this.catalogoRecargos.find((r) => r.id === recargoInicial) ?? this.catalogoRecargos[0];
-    const montoInicial = Math.max(0.01, elegida.precio + (recargoObj.tipo === 'MONTO_FIJO' ? recargoObj.valor : (elegida.precio * recargoObj.valor) / 100));
 
     this.formPago.reset({
       idMembresia: elegida.id,
       idMetodoPago: efectivo?.id ?? 0,
-      idBeneficio: 'REGULAR',
-      idRecargo: recargoInicial,
-      monto: montoInicial,
+      monto: elegida.precio,
       referencia: '',
       observacion: '',
     });
+    this.cargarCotizacion(elegida.id);
     this.errorModal.set(null);
     this.guardando.set(false);
     this.modalPago.set(true);
@@ -253,23 +189,31 @@ export class GestionPagosComponent implements OnInit {
     this.modalPago.set(false);
     this.errorModal.set(null);
     this.guardando.set(false);
+    this.cotizacion.set(null);
   }
 
-  /** Al cambiar membresía, beneficio o recargo se recalcula el monto sugerido. */
+  /** Al cambiar de membresía se vuelve a cotizar el cobro. */
   protected alCambiarMembresia(): void {
-    const estaVencida = this.esFueraDePlazo();
-    if (estaVencida && this.formPago.controls.idRecargo.value === 'NINGUNO') {
-      this.formPago.controls.idRecargo.setValue('MORA_FIJA');
-    }
-    this.formPago.controls.monto.setValue(this.montoSugeridoFinal());
+    const id = Number(this.formPago.controls.idMembresia.value);
+    if (id) this.cargarCotizacion(id);
   }
 
-  protected alCambiarBeneficio(): void {
-    this.formPago.controls.monto.setValue(this.montoSugeridoFinal());
-  }
-
-  protected alCambiarRecargo(): void {
-    this.formPago.controls.monto.setValue(this.montoSugeridoFinal());
+  /** Pide al backend el precio, descuento, recargo y total; sugiere el total como monto a cobrar. */
+  protected cargarCotizacion(idMembresia: number): void {
+    this.cotizacion.set(null);
+    this.errorCotizacion.set(null);
+    this.cargandoCotizacion.set(true);
+    this.pagosService.cotizar(idMembresia).subscribe({
+      next: (c) => {
+        this.cotizacion.set(c);
+        this.formPago.controls.monto.setValue(c.total);
+        this.cargandoCotizacion.set(false);
+      },
+      error: (err) => {
+        this.errorCotizacion.set(mensajeDeError(err, 'No se pudo calcular el total a cobrar.'));
+        this.cargandoCotizacion.set(false);
+      },
+    });
   }
 
   protected registrarPago(): void {
@@ -277,30 +221,19 @@ export class GestionPagosComponent implements OnInit {
       this.formPago.markAllAsTouched();
       return;
     }
+    const total = this.cotizacion()?.total;
+    if (total === undefined) {
+      this.errorModal.set('Espera a que se calcule el total del cobro antes de registrar el pago.');
+      return;
+    }
     if (this.montoInsuficiente()) {
       this.errorModal.set(
-        `El monto ingresado (Q ${Number(this.valoresPago().monto).toFixed(2)}) debe cubrir el total calculado del cobro (Q ${this.montoSugeridoFinal().toFixed(2)}).`,
+        `El monto ingresado (Q ${Number(this.valoresPago().monto).toFixed(2)}) debe cubrir el total del cobro (Q ${total.toFixed(2)}).`,
       );
       return;
     }
 
     const valor = this.formPago.getRawValue();
-    const membresia = this.membresiaEnFormulario();
-    const beneficio = this.beneficioEnFormulario();
-    const recargo = this.recargoEnFormulario();
-    const descMonto = this.descuentoMonto();
-    const recMonto = this.recargoMonto();
-
-    let detallePO = `Plan: ${membresia?.nombrePlan || 'Plan'} (Q${membresia?.precio.toFixed(2) || '0.00'})`;
-    if (beneficio.id !== 'REGULAR') {
-      detallePO += ` | Beneficio: ${beneficio.nombre} (-Q${descMonto.toFixed(2)})`;
-    }
-    if (recargo.id !== 'NINGUNO') {
-      detallePO += ` | Recargo tardío: ${recargo.nombre} (+Q${recMonto.toFixed(2)})`;
-    }
-    const notaUsuario = valor.observacion.trim();
-    const observacionCompleta = notaUsuario ? `${detallePO} - Nota: ${notaUsuario}` : detallePO;
-
     this.errorModal.set(null);
     this.guardando.set(true);
     this.pagosService
@@ -309,7 +242,7 @@ export class GestionPagosComponent implements OnInit {
         idMetodoPago: Number(valor.idMetodoPago),
         monto: Number(valor.monto),
         referencia: valor.referencia.trim() || undefined,
-        observacion: observacionCompleta,
+        observacion: valor.observacion.trim() || undefined,
       })
       .subscribe({
         next: (pago) => {

@@ -12,6 +12,7 @@ import { AsistenciaService } from '../../../asistencia/services/asistencia.servi
 import { AsistenciaRegistro } from '../../../asistencia/models/asistencia.model';
 import { RUTAS } from '../../../../core/constants/rutas.constants';
 import { NotificacionService, mensajeDeError } from '../../../../core/services/notificacion.service';
+import { formatearHora } from '../../../asistencia/utils/grafico-asistencias';
 import { PanelVencimientosComponent } from '../../../membresias/components/panel-vencimientos/panel-vencimientos.component';
 
 @Component({
@@ -31,6 +32,7 @@ export class DashboardHome {
   private readonly notificacion = inject(NotificacionService);
 
   protected readonly RUTAS = RUTAS;
+  protected readonly formatearHora = formatearHora;
   protected readonly usuario = this.auth.usuario;
 
   // Roles verificables (M1)
@@ -86,8 +88,8 @@ export class DashboardHome {
   });
 
   constructor() {
-    // Cargar asistencias de hoy (sucursal 1 por defecto)
-    this.asistenciaService.getAsistenciasHoy(1).subscribe({
+    // Asistencias reales de hoy (todas las sucursales), leídas del backend
+    this.asistenciaService.getAsistenciasHoy().subscribe({
       next: (registros) => this.asistencias.set(registros),
       error: (err) => this.notificacion.error(mensajeDeError(err, 'No se pudieron cargar las asistencias de hoy.')),
     });
@@ -120,18 +122,18 @@ export class DashboardHome {
       .registrarEntrada({
         idSocio: socioId,
         idSucursal: 1,
-        tipo: 'ENTRADA',
       })
       .subscribe({
         next: (registro) => {
           this.asistencias.update((prev) => [registro, ...prev]);
           this.mensajeAsistencia.set(
-            `Entrada registrada para ${registro.nombreSocio} ${registro.apellidoSocio} a las ${registro.horaEntrada}.`
+            `Entrada registrada para ${registro.nombreSocio} ${registro.apellidoSocio} a las ${formatearHora(registro.horaEntrada)}.`
           );
           this.formMarcaje.reset({ idSocio: '' });
           setTimeout(() => this.mensajeAsistencia.set(null), 4000);
         },
-        error: (err) => this.notificacion.error(mensajeDeError(err, 'No se pudo registrar la entrada.')),
+        // El backend bloquea el acceso (membresía vencida, socio inactivo o que ya está dentro) con un motivo claro
+        error: (err) => this.errorAsistencia.set(`ACCESO BLOQUEADO: ${mensajeDeError(err, 'No se pudo registrar la entrada.')}`),
       });
   }
 
@@ -142,7 +144,7 @@ export class DashboardHome {
           prev.map((a) => (a.idAsistencia === idAsistencia ? actualizada : a))
         );
         this.mensajeAsistencia.set(
-          `Salida registrada para ${actualizada.nombreSocio} a las ${actualizada.horaSalida}.`
+          `Salida registrada para ${actualizada.nombreSocio} a las ${formatearHora(actualizada.horaSalida)}.`
         );
         setTimeout(() => this.mensajeAsistencia.set(null), 4000);
       },
