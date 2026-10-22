@@ -32,12 +32,37 @@ describe('ReportesService', () => {
     const mockDashboard: any = { totalSocios: 100, totalSociosActivos: 80, totalSociosMorosos: 20 };
 
     service.getDashboardResumen().subscribe((res) => {
-      expect(res).toEqual(mockDashboard);
+      expect(res.totalSocios).toBe(mockDashboard.totalSocios);
+      expect(res.totalSociosActivos).toBe(mockDashboard.totalSociosActivos);
+      expect(res.totalSociosMorosos).toBe(mockDashboard.totalSociosMorosos);
     });
 
     const req = httpTesting.expectOne(`${API.reportes}/dashboard`);
     expect(req.request.method).toBe('GET');
     req.flush(mockDashboard);
+  });
+
+  it('debe normalizar el total de miembros, los planes y los ingresos recientes del dashboard', () => {
+    service.getDashboardResumen().subscribe((res) => {
+      expect(res.totalSocios).toBe(100);
+      expect(res.topPlanes).toEqual([
+        { planId: 1, nombrePlan: 'Mensual', cantidadSocios: 30, porcentaje: 75 },
+        { planId: 2, nombrePlan: 'Anual', cantidadSocios: 10, porcentaje: 25 },
+      ]);
+      expect(res.ingresosUltimos6Meses[0].total).toBe(1250);
+    });
+
+    const req = httpTesting.expectOne(`${API.reportes}/dashboard`);
+    req.flush({
+      activos: 70,
+      morosos: 20,
+      inactivos: 10,
+      planesContratados: [
+        { idPlan: 1, planNombre: 'Mensual', cantidad: 30 },
+        { idPlan: 2, planNombre: 'Anual', cantidad: 10 },
+      ],
+      ingresosUltimosMeses: [{ numeroMes: 10, montoTotal: 1250 }],
+    });
   });
 
   it('debe llamar a GET /reportes/ingresos con parámetro de año', () => {
@@ -50,6 +75,19 @@ describe('ReportesService', () => {
     const req = httpTesting.expectOne((r) => r.url === `${API.reportes}/ingresos` && r.params.get('anio') === '2026');
     expect(req.request.method).toBe('GET');
     req.flush(mockIngresos);
+  });
+
+  it('debe filtrar ingresos por fecha de inicio y fecha de fin', () => {
+    service.getReporteIngresos(undefined, '2026-01-01', '2026-03-31').subscribe();
+
+    const req = httpTesting.expectOne(
+      (r) =>
+        r.url === `${API.reportes}/ingresos` &&
+        r.params.get('fechaInicio') === '2026-01-01' &&
+        r.params.get('fechaFin') === '2026-03-31' &&
+        !r.params.has('anio')
+    );
+    req.flush({});
   });
 
   it('debe llamar a GET /reportes/miembros-estado con filtro MOROSO y sucursal', () => {
@@ -98,5 +136,18 @@ describe('ReportesService', () => {
     expect(req.request.method).toBe('GET');
     req.flush(mockAsistencias);
   });
-});
 
+  it('debe filtrar asistencias por fecha de inicio y fecha de fin', () => {
+    service.getMetricasAsistencia(undefined, undefined, undefined, '2026-10-01', '2026-10-20').subscribe();
+
+    const req = httpTesting.expectOne(
+      (r) =>
+        r.url === `${API.reportes}/asistencias` &&
+        r.params.get('fechaInicio') === '2026-10-01' &&
+        r.params.get('fechaFin') === '2026-10-20' &&
+        !r.params.has('mes') &&
+        !r.params.has('anio')
+    );
+    req.flush({});
+  });
+});
