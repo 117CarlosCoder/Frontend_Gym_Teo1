@@ -206,73 +206,62 @@
             }
           </div>
 
-          <!-- CURVA DEL PO (1): BENEFICIO EN EL PRECIO A CIERTOS TIPOS DE MIEMBROS -->
-          <div class="col-md-6">
-            <label class="form-label fw-semibold" for="pago-beneficio">
-              <i class="bi bi-tag-fill me-1 text-success"></i>Beneficio / Tipo de Miembro
-            </label>
-            <select id="pago-beneficio" class="form-select" formControlName="idBeneficio" (change)="alCambiarBeneficio()">
-              @for (b of catalogoBeneficios; track b.id) {
-                <option [value]="b.id">{{ b.nombre }}</option>
+          <!-- CURVA DEL PO: descuento por promoción vigente y recargo por pago tardío, calculados por el backend -->
+          <div class="col-12">
+            <div class="p-3 rounded bg-light border">
+              @if (cargandoCotizacion()) {
+                <div class="text-muted small">
+                  <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Calculando el total del cobro...
+                </div>
+              } @else if (errorCotizacion()) {
+                <div class="d-flex justify-content-between align-items-center gap-2 text-danger small">
+                  <span><i class="bi bi-exclamation-octagon-fill me-1"></i>{{ errorCotizacion() }}</span>
+                  <button type="button" class="btn btn-sm btn-outline-danger" (click)="alCambiarMembresia()">Reintentar</button>
+                </div>
+              } @else if (cotizacion(); as c) {
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                  <span class="text-muted small">Precio del plan:</span>
+                  <span class="fw-semibold">Q {{ c.montoBase | number: '1.2-2' }}</span>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mb-1" [class.text-success]="c.descuento > 0">
+                  <span class="small">
+                    <i class="bi bi-tag-fill me-1"></i>Descuento
+                    {{ c.nombrePromocion ? '(' + c.nombrePromocion + ')' : '' }}:
+                  </span>
+                  <span class="fw-bold">{{ c.descuento > 0 ? '- Q ' + (c.descuento | number: '1.2-2') : 'No aplica' }}</span>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mb-1" [class.text-danger]="c.recargo > 0">
+                  <span class="small">
+                    <i class="bi bi-clock-history me-1"></i>Recargo por pago tardío
+                    @if (c.pagoTardio) {
+                      ({{ c.porcentajeRecargo | number: '1.0-2' }}%, {{ c.diasAtraso }} {{ c.diasAtraso === 1 ? 'día' : 'días' }} de atraso):
+                    } @else {
+                      :
+                    }
+                  </span>
+                  <span class="fw-bold">{{ c.recargo > 0 ? '+ Q ' + (c.recargo | number: '1.2-2') : 'No aplica' }}</span>
+                </div>
+                <hr class="my-2">
+                <div class="d-flex justify-content-between align-items-center">
+                  <strong class="fs-6">Total a cobrar:</strong>
+                  <strong class="fs-5 text-primary">Q {{ c.total | number: '1.2-2' }}</strong>
+                </div>
               }
-            </select>
-            <small class="text-muted d-block mt-1">{{ beneficioEnFormulario().descripcion }}</small>
+            </div>
+            <small class="text-muted d-block mt-1">
+              El descuento sale de las promociones vigentes y el recargo se aplica cuando la membresía ya venció.
+              Queda registrado en el historial y en el comprobante PDF.
+            </small>
           </div>
 
-          <!-- CURVA DEL PO (2): RECARGO POR PAGO FUERA DE PLAZO / TARDÍO -->
           <div class="col-md-6">
-            <label class="form-label fw-semibold" for="pago-recargo">
-              <i class="bi bi-exclamation-triangle-fill me-1 text-warning"></i>Recargo por Pago Tardío / Fuera de Plazo
-            </label>
-            <select id="pago-recargo" class="form-select" formControlName="idRecargo" (change)="alCambiarRecargo()">
-              @for (r of catalogoRecargos; track r.id) {
-                <option [value]="r.id">{{ r.nombre }}</option>
-              }
-            </select>
-            @if (esFueraDePlazo()) {
-              <small class="text-danger fw-semibold d-block mt-1">
-                <i class="bi bi-clock-history me-1"></i>Membresía vencida hace {{ diasAtraso() }} días (pago fuera de plazo).
-              </small>
-            } @else {
-              <small class="text-muted d-block mt-1">{{ recargoEnFormulario().descripcion }}</small>
-            }
-          </div>
-
-          <div class="col-md-6">
-            <label class="form-label fw-semibold" for="pago-monto">Monto a Cobrar (Q) *</label>
+            <label class="form-label fw-semibold" for="pago-monto">Monto recibido (Q) *</label>
             <input id="pago-monto" type="number" min="0.01" step="0.01" class="form-control" formControlName="monto" />
             @if (formPago.controls.monto.touched && formPago.controls.monto.invalid) {
               <small class="text-danger">El monto debe ser mayor a cero.</small>
             } @else if (montoInsuficiente()) {
-              <small class="text-danger">El monto debe cubrir el total calculado del cobro (Q {{ montoSugeridoFinal() | number: '1.2-2' }}).</small>
+              <small class="text-danger">Debe cubrir el total a cobrar (Q {{ cotizacion()?.total | number: '1.2-2' }}).</small>
             }
-          </div>
-
-          <!-- DESGLOSE EN VIVO DEL COBRO (CURVA PO) -->
-          <div class="col-12">
-            <div class="p-3 rounded bg-light border">
-              <div class="d-flex justify-content-between align-items-center mb-1">
-                <span class="text-muted small">Precio base del plan:</span>
-                <span class="fw-semibold">Q {{ (membresiaEnFormulario()?.precio || 0) | number: '1.2-2' }}</span>
-              </div>
-              @if (descuentoMonto() > 0) {
-                <div class="d-flex justify-content-between align-items-center text-success mb-1">
-                  <span class="small"><i class="bi bi-dash-circle me-1"></i>Beneficio aplicado ({{ beneficioEnFormulario().nombre }}):</span>
-                  <span class="fw-bold">- Q {{ descuentoMonto() | number: '1.2-2' }}</span>
-                </div>
-              }
-              @if (recargoMonto() > 0) {
-                <div class="d-flex justify-content-between align-items-center text-danger mb-1">
-                  <span class="small"><i class="bi bi-plus-circle me-1"></i>Recargo tardío ({{ recargoEnFormulario().nombre }}):</span>
-                  <span class="fw-bold">+ Q {{ recargoMonto() | number: '1.2-2' }}</span>
-                </div>
-              }
-              <hr class="my-2">
-              <div class="d-flex justify-content-between align-items-center">
-                <strong class="fs-6">Total Calculado:</strong>
-                <strong class="fs-5 text-primary">Q {{ montoSugeridoFinal() | number: '1.2-2' }}</strong>
-              </div>
-            </div>
           </div>
 
           <div class="col-md-6">
@@ -314,7 +303,7 @@
 
       <div class="modal-footer-custom">
         <button type="button" class="btn btn-light" [disabled]="guardando()" (click)="cerrarModalPago()">Cancelar</button>
-        <button type="submit" class="btn btn--primary" [disabled]="formPago.invalid || montoInsuficiente() || guardando()">
+        <button type="submit" class="btn btn--primary" [disabled]="formPago.invalid || !cotizacion() || montoInsuficiente() || guardando()">
           @if (guardando()) {
             <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
             Registrando...

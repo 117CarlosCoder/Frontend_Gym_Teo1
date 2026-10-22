@@ -38,10 +38,13 @@ describe('RegistroAsistenciaComponent', () => {
           idSocio: 1,
           nombreSocio: 'Carlos',
           apellidoSocio: 'Gomez',
+          idSucursal: 1,
           sucursal: 'Central',
           fecha: '2026-10-15',
           horaEntrada: '09:00:00',
           horaSalida: null,
+          dentro: true,
+          minutosPermanencia: null,
           registradoPor: 'Recepción',
         })
       ),
@@ -51,10 +54,13 @@ describe('RegistroAsistenciaComponent', () => {
           idSocio: 1,
           nombreSocio: 'Carlos',
           apellidoSocio: 'Gomez',
+          idSucursal: 1,
           sucursal: 'Central',
           fecha: '2026-10-15',
           horaEntrada: '09:00:00',
           horaSalida: '10:30:00',
+          dentro: false,
+          minutosPermanencia: 90,
           registradoPor: 'Recepción',
         })
       ),
@@ -84,7 +90,6 @@ describe('RegistroAsistenciaComponent', () => {
     expect(mockAsistenciaService.registrarEntrada).toHaveBeenCalledWith({
       idSocio: 1,
       idSucursal: 1,
-      tipo: 'ENTRADA',
     });
 
     const autorizado = (component as any).accesoAutorizado();
@@ -118,5 +123,17 @@ describe('RegistroAsistenciaComponent', () => {
     expect((component as any).sociosFiltrados().length).toBe(1);
     expect((component as any).sociosFiltrados()[0].idSocio).toBe(1);
   });
-});
 
+  it('marca al socio como "Dentro" después de su entrada y registra su salida en el backend', () => {
+    (component as any).registrarEntrada(1);
+    const activa = (component as any).obtenerAsistenciaActiva(1);
+    expect(activa?.idAsistencia).toBe(101);
+    expect((component as any).sociosDentro()).toBe(1);
+
+    (component as any).registrarSalida(activa);
+
+    expect(mockAsistenciaService.registrarSalida).toHaveBeenCalledWith(101);
+    expect((component as any).obtenerAsistenciaActiva(1)).toBeUndefined();
+    expect((component as any).sociosDentro()).toBe(0);
+  });
+});
