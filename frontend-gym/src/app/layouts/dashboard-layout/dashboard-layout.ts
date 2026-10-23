@@ -43,7 +43,11 @@ export class DashboardLayout {
   );
 
   protected readonly puedeVerAsistencia = computed(() =>
-    this.auth.tieneRol('ADMIN', 'RECEPCION', 'RECEPCIONISTA', 'ENTRENADOR'),
+    this.auth.tieneRol('ADMIN', 'RECEPCION', 'RECEPCIONISTA'),
+  );
+
+  protected readonly puedeVerEspacioEntrenador = computed(() =>
+    this.auth.tieneRol('ENTRENADOR'),
   );
 
   /** Determina si el usuario puede ver el módulo de membresias. */

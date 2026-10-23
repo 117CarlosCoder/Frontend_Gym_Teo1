@@ -3,6 +3,7 @@ export const RUTAS = {
   login: '/login',
   dashboard: {
     default: '/dashboard',
+    entrenador: '/dashboard/entrenador',
     asistencia: '/dashboard/asistencia',
     socios: '/dashboard/socios',
     planes: '/dashboard/planes',
@@ -13,4 +14,3 @@ export const RUTAS = {
     perfil: '/dashboard/perfil',
   },
 } as const;
-
