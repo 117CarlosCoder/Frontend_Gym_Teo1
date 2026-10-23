@@ -1,0 +1,274 @@
+<section class="coach-page">
+  <header class="coach-heading">
+    <div>
+      <p class="coach-eyebrow">ÁREA PERSONAL</p>
+      <h1>Espacio del entrenador</h1>
+      <p class="coach-muted">Gestiona a tus socios, planifica sus entrenamientos y revisa su progreso.</p>
+    </div>
+    <button class="coach-button coach-button--secondary" type="button" (click)="cargarDatos()" [disabled]="cargando()">
+      Actualizar datos
+    </button>
+  </header>
+
+  @if (cargando()) {
+    <div class="coach-state" role="status">Cargando información del entrenador...</div>
+  } @else if (errorCarga()) {
+    <div class="coach-state coach-state--error" role="alert">
+      <p>{{ errorCarga() }}</p>
+      <button class="coach-button coach-button--secondary" type="button" (click)="cargarDatos()">Reintentar</button>
+    </div>
+  } @else {
+    <div class="coach-metrics">
+      <article class="coach-metric">
+        <span>Socios asignados</span>
+        <strong>{{ reporte()?.sociosAsignados ?? socios().length }}</strong>
+        <small>{{ reporte()?.asignacionesActivas ?? sociosActivos().length }} asignaciones activas</small>
+      </article>
+      <article class="coach-metric">
+        <span>En el gimnasio ahora</span>
+        <strong>{{ sociosDentro().length }}</strong>
+        <small>De tus socios asignados</small>
+      </article>
+      <article class="coach-metric">
+        <span>Rutinas activas</span>
+        <strong>{{ reporte()?.rutinasActivas ?? rutinas().length }}</strong>
+        <small>En tu calendario semanal</small>
+      </article>
+      <article class="coach-metric">
+        <span>Asistencias del período</span>
+        <strong>{{ reporte()?.asistenciasSocios ?? 0 }}</strong>
+        <small>{{ desde() | date:'mediumDate' }} - {{ hasta() | date:'mediumDate' }}</small>
+      </article>
+    </div>
+
+    <nav class="coach-tabs" aria-label="Secciones del entrenador">
+      <button type="button" [class.coach-tab--active]="seccion() === 'resumen'" (click)="cambiarSeccion('resumen')">Resumen y socios</button>
+      <button type="button" [class.coach-tab--active]="seccion() === 'rutinas'" (click)="cambiarSeccion('rutinas')">Rutinas y calendario</button>
+      <button type="button" [class.coach-tab--active]="seccion() === 'reportes'" (click)="cambiarSeccion('reportes')">Mis reportes</button>
+    </nav>
+
+    @if (seccion() === 'resumen') {
+      <div class="coach-columns">
+        <section class="coach-card">
+          <div class="coach-card__heading">
+            <div>
+              <h2>Mis socios dentro</h2>
+              <p class="coach-muted">Socios asignados con una asistencia abierta.</p>
+            </div>
+            <span class="coach-count">{{ sociosDentro().length }}</span>
+          </div>
+          @if (sociosDentro().length) {
+            <ul class="coach-presence-list">
+              @for (presencia of sociosDentro(); track presencia.idSocio) {
+                <li>
+                  <span class="coach-presence-dot" aria-hidden="true"></span>
+                  <div>
+                    <strong>{{ presencia.nombreSocio }}</strong>
+                    <small>{{ presencia.sucursal }} - Entrada {{ presencia.horaEntrada }}</small>
+                  </div>
+                </li>
+              }
+            </ul>
+          } @else {
+            <p class="coach-empty">Ninguno de tus socios asignados aparece dentro del gimnasio.</p>
+          }
+        </section>
+
+        <section class="coach-card">
+          <div class="coach-card__heading">
+            <div>
+              <h2>Próximas rutinas</h2>
+              <p class="coach-muted">Tu planificación semanal activa.</p>
+            </div>
+            <button class="coach-text-button" type="button" (click)="cambiarSeccion('rutinas')">Administrar</button>
+          </div>
+          <ul class="coach-next-list">
+            @for (dia of diasSemana; track dia) {
+              @for (rutina of rutinasPorDia().get(dia) ?? []; track rutina.idRutina) {
+                <li>
+                  <span>{{ nombreDia(dia) }}</span>
+                  <strong>{{ rutina.grupoMuscular }}</strong>
+                  @if (rutina.horaInicio) {
+                    <small>{{ rutina.horaInicio }}@if (rutina.horaFin) { - {{ rutina.horaFin }} }</small>
+                  }
+                </li>
+              }
+            }
+          </ul>
+          @if (!rutinas().length) {
+            <p class="coach-empty">Aún no tienes rutinas en tu calendario.</p>
+          }
+        </section>
+      </div>
+
+      <section class="coach-card coach-members">
+        <div class="coach-card__heading">
+          <div>
+            <h2>Socios asignados</h2>
+            <p class="coach-muted">Asignaciones vigentes e historial de asignaciones.</p>
+          </div>
+        </div>
+        @if (socios().length) {
+          <div class="coach-table-wrap">
+            <table class="coach-table">
+              <thead>
+                <tr>
+                  <th>Socio</th>
+                  <th>Inicio de asignación</th>
+                  <th>Estado</th>
+                  <th>Presencia</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (socio of socios(); track socio.idSocio) {
+                  <tr>
+                    <td>
+                      <strong>{{ socio.nombres }} {{ socio.apellidos }}</strong>
+                      @if (socio.correo) { <small>{{ socio.correo }}</small> }
+                    </td>
+                    <td>{{ socio.fechaInicio | date:'mediumDate' }}</td>
+                    <td><span class="coach-status" [class.coach-status--inactive]="!socio.activo">{{ socio.activo ? 'Activa' : 'Finalizada' }}</span></td>
+                    <td>{{ horaDeEntrada(socio.idSocio) ? 'Dentro · ' + horaDeEntrada(socio.idSocio) : 'Fuera' }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        } @else {
+          <p class="coach-empty">No se encontraron socios asignados a tu cuenta.</p>
+        }
+      </section>
+    }
+
+    @if (seccion() === 'rutinas') {
+      <div class="coach-columns coach-columns--routine">
+        <section class="coach-card">
+          <div class="coach-card__heading">
+            <div>
+              <h2>{{ rutinaEnEdicion() ? 'Editar rutina' : 'Agregar rutina semanal' }}</h2>
+              <p class="coach-muted">Define el día, grupo muscular, descripción y horario.</p>
+            </div>
+          </div>
+          <form class="coach-form" [formGroup]="rutinaForm" (ngSubmit)="guardarRutina()">
+            <label>
+              Día de la semana
+              <select formControlName="diaSemana">
+                @for (dia of diasSemana; track dia) {
+                  <option [value]="dia">{{ nombreDia(dia) }}</option>
+                }
+              </select>
+            </label>
+            <label>
+              Grupo muscular
+              <input type="text" formControlName="grupoMuscular" placeholder="Ej. Tren superior" maxlength="80">
+              @if (rutinaForm.controls.grupoMuscular.touched && rutinaForm.controls.grupoMuscular.invalid) {
+                <small class="coach-field-error">Escribe un grupo muscular de hasta 80 caracteres.</small>
+              }
+            </label>
+            <label>
+              Descripción (opcional)
+              <textarea formControlName="descripcion" rows="3" maxlength="500" placeholder="Ejercicios, series o indicaciones"></textarea>
+            </label>
+            <div class="coach-form__times">
+              <label>Hora de inicio <input type="time" formControlName="horaInicio"></label>
+              <label>Hora de fin <input type="time" formControlName="horaFin"></label>
+            </div>
+            <div class="coach-form__actions">
+              <button class="coach-button" type="submit" [disabled]="guardandoRutina()">
+                {{ guardandoRutina() ? 'Guardando…' : rutinaEnEdicion() ? 'Guardar cambios' : 'Agregar rutina' }}
+              </button>
+              @if (rutinaEnEdicion()) {
+                <button class="coach-button coach-button--secondary" type="button" (click)="cancelarEdicion()">Cancelar</button>
+              }
+            </div>
+          </form>
+        </section>
+
+        <section class="coach-card">
+          <div class="coach-card__heading">
+            <div>
+              <h2>Calendario semanal</h2>
+              <p class="coach-muted">Organiza las sesiones de entrenamiento por día.</p>
+            </div>
+          </div>
+          <div class="coach-calendar">
+            @for (dia of diasSemana; track dia) {
+              <article class="coach-day">
+                <h3>{{ nombreDia(dia) }}</h3>
+                @for (rutina of rutinasPorDia().get(dia) ?? []; track rutina.idRutina) {
+                  <div class="coach-routine">
+                    <div class="coach-routine__top">
+                      <strong>{{ rutina.grupoMuscular }}</strong>
+                      @if (rutina.horaInicio) { <span>{{ rutina.horaInicio }}@if (rutina.horaFin) { - {{ rutina.horaFin }} }</span> }
+                    </div>
+                    @if (rutina.descripcion) { <p>{{ rutina.descripcion }}</p> }
+                    <div class="coach-routine__actions">
+                      <button class="coach-text-button" type="button" (click)="editarRutina(rutina)">Editar</button>
+                      <button class="coach-text-button coach-text-button--danger" type="button" (click)="eliminarRutina(rutina)">Eliminar</button>
+                    </div>
+                  </div>
+                } @empty {
+                  <p class="coach-day__empty">Sin rutina</p>
+                }
+              </article>
+            }
+          </div>
+        </section>
+      </div>
+    }
+
+    @if (seccion() === 'reportes') {
+      <section class="coach-card">
+        <div class="coach-card__heading coach-card__heading--wrap">
+          <div>
+            <h2>Reportes personales</h2>
+            <p class="coach-muted">Asistencia y evolución física de tus socios en el período seleccionado.</p>
+          </div>
+          <form class="coach-date-filter" (submit)="$event.preventDefault(); consultarReporte()">
+            <label>Desde <input type="date" [value]="desde()" (change)="actualizarFecha($event, 'desde')"></label>
+            <label>Hasta <input type="date" [value]="hasta()" (change)="actualizarFecha($event, 'hasta')"></label>
+            <button class="coach-button" type="submit">Consultar</button>
+          </form>
+        </div>
+        <div class="coach-report-summary">
+          <div><span>Socios asignados</span><strong>{{ reporte()?.sociosAsignados ?? 0 }}</strong></div>
+          <div><span>Asignaciones activas</span><strong>{{ reporte()?.asignacionesActivas ?? 0 }}</strong></div>
+          <div><span>Rutinas activas</span><strong>{{ reporte()?.rutinasActivas ?? 0 }}</strong></div>
+          <div><span>Asistencias de socios</span><strong>{{ reporte()?.asistenciasSocios ?? 0 }}</strong></div>
+        </div>
+        <h3 class="coach-subheading">Progreso y mediciones físicas</h3>
+        @if (reporte()?.progresoSocios?.length) {
+          <div class="coach-table-wrap">
+            <table class="coach-table">
+              <thead>
+                <tr>
+                  <th>Socio</th>
+                  <th>Mediciones</th>
+                  <th>Peso (kg)</th>
+                  <th>Grasa corporal</th>
+                  <th>Masa muscular (kg)</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (progreso of reporte()?.progresoSocios ?? []; track progreso.idSocio) {
+                  <tr>
+                    <td>
+                      <strong>{{ progreso.nombreSocio }}</strong>
+                      @if (progreso.fechaActual) { <small>Última medición: {{ progreso.fechaActual | date:'mediumDate' }}</small> }
+                    </td>
+                    <td>{{ progreso.fechaAnterior ? (progreso.fechaAnterior | date:'shortDate') : '—' }} <i class="bi bi-arrow-right"></i> {{ progreso.fechaActual ? (progreso.fechaActual | date:'shortDate') : '—' }}</td>
+                    <td>{{ progreso.pesoAnterior ?? '—' }} <i class="bi bi-arrow-right"></i> {{ progreso.pesoActual ?? '—' }}</td>
+                    <td>{{ progreso.grasaAnterior ?? '—' }} <i class="bi bi-arrow-right"></i> {{ progreso.grasaActual ?? '—' }}</td>
+                    <td>{{ progreso.masaMuscularAnterior ?? '—' }} <i class="bi bi-arrow-right"></i> {{ progreso.masaMuscularActual ?? '—' }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        } @else {
+          <p class="coach-empty">No hay mediciones de progreso para tus socios en este período.</p>
+        }
+      </section>
+    }
+  }
+</section>
