@@ -7,12 +7,11 @@ import { ReportesService } from '../../services/reportes.service';
 import {
   DashboardResumen,
   MetricaAsistencia,
-  MiembroEstadoDetalle,
   ReporteIngresos,
   ReporteMiembrosEstado,
   ReporteRenovaciones,
 } from '../../models/reporte.model';
-import { NotificacionService, mensajeDeError } from '../../../../core/services/notificacion.service';
+import { mensajeDeError } from '../../../../core/services/notificacion.service';
 import { RUTAS } from '../../../../core/constants/rutas.constants';
 import { AuthService } from '../../../../core/services/auth.service';
 
@@ -27,7 +26,6 @@ export type ReporteTab = 'dashboard' | 'ingresos' | 'miembros' | 'renovaciones' 
 })
 export class ReportesDashboardComponent implements OnInit {
   private readonly reportesService = inject(ReportesService);
-  private readonly notificacion = inject(NotificacionService);
   private readonly router = inject(Router);
   protected readonly auth = inject(AuthService);
   protected readonly RUTAS = RUTAS;
@@ -54,13 +52,20 @@ export class ReportesDashboardComponent implements OnInit {
   readonly metricasAsistencia = signal<MetricaAsistencia | null>(null);
 
   // Filtros interactivos
-  protected readonly anioFiltroIngresos = signal<number>(new Date().getFullYear());
+  protected readonly anioFiltroIngresos = signal<number | undefined>(new Date().getFullYear());
   protected readonly anioFiltroRenovaciones = signal<number>(new Date().getFullYear());
+  protected readonly fechaInicioIngresos = signal<string>('');
+  protected readonly fechaFinIngresos = signal<string>('');
   protected readonly estadoFiltroMiembros = signal<string>('TODOS');
   protected readonly sucursalFiltroMiembros = signal<number | undefined>(undefined);
 
-  protected readonly mesFiltroAsistencias = signal<number>(new Date().getMonth() + 1);
-  protected readonly anioFiltroAsistencias = signal<number>(new Date().getFullYear());
+  private readonly fechaActual = new Date();
+  protected readonly fechaInicioAsistencias = signal<string>(
+    `${this.fechaActual.getFullYear()}-${String(this.fechaActual.getMonth() + 1).padStart(2, '0')}-01`
+  );
+  protected readonly fechaFinAsistencias = signal<string>(
+    `${this.fechaActual.getFullYear()}-${String(this.fechaActual.getMonth() + 1).padStart(2, '0')}-${String(this.fechaActual.getDate()).padStart(2, '0')}`
+  );
   protected readonly busquedaMiembro = signal<string>('');
 
   // Fecha actual para reportes impresos
@@ -79,7 +84,7 @@ export class ReportesDashboardComponent implements OnInit {
       return this.reporteRenovaciones()?.anio || this.anioFiltroRenovaciones();
     }
     if (tab === 'asistencias') {
-      return this.anioFiltroAsistencias();
+      return Number(this.fechaFinAsistencias().slice(0, 4)) || this.fechaActual.getFullYear();
     }
     return new Date().getFullYear();
   });
@@ -95,7 +100,7 @@ export class ReportesDashboardComponent implements OnInit {
       case 'renovaciones':
         return `Reporte Analítico de Renovaciones y Retención (${this.anioActivo()})`;
       case 'asistencias':
-        return `Métricas de Afluencia y Horarios Pico (${this.obtenerNombreMes(this.mesFiltroAsistencias())} ${this.anioFiltroAsistencias()})`;
+        return `Métricas de Afluencia y Horarios Pico (${this.periodoAsistencias()})`;
     }
   });
 
@@ -120,21 +125,11 @@ export class ReportesDashboardComponent implements OnInit {
     return rep.horaPico || '18:00 - 19:00 (Estándar)';
   });
 
-  // Nombres de los meses
-  protected readonly meses = [
-    { valor: 1, nombre: 'Enero' },
-    { valor: 2, nombre: 'Febrero' },
-    { valor: 3, nombre: 'Marzo' },
-    { valor: 4, nombre: 'Abril' },
-    { valor: 5, nombre: 'Mayo' },
-    { valor: 6, nombre: 'Junio' },
-    { valor: 7, nombre: 'Julio' },
-    { valor: 8, nombre: 'Agosto' },
-    { valor: 9, nombre: 'Septiembre' },
-    { valor: 10, nombre: 'Octubre' },
-    { valor: 11, nombre: 'Noviembre' },
-    { valor: 12, nombre: 'Diciembre' },
-  ];
+  readonly porcentajePromedioDiario = computed(() => {
+    const totalSociosActivos = this.resumen()?.totalSociosActivos ?? 0;
+    if (totalSociosActivos <= 0) return 0;
+    return Math.round(((this.metricasAsistencia()?.promedioDiario ?? 0) / totalSociosActivos) * 1000) / 10;
+  });
 
   // Miembros filtrados en la tabla por búsqueda
   protected readonly miembrosFiltrados = computed(() => {
@@ -198,21 +193,39 @@ export class ReportesDashboardComponent implements OnInit {
   cargarReporteIngresos(): void {
     this.cargando.set(true);
     this.error.set(null);
-    this.reportesService.getReporteIngresos(this.anioFiltroIngresos()).subscribe({
-      next: (data) => {
-        this.reporteIngresos.set(data);
-        this.cargando.set(false);
-      },
-      error: (err) => {
-        this.cargando.set(false);
-        this.error.set(mensajeDeError(err, 'No se pudo generar el reporte de ingresos.'));
-      },
-    });
+    const usaRangoFechas = Boolean(this.fechaInicioIngresos() || this.fechaFinIngresos());
+    this.reportesService
+      .getReporteIngresos(
+        usaRangoFechas ? undefined : this.anioFiltroIngresos(),
+        this.fechaInicioIngresos(),
+        this.fechaFinIngresos()
+      )
+      .subscribe({
+        next: (data) => {
+          this.reporteIngresos.set(data);
+          this.cargando.set(false);
+        },
+        error: (err) => {
+          this.cargando.set(false);
+          this.error.set(mensajeDeError(err, 'No se pudo generar el reporte de ingresos.'));
+        },
+      });
   }
 
   cambiarAnioIngresos(val: any): void {
     const anio = val === 'todos' ? undefined : Number(val);
-    this.anioFiltroIngresos.set(anio as any);
+    this.anioFiltroIngresos.set(anio);
+    this.fechaInicioIngresos.set('');
+    this.fechaFinIngresos.set('');
+    this.cargarReporteIngresos();
+  }
+
+  cambiarFechaIngresos(tipo: 'inicio' | 'fin', fecha: string): void {
+    (tipo === 'inicio' ? this.fechaInicioIngresos : this.fechaFinIngresos).set(fecha);
+    if (!this.rangoFechasValido(this.fechaInicioIngresos(), this.fechaFinIngresos())) {
+      this.error.set('La Fecha Inicio no puede ser posterior a la Fecha Fin.');
+      return;
+    }
     this.cargarReporteIngresos();
   }
 
@@ -270,7 +283,13 @@ export class ReportesDashboardComponent implements OnInit {
     this.cargando.set(true);
     this.error.set(null);
     this.reportesService
-      .getMetricasAsistencia(this.mesFiltroAsistencias(), this.anioFiltroAsistencias())
+      .getMetricasAsistencia(
+        undefined,
+        undefined,
+        undefined,
+        this.fechaInicioAsistencias(),
+        this.fechaFinAsistencias()
+      )
       .subscribe({
         next: (data) => {
           this.metricasAsistencia.set(data);
@@ -283,10 +302,12 @@ export class ReportesDashboardComponent implements OnInit {
       });
   }
 
-  cambiarMesAsistencia(val: any): void {
-    const mes = Number(val);
-    if (!mes || isNaN(mes)) return;
-    this.mesFiltroAsistencias.set(mes);
+  cambiarFechaAsistencia(tipo: 'inicio' | 'fin', fecha: string): void {
+    (tipo === 'inicio' ? this.fechaInicioAsistencias : this.fechaFinAsistencias).set(fecha);
+    if (!this.rangoFechasValido(this.fechaInicioAsistencias(), this.fechaFinAsistencias())) {
+      this.error.set('La Fecha Inicio no puede ser posterior a la Fecha Fin.');
+      return;
+    }
     this.cargarMetricasAsistencia();
   }
 
@@ -304,6 +325,14 @@ export class ReportesDashboardComponent implements OnInit {
       'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
     ];
     return nombres[numMes - 1] || `Mes ${numMes}`;
+  }
+
+  periodoAsistencias(): string {
+    return `${this.fechaInicioAsistencias()} - ${this.fechaFinAsistencias()}`;
+  }
+
+  private rangoFechasValido(fechaInicio: string, fechaFin: string): boolean {
+    return !fechaInicio || !fechaFin || fechaInicio <= fechaFin;
   }
 
   calcularPorcentajeBarra(monto: number, maximo: number): number {
