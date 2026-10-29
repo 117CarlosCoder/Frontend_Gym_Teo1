@@ -5,32 +5,44 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 
 import { NotificacionService, mensajeDeError } from '../../../../core/services/notificacion.service';
-import { calcularNuevoVencimiento, diasHasta } from '../../../../core/utils/fechas';
+import { calcularNuevoVencimiento, diasHasta, hoyIso, sumarDias } from '../../../../core/utils/fechas';
 import { ModalComponent } from '../../../../shared/components/modal/modal.component';
+import {
+  CongelarMembresiaComponent,
+  MembresiaCongelable,
+} from '../../../membresias/components/congelar-membresia/congelar-membresia.component';
+import { Promocion, describirDescuento } from '../../../promociones/models/promocion.model';
+import { PromocionesService } from '../../../promociones/services/promociones.service';
 import { SocioTablaDTO } from '../../../socios/models/socio-tabla-dto.model';
 import { SociosService } from '../../../socios/services/socios.service';
 import { HistorialPagosComponent } from '../../components/historial-pagos/historial-pagos.component';
 import {
-  BENEFICIOS_MIEMBRO,
-  BeneficioMiembro,
+  CotizacionPago,
+  EstadoCuenta,
+  FacturaCuenta,
   MembresiaPagable,
   MetodoPago,
   Pago,
-  RECARGOS_PAGO_TARDIO,
-  RecargoPagoTardio,
+  ReglasAbono,
 } from '../../models/pago.model';
 import { PagosService } from '../../services/pagos.service';
 
-/** Registro de pagos y estado de cuenta del socio (M4) con Curva PO: beneficios y recargo por mora. */
+/**
+ * Registro de pagos y estado de cuenta del socio (M4).
+ * Curva del PO: el descuento (promoción vigente) y el recargo por pago tardío los calcula el backend
+ * en la cotización; aquí solo se muestran, así pantalla, historial y comprobante PDF coinciden.
+ * Ajustes finales del PO: pago en cuotas/abonos con saldo pendiente y congelamiento de la membresía.
+ */
 @Component({
   selector: 'app-gestion-pagos',
-  imports: [ReactiveFormsModule, DatePipe, DecimalPipe, NgClass, ModalComponent, HistorialPagosComponent],
+  imports: [ReactiveFormsModule, DatePipe, DecimalPipe, NgClass, ModalComponent, HistorialPagosComponent, CongelarMembresiaComponent],
   templateUrl: './gestion-pagos.component.html',
   styleUrl: './gestion-pagos.component.css',
 })
 export class GestionPagosComponent implements OnInit {
   private readonly pagosService = inject(PagosService);
   private readonly sociosService = inject(SociosService);
+  private readonly promocionesService = inject(PromocionesService);
   private readonly notificacion = inject(NotificacionService);
   private readonly route = inject(ActivatedRoute);
   private readonly fb = inject(FormBuilder);
@@ -40,13 +52,37 @@ export class GestionPagosComponent implements OnInit {
   protected readonly idSocioSeleccionado = signal<number | null>(null);
 
   protected readonly metodosPago = signal<MetodoPago[]>([]);
+  /** Promociones vigentes que el administrador configuró; recepción puede elegir cuál aplicar. */
+  protected readonly promocionesVigentes = signal<Promocion[]>([]);
+  protected readonly describirDescuento = describirDescuento;
   protected readonly membresias = signal<MembresiaPagable[]>([]);
   protected readonly cargandoMembresias = signal(false);
   protected readonly errorMembresias = signal<string | null>(null);
 
-  // Catálogos Curva del PO (Sprint 5)
-  readonly catalogoBeneficios: BeneficioMiembro[] = BENEFICIOS_MIEMBRO;
-  readonly catalogoRecargos: RecargoPagoTardio[] = RECARGOS_PAGO_TARDIO;
+  // Cotización del cobro calculada por el backend (precio, descuento, recargo y total)
+  protected readonly cotizacion = signal<CotizacionPago | null>(null);
+  protected readonly cargandoCotizacion = signal(false);
+  protected readonly errorCotizacion = signal<string | null>(null);
+
+  // Estado de cuenta (pagos en abonos)
+  protected readonly estadoCuenta = signal<EstadoCuenta | null>(null);
+  protected readonly cargandoCuenta = signal(false);
+  protected readonly errorCuenta = signal<string | null>(null);
+  protected readonly reglasAbono = signal<ReglasAbono | null>(null);
+
+  // Modal de abono
+  protected readonly facturaAAbonar = signal<FacturaCuenta | null>(null);
+  protected readonly errorAbono = signal<string | null>(null);
+  protected readonly guardandoAbono = signal(false);
+  protected readonly formAbono = this.fb.nonNullable.group({
+    idMetodoPago: [0, [Validators.required, Validators.min(1)]],
+    monto: [0, [Validators.required, Validators.min(0.01)]],
+    referencia: ['', [Validators.maxLength(100)]],
+  });
+  private readonly valoresAbono = toSignal(this.formAbono.valueChanges, { initialValue: this.formAbono.getRawValue() });
+
+  // Modal de congelamiento
+  protected readonly membresiaACongelar = signal<MembresiaCongelable | null>(null);
 
   /** Se incrementa para recargar el historial después de registrar un pago. */
   protected readonly recargaHistorial = signal(0);
@@ -61,8 +97,8 @@ export class GestionPagosComponent implements OnInit {
   protected readonly formPago = this.fb.nonNullable.group({
     idMembresia: [0, [Validators.required, Validators.min(1)]],
     idMetodoPago: [0, [Validators.required, Validators.min(1)]],
-    idBeneficio: ['REGULAR', [Validators.required]],
-    idRecargo: ['NINGUNO', [Validators.required]],
+    /** 0 = automática (la vigente con mayor descuento). */
+    idPromocion: [0],
     monto: [0, [Validators.required, Validators.min(0.01)]],
     referencia: ['', [Validators.maxLength(100)]],
     observacion: ['', [Validators.maxLength(255)]],
@@ -93,69 +129,49 @@ export class GestionPagosComponent implements OnInit {
     return this.metodosPago().find((m) => m.id === id) ?? null;
   });
 
-  protected readonly beneficioEnFormulario = computed(() => {
-    const id = this.valoresPago().idBeneficio || 'REGULAR';
-    return this.catalogoBeneficios.find((b) => b.id === id) ?? this.catalogoBeneficios[0];
-  });
-
-  protected readonly recargoEnFormulario = computed(() => {
-    const id = this.valoresPago().idRecargo || 'NINGUNO';
-    return this.catalogoRecargos.find((r) => r.id === id) ?? this.catalogoRecargos[0];
-  });
-
-  protected readonly esFueraDePlazo = computed(() => {
-    const m = this.membresiaEnFormulario();
-    if (!m || !m.fechaVencimiento) return false;
-    return diasHasta(m.fechaVencimiento) < 0;
-  });
-
-  protected readonly diasAtraso = computed(() => {
-    const m = this.membresiaEnFormulario();
-    if (!m || !m.fechaVencimiento) return 0;
-    const d = diasHasta(m.fechaVencimiento);
-    return d < 0 ? Math.abs(d) : 0;
-  });
-
-  protected readonly descuentoMonto = computed(() => {
-    const m = this.membresiaEnFormulario();
-    if (!m) return 0;
-    const b = this.beneficioEnFormulario();
-    if (b.tipo === 'PORCENTAJE') {
-      return Number(((m.precio * b.valor) / 100).toFixed(2));
-    }
-    return Math.min(m.precio, b.valor);
-  });
-
-  protected readonly recargoMonto = computed(() => {
-    const m = this.membresiaEnFormulario();
-    if (!m) return 0;
-    const r = this.recargoEnFormulario();
-    if (r.tipo === 'PORCENTAJE') {
-      return Number(((m.precio * r.valor) / 100).toFixed(2));
-    }
-    return r.valor;
-  });
-
-  protected readonly montoSugeridoFinal = computed(() => {
-    const m = this.membresiaEnFormulario();
-    if (!m) return 0;
-    const final = m.precio - this.descuentoMonto() + this.recargoMonto();
-    return Math.max(0.01, Number(final.toFixed(2)));
-  });
-
   protected readonly esEfectivo = computed(
     () => (this.metodoEnFormulario()?.nombre ?? '').trim().toUpperCase() === 'EFECTIVO',
   );
 
+  /** Primer abono mínimo según las reglas del gimnasio; sin abonos permitidos es el total. */
+  protected readonly montoMinimo = computed(() => {
+    const c = this.cotizacion();
+    if (!c) return 0;
+    const porcentaje = this.reglasAbono()?.porcentajeMinimoInicial ?? 100;
+    if (porcentaje >= 100) return c.total;
+    return Math.ceil(c.total * porcentaje) / 100;
+  });
+
+  /** El backend rechaza montos menores al primer abono mínimo. */
   protected readonly montoInsuficiente = computed(() => {
-    const membresia = this.membresiaEnFormulario();
-    if (!membresia) return false;
-    const montoIngresado = Number(this.valoresPago().monto);
-    if (montoIngresado <= 0) return true;
-    const minimo = this.esEfectivo()
-      ? (this.descuentoMonto() > 0 ? this.montoSugeridoFinal() : membresia.precio)
-      : 0.01;
-    return montoIngresado < minimo;
+    if (!this.cotizacion()) return false;
+    return Number(this.valoresPago().monto) < this.montoMinimo();
+  });
+
+  /** Pago en cuotas: el monto cubre el mínimo pero no el total; la factura queda con saldo. */
+  protected readonly pagoParcial = computed(() => {
+    const c = this.cotizacion();
+    if (!c || this.montoInsuficiente()) return null;
+    const monto = Number(this.valoresPago().monto);
+    if (monto >= c.total) return null;
+    const plazo = this.reglasAbono()?.plazoDias ?? 0;
+    return { saldo: Math.round((c.total - monto) * 100) / 100, fechaLimite: sumarDias(hoyIso(), plazo) };
+  });
+
+  /** Factura con saldo de cada membresía: no se cobra otro periodo hasta liquidarla. */
+  protected readonly saldoPorMembresia = computed(() => {
+    const mapa = new Map<number, FacturaCuenta>();
+    for (const f of this.estadoCuenta()?.facturas ?? []) {
+      if (f.saldo > 0 && !mapa.has(f.idMembresia)) mapa.set(f.idMembresia, f);
+    }
+    return mapa;
+  });
+
+  protected readonly facturasConSaldo = computed(() => (this.estadoCuenta()?.facturas ?? []).filter((f) => f.saldo > 0));
+
+  protected readonly abonoExcedeSaldo = computed(() => {
+    const factura = this.facturaAAbonar();
+    return !!factura && Number(this.valoresAbono().monto) > factura.saldo;
   });
 
   protected readonly vistaPrevia = computed(() => {
@@ -176,11 +192,25 @@ export class GestionPagosComponent implements OnInit {
       next: (metodos) => this.metodosPago.set(metodos),
       error: (err) => this.notificacion.error(mensajeDeError(err, 'No se pudieron cargar los métodos de pago.')),
     });
+    this.cargarPromocionesVigentes();
+    this.pagosService.obtenerReglasAbono().subscribe({
+      next: (reglas) => this.reglasAbono.set(reglas),
+      // Sin reglas se exige el pago completo
+      error: () => this.reglasAbono.set(null),
+    });
 
     const socioEnUrl = Number(this.route.snapshot.queryParamMap.get('socio'));
     if (socioEnUrl > 0) {
       this.seleccionarSocio(socioEnUrl);
     }
+  }
+
+  private cargarPromocionesVigentes(): void {
+    this.promocionesService.listarVigentes().subscribe({
+      next: (lista) => this.promocionesVigentes.set(lista),
+      // Sin la lista se cobra con la promoción automática del backend
+      error: () => this.promocionesVigentes.set([]),
+    });
   }
 
   protected alBuscar(evento: Event): void {
@@ -191,6 +221,25 @@ export class GestionPagosComponent implements OnInit {
     this.idSocioSeleccionado.set(idSocio);
     this.ultimoPago.set(null);
     this.cargarMembresias();
+    this.cargarEstadoCuenta();
+  }
+
+  protected cargarEstadoCuenta(): void {
+    const id = this.idSocioSeleccionado();
+    if (!id) return;
+    this.cargandoCuenta.set(true);
+    this.errorCuenta.set(null);
+    this.pagosService.estadoCuenta(id).subscribe({
+      next: (cuenta) => {
+        this.estadoCuenta.set(cuenta);
+        this.cargandoCuenta.set(false);
+      },
+      error: (err) => {
+        this.estadoCuenta.set(null);
+        this.errorCuenta.set(mensajeDeError(err, 'No se pudo cargar el estado de cuenta.'));
+        this.cargandoCuenta.set(false);
+      },
+    });
   }
 
   protected cargarMembresias(): void {
@@ -229,21 +278,26 @@ export class GestionPagosComponent implements OnInit {
       this.notificacion.aviso('El socio no tiene una membresía asignada. Asígnale un plan antes de registrar el pago.');
       return;
     }
+    const conSaldo = this.saldoPorMembresia().get(elegida.id);
+    if (conSaldo) {
+      this.notificacion.aviso(
+        `La membresía tiene un saldo pendiente de Q ${conSaldo.saldo.toFixed(2)}. Registra el abono antes de cobrar otro periodo.`,
+      );
+      this.abrirModalAbono(conSaldo);
+      return;
+    }
     const efectivo = this.metodosPago().find((m) => m.nombre.toUpperCase() === 'EFECTIVO') ?? this.metodosPago()[0];
-    const estaVencida = elegida.fechaVencimiento ? diasHasta(elegida.fechaVencimiento) < 0 : false;
-    const recargoInicial = estaVencida ? 'MORA_FIJA' : 'NINGUNO';
-    const recargoObj = this.catalogoRecargos.find((r) => r.id === recargoInicial) ?? this.catalogoRecargos[0];
-    const montoInicial = Math.max(0.01, elegida.precio + (recargoObj.tipo === 'MONTO_FIJO' ? recargoObj.valor : (elegida.precio * recargoObj.valor) / 100));
 
     this.formPago.reset({
       idMembresia: elegida.id,
       idMetodoPago: efectivo?.id ?? 0,
-      idBeneficio: 'REGULAR',
-      idRecargo: recargoInicial,
-      monto: montoInicial,
+      idPromocion: 0,
+      monto: elegida.precio,
       referencia: '',
       observacion: '',
     });
+    this.cargarPromocionesVigentes();
+    this.cargarCotizacion(elegida.id);
     this.errorModal.set(null);
     this.guardando.set(false);
     this.modalPago.set(true);
@@ -253,23 +307,32 @@ export class GestionPagosComponent implements OnInit {
     this.modalPago.set(false);
     this.errorModal.set(null);
     this.guardando.set(false);
+    this.cotizacion.set(null);
   }
 
-  /** Al cambiar membresía, beneficio o recargo se recalcula el monto sugerido. */
+  /** Al cambiar de membresía o de promoción se vuelve a cotizar el cobro. */
   protected alCambiarMembresia(): void {
-    const estaVencida = this.esFueraDePlazo();
-    if (estaVencida && this.formPago.controls.idRecargo.value === 'NINGUNO') {
-      this.formPago.controls.idRecargo.setValue('MORA_FIJA');
-    }
-    this.formPago.controls.monto.setValue(this.montoSugeridoFinal());
+    const id = Number(this.formPago.controls.idMembresia.value);
+    if (id) this.cargarCotizacion(id);
   }
 
-  protected alCambiarBeneficio(): void {
-    this.formPago.controls.monto.setValue(this.montoSugeridoFinal());
-  }
-
-  protected alCambiarRecargo(): void {
-    this.formPago.controls.monto.setValue(this.montoSugeridoFinal());
+  /** Pide al backend el precio, descuento, recargo y total; sugiere el total como monto a cobrar. */
+  protected cargarCotizacion(idMembresia: number): void {
+    this.cotizacion.set(null);
+    this.errorCotizacion.set(null);
+    this.cargandoCotizacion.set(true);
+    const idPromocion = Number(this.formPago.controls.idPromocion.value) || null;
+    this.pagosService.cotizar(idMembresia, idPromocion).subscribe({
+      next: (c) => {
+        this.cotizacion.set(c);
+        this.formPago.controls.monto.setValue(c.total);
+        this.cargandoCotizacion.set(false);
+      },
+      error: (err) => {
+        this.errorCotizacion.set(mensajeDeError(err, 'No se pudo calcular el total a cobrar.'));
+        this.cargandoCotizacion.set(false);
+      },
+    });
   }
 
   protected registrarPago(): void {
@@ -277,30 +340,21 @@ export class GestionPagosComponent implements OnInit {
       this.formPago.markAllAsTouched();
       return;
     }
+    const total = this.cotizacion()?.total;
+    if (total === undefined) {
+      this.errorModal.set('Espera a que se calcule el total del cobro antes de registrar el pago.');
+      return;
+    }
     if (this.montoInsuficiente()) {
       this.errorModal.set(
-        `El monto ingresado (Q ${Number(this.valoresPago().monto).toFixed(2)}) debe cubrir el total calculado del cobro (Q ${this.montoSugeridoFinal().toFixed(2)}).`,
+        this.montoMinimo() < total
+          ? `El monto ingresado (Q ${Number(this.valoresPago().monto).toFixed(2)}) debe ser al menos el primer abono mínimo (Q ${this.montoMinimo().toFixed(2)}) de un total de Q ${total.toFixed(2)}.`
+          : `El monto ingresado (Q ${Number(this.valoresPago().monto).toFixed(2)}) debe cubrir el total del cobro (Q ${total.toFixed(2)}).`,
       );
       return;
     }
 
     const valor = this.formPago.getRawValue();
-    const membresia = this.membresiaEnFormulario();
-    const beneficio = this.beneficioEnFormulario();
-    const recargo = this.recargoEnFormulario();
-    const descMonto = this.descuentoMonto();
-    const recMonto = this.recargoMonto();
-
-    let detallePO = `Plan: ${membresia?.nombrePlan || 'Plan'} (Q${membresia?.precio.toFixed(2) || '0.00'})`;
-    if (beneficio.id !== 'REGULAR') {
-      detallePO += ` | Beneficio: ${beneficio.nombre} (-Q${descMonto.toFixed(2)})`;
-    }
-    if (recargo.id !== 'NINGUNO') {
-      detallePO += ` | Recargo tardío: ${recargo.nombre} (+Q${recMonto.toFixed(2)})`;
-    }
-    const notaUsuario = valor.observacion.trim();
-    const observacionCompleta = notaUsuario ? `${detallePO} - Nota: ${notaUsuario}` : detallePO;
-
     this.errorModal.set(null);
     this.guardando.set(true);
     this.pagosService
@@ -308,24 +362,96 @@ export class GestionPagosComponent implements OnInit {
         idMembresia: Number(valor.idMembresia),
         idMetodoPago: Number(valor.idMetodoPago),
         monto: Number(valor.monto),
+        idPromocion: Number(valor.idPromocion) || undefined,
         referencia: valor.referencia.trim() || undefined,
-        observacion: observacionCompleta,
+        observacion: valor.observacion.trim() || undefined,
       })
       .subscribe({
         next: (pago) => {
           this.cerrarModalPago();
           this.ultimoPago.set(pago);
           this.notificacion.exito(
-            `Pago #${pago.idComprobante} registrado. Membresía vigente hasta el ${this.formatearFecha(pago.nuevaFechaVencimiento)}.`,
+            pago.saldoPendiente > 0
+              ? `Abono #${pago.idComprobante} registrado. Saldo pendiente: Q ${pago.saldoPendiente.toFixed(2)} hasta el ${this.formatearFecha(pago.fechaLimiteSaldo ?? '')}.`
+              : `Pago #${pago.idComprobante} registrado. Membresía vigente hasta el ${this.formatearFecha(pago.nuevaFechaVencimiento)}.`,
           );
-          this.cargarMembresias();
-          this.recargaHistorial.update((n) => n + 1);
+          this.recargarSocio();
         },
         error: (err) => {
           this.guardando.set(false);
           this.errorModal.set(mensajeDeError(err, 'No se pudo registrar el pago.'));
         },
       });
+  }
+
+  // --- Abonos al saldo ---
+  protected abrirModalAbono(factura: FacturaCuenta): void {
+    const efectivo = this.metodosPago().find((m) => m.nombre.toUpperCase() === 'EFECTIVO') ?? this.metodosPago()[0];
+    this.formAbono.reset({ idMetodoPago: efectivo?.id ?? 0, monto: factura.saldo, referencia: '' });
+    this.errorAbono.set(null);
+    this.guardandoAbono.set(false);
+    this.facturaAAbonar.set(factura);
+  }
+
+  protected cerrarModalAbono(): void {
+    this.facturaAAbonar.set(null);
+    this.errorAbono.set(null);
+    this.guardandoAbono.set(false);
+  }
+
+  protected registrarAbono(): void {
+    const factura = this.facturaAAbonar();
+    if (!factura) return;
+    if (this.formAbono.invalid) {
+      this.formAbono.markAllAsTouched();
+      return;
+    }
+    if (this.abonoExcedeSaldo()) {
+      this.errorAbono.set(`El abono no puede superar el saldo pendiente (Q ${factura.saldo.toFixed(2)}).`);
+      return;
+    }
+    const valor = this.formAbono.getRawValue();
+    this.errorAbono.set(null);
+    this.guardandoAbono.set(true);
+    this.pagosService
+      .registrarAbono({
+        idFactura: factura.idFactura,
+        idMetodoPago: Number(valor.idMetodoPago),
+        monto: Number(valor.monto),
+        referencia: valor.referencia.trim() || undefined,
+      })
+      .subscribe({
+        next: (pago) => {
+          this.cerrarModalAbono();
+          this.ultimoPago.set(pago);
+          this.notificacion.exito(
+            pago.saldoPendiente > 0
+              ? `Abono registrado. Saldo pendiente de la factura #${factura.idFactura}: Q ${pago.saldoPendiente.toFixed(2)}.`
+              : `Abono registrado. La factura #${factura.idFactura} quedó liquidada.`,
+          );
+          this.recargarSocio();
+        },
+        error: (err) => {
+          this.guardandoAbono.set(false);
+          this.errorAbono.set(mensajeDeError(err, 'No se pudo registrar el abono.'));
+        },
+      });
+  }
+
+  // --- Congelamiento ---
+  protected abrirCongelamiento(m: MembresiaPagable): void {
+    this.membresiaACongelar.set({
+      id: m.id,
+      nombrePlan: m.nombrePlan,
+      fechaVencimiento: m.fechaVencimiento,
+      estado: m.estado,
+    });
+  }
+
+  protected recargarSocio(): void {
+    this.cargarMembresias();
+    this.cargarEstadoCuenta();
+    this.recargaHistorial.update((n) => n + 1);
   }
 
   protected descargarUltimoComprobante(): void {

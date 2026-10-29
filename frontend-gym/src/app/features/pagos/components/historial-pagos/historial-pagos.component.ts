@@ -71,16 +71,4 @@ export class HistorialPagosComponent {
       },
     });
   }
-
-  protected tieneBeneficio(observacion: string | null): boolean {
-    if (!observacion) return false;
-    const lower = observacion.toLowerCase();
-    return lower.includes('beneficio') || lower.includes('descuento');
-  }
-
-  protected tieneRecargo(observacion: string | null): boolean {
-    if (!observacion) return false;
-    const lower = observacion.toLowerCase();
-    return lower.includes('recargo') || lower.includes('mora') || lower.includes('tardío') || lower.includes('tardio');
-  }
 }

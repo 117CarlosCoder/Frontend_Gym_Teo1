@@ -1,0 +1,399 @@
+<section class="promos">
+  <header class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+    <div>
+      <h2 class="promos__titulo m-0">Reglas y descuentos</h2>
+      <p class="promos__subtitulo m-0">
+        Promociones, recargo por pago tardío, reglas de congelamiento de membresías y de pagos en abonos.
+      </p>
+    </div>
+    <button type="button" class="btn btn--primary" (click)="abrirNueva()">
+      <i class="bi bi-plus-circle me-1"></i>Nueva promoción
+    </button>
+  </header>
+
+  <div class="row g-4">
+    <!-- Promociones -->
+    <div class="col-12 col-xl-8">
+      <div class="card border-0 shadow-sm">
+        <div class="card-body">
+          <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+            <h3 class="fs-6 fw-bold m-0">
+              <i class="bi bi-tags me-2"></i>Promociones
+              <span class="badge bg-success ms-1">{{ totalVigentes() }} vigentes</span>
+            </h3>
+            <div class="btn-group btn-group-sm" role="group" aria-label="Filtrar promociones">
+              <button type="button" class="btn btn-outline-primary" [class.active]="filtro() === 'TODAS'" (click)="filtro.set('TODAS')">Todas</button>
+              <button type="button" class="btn btn-outline-primary" [class.active]="filtro() === 'VIGENTES'" (click)="filtro.set('VIGENTES')">Vigentes</button>
+              <button type="button" class="btn btn-outline-primary" [class.active]="filtro() === 'INACTIVAS'" (click)="filtro.set('INACTIVAS')">Inactivas</button>
+            </div>
+          </div>
+
+          @if (cargando()) {
+            <div class="text-muted small py-4 text-center">
+              <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Cargando promociones...
+            </div>
+          } @else if (errorCarga()) {
+            <div class="alert alert-danger d-flex align-items-center justify-content-between gap-3 mb-0" role="alert">
+              <span><i class="bi bi-exclamation-octagon-fill me-2"></i>{{ errorCarga() }}</span>
+              <button type="button" class="btn btn-sm btn-outline-danger" (click)="cargarPromociones()">
+                <i class="bi bi-arrow-clockwise me-1"></i>Reintentar
+              </button>
+            </div>
+          } @else {
+            <div class="table-responsive">
+              <table class="table align-middle mb-0">
+                <thead>
+                  <tr>
+                    <th>Promoción</th>
+                    <th>Descuento</th>
+                    <th>Vigencia</th>
+                    <th>Estado</th>
+                    <th class="text-end">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (p of promocionesFiltradas(); track p.id) {
+                    <tr>
+                      <td>
+                        <span class="fw-semibold">{{ p.nombre }}</span>
+                        @if (p.descripcion) {
+                          <small class="text-muted d-block">{{ p.descripcion }}</small>
+                        }
+                      </td>
+                      <td>
+                        <span class="fw-bold text-success">{{ describirDescuento(p) }}</span>
+                        <small class="text-muted d-block">{{ p.tipoDescuento === 'PORCENTAJE' ? 'Porcentaje' : 'Monto fijo' }}</small>
+                      </td>
+                      <td class="text-nowrap small">
+                        {{ p.fechaInicio | date: 'dd/MM/yyyy' }} - {{ p.fechaFin | date: 'dd/MM/yyyy' }}
+                      </td>
+                      <td>
+                        <span class="badge {{ estadoPromocion(p).clase }}">{{ estadoPromocion(p).texto }}</span>
+                      </td>
+                      <td class="text-end text-nowrap">
+                        <button type="button" class="btn btn-sm btn-outline-primary me-1" title="Editar" aria-label="Editar promoción" (click)="abrirEdicion(p)">
+                          <i class="bi bi-pencil"></i>
+                        </button>
+                        <button
+                          type="button"
+                          class="btn btn-sm me-1"
+                          [class.btn-outline-secondary]="p.activo"
+                          [class.btn-outline-success]="!p.activo"
+                          [title]="p.activo ? 'Desactivar' : 'Activar'"
+                          [attr.aria-label]="p.activo ? 'Desactivar promoción' : 'Activar promoción'"
+                          [disabled]="procesandoId() === p.id"
+                          (click)="cambiarEstado(p)"
+                        >
+                          @if (procesandoId() === p.id) {
+                            <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                          } @else {
+                            <i class="bi" [class.bi-pause-circle]="p.activo" [class.bi-play-circle]="!p.activo"></i>
+                          }
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-danger" title="Eliminar" aria-label="Eliminar promoción" (click)="pedirEliminar(p)">
+                          <i class="bi bi-trash"></i>
+                        </button>
+                      </td>
+                    </tr>
+                  } @empty {
+                    <tr>
+                      <td colspan="5" class="text-center text-muted py-4">
+                        <i class="bi bi-tag fs-3 d-block mb-2"></i>
+                        No hay promociones en esta vista.
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+
+    <!-- Recargo por pago tardío y reglas -->
+    <div class="col-12 col-xl-4">
+      <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body">
+          <h3 class="fs-6 fw-bold mb-1"><i class="bi bi-clock-history me-2"></i>Recargo por pago tardío</h3>
+          <p class="text-muted small mb-3">
+            Porcentaje del precio del plan que se suma al cobro cuando la membresía ya venció.
+          </p>
+          <form [formGroup]="formRecargo" (ngSubmit)="guardarRecargo()">
+            <label class="form-label fw-semibold" for="recargo-porcentaje">Porcentaje</label>
+            <div class="input-group mb-2">
+              <input id="recargo-porcentaje" type="number" min="0" max="100" step="0.01" class="form-control" formControlName="porcentaje" />
+              <span class="input-group-text">%</span>
+              <button type="submit" class="btn btn--primary" [disabled]="formRecargo.invalid || formRecargo.pristine || guardandoRecargo()">
+                @if (guardandoRecargo()) {
+                  <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                } @else {
+                  Guardar
+                }
+              </button>
+            </div>
+            @if (formRecargo.controls.porcentaje.touched && formRecargo.controls.porcentaje.invalid) {
+              <small class="text-danger d-block">Ingresa un valor entre 0 y 100.</small>
+            }
+            @if (errorRecargo()) {
+              <small class="text-danger d-block"><i class="bi bi-exclamation-octagon-fill me-1"></i>{{ errorRecargo() }}</small>
+            }
+            @if (recargoActual() !== null) {
+              <small class="text-muted d-block">
+                Actual: <strong>{{ recargoActual() | number: '1.0-2' }} %</strong>
+                @if (recargoActualizado()) {
+                  · actualizado el {{ recargoActualizado() | date: 'dd/MM/yyyy HH:mm' }}
+                }
+              </small>
+            }
+          </form>
+        </div>
+      </div>
+
+      @if (errorReglas()) {
+        <div class="alert alert-danger small d-flex justify-content-between align-items-start gap-2" role="alert">
+          <span><i class="bi bi-exclamation-octagon-fill me-1"></i>{{ errorReglas() }}</span>
+          <button type="button" class="btn-close btn-close-sm" aria-label="Ocultar error" (click)="errorReglas.set(null)"></button>
+        </div>
+      }
+
+      <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body">
+          <h3 class="fs-6 fw-bold mb-1"><i class="bi bi-snow me-2"></i>Congelamiento de membresías</h3>
+          <p class="text-muted small mb-3">Los días congelados se suman al vencimiento; mientras dura, el socio no puede ingresar.</p>
+          <form [formGroup]="formCongelamiento" (ngSubmit)="guardarCongelamiento()">
+            <div class="row g-2">
+              <div class="col-4">
+                <label class="form-label small fw-semibold" for="cong-min">Días mín.</label>
+                <input id="cong-min" type="number" min="1" max="365" class="form-control" formControlName="diasMinimo" />
+              </div>
+              <div class="col-4">
+                <label class="form-label small fw-semibold" for="cong-max">Días máx.</label>
+                <input id="cong-max" type="number" min="1" max="365" class="form-control" formControlName="diasMaximo" />
+              </div>
+              <div class="col-4">
+                <label class="form-label small fw-semibold" for="cong-anio">Por año</label>
+                <input id="cong-anio" type="number" min="1" max="12" class="form-control" formControlName="maximoPorAnio" />
+              </div>
+            </div>
+            @if (formCongelamiento.controls.diasMinimo.value > formCongelamiento.controls.diasMaximo.value) {
+              <small class="text-danger d-block mt-1">Los días mínimos no pueden ser mayores que los máximos.</small>
+            } @else if (formCongelamiento.touched && formCongelamiento.invalid) {
+              <small class="text-danger d-block mt-1">Revisa los valores (días 1-365, por año 1-12).</small>
+            }
+            <button type="submit" class="btn btn--primary btn-sm mt-2" [disabled]="formCongelamiento.invalid || formCongelamiento.pristine || guardandoReglas() !== null">
+              @if (guardandoReglas() === 'congelamiento') {
+                <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+              }
+              Guardar reglas
+            </button>
+          </form>
+        </div>
+      </div>
+
+      <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body">
+          <h3 class="fs-6 fw-bold mb-1"><i class="bi bi-cash-stack me-2"></i>Pagos en abonos</h3>
+          <p class="text-muted small mb-3">
+            Porcentaje mínimo del primer pago y plazo para liquidar el saldo. Con 100 % no se permiten abonos.
+          </p>
+          <form [formGroup]="formAbonos" (ngSubmit)="guardarAbonos()">
+            <div class="row g-2">
+              <div class="col-6">
+                <label class="form-label small fw-semibold" for="abono-pct">Primer abono mín.</label>
+                <div class="input-group">
+                  <input id="abono-pct" type="number" min="1" max="100" class="form-control" formControlName="porcentajeMinimoInicial" />
+                  <span class="input-group-text">%</span>
+                </div>
+              </div>
+              <div class="col-6">
+                <label class="form-label small fw-semibold" for="abono-plazo">Plazo del saldo</label>
+                <div class="input-group">
+                  <input id="abono-plazo" type="number" min="1" max="90" class="form-control" formControlName="plazoDias" />
+                  <span class="input-group-text">días</span>
+                </div>
+              </div>
+            </div>
+            @if (formAbonos.touched && formAbonos.invalid) {
+              <small class="text-danger d-block mt-1">Porcentaje entre 1 y 100; plazo entre 1 y 90 días.</small>
+            }
+            <button type="submit" class="btn btn--primary btn-sm mt-2" [disabled]="formAbonos.invalid || formAbonos.pristine || guardandoReglas() !== null">
+              @if (guardandoReglas() === 'abonos') {
+                <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+              }
+              Guardar reglas
+            </button>
+          </form>
+        </div>
+      </div>
+
+      <div class="card border-0 shadow-sm">
+        <div class="card-body small">
+          <h3 class="fs-6 fw-bold mb-2"><i class="bi bi-info-circle me-2"></i>Cómo se aplican</h3>
+          <ul class="mb-0 ps-3 text-muted">
+            <li>Al cobrar, se aplica automáticamente la promoción vigente que da el mayor descuento, o la que elija recepción.</li>
+            <li>Solo cuentan las promociones activas cuya vigencia incluye la fecha del pago.</li>
+            <li>El descuento nunca supera el precio del plan.</li>
+            <li>Una promoción ya usada en pagos no se puede eliminar: desactívala.</li>
+            <li>Los precios de cada plan se editan en <strong>Planes</strong>.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+@if (modalAbierto()) {
+  <app-modal
+    [titulo]="promocionEditando() ? 'Editar promoción' : 'Nueva promoción'"
+    [subtitulo]="promocionEditando()?.nombre ?? 'Descuento aplicable al cobro de membresías'"
+    icono="bi-tag"
+    tamano="lg"
+    [error]="errorModal()"
+    (cerrarError)="errorModal.set(null)"
+    [bloqueado]="guardando()"
+    (cerrar)="cerrarModal()"
+  >
+    <form [formGroup]="formPromocion" (ngSubmit)="guardar()">
+      <div class="modal-body-custom">
+        <div class="row g-3">
+          <div class="col-md-8">
+            <label class="form-label fw-semibold" for="promo-nombre">Nombre *</label>
+            <input id="promo-nombre" type="text" class="form-control" formControlName="nombre" placeholder="Ej. Promo Estudiantes" />
+            @if (formPromocion.controls.nombre.touched && formPromocion.controls.nombre.invalid) {
+              <small class="text-danger">El nombre es obligatorio (máximo 100 caracteres).</small>
+            }
+          </div>
+
+          <div class="col-md-4 d-flex align-items-end">
+            <div class="form-check form-switch mb-2">
+              <input id="promo-activo" class="form-check-input" type="checkbox" role="switch" formControlName="activo" />
+              <label class="form-check-label" for="promo-activo">Activa</label>
+            </div>
+          </div>
+
+          <div class="col-12">
+            <label class="form-label fw-semibold" for="promo-descripcion">Descripción</label>
+            <input id="promo-descripcion" type="text" class="form-control" formControlName="descripcion" placeholder="Opcional" />
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label fw-semibold" for="promo-tipo">Tipo de descuento *</label>
+            <select id="promo-tipo" class="form-select" formControlName="tipoDescuento">
+              <option value="PORCENTAJE">Porcentaje del precio</option>
+              <option value="MONTO_FIJO">Monto fijo (Q)</option>
+            </select>
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label fw-semibold" for="promo-valor">{{ esPorcentaje() ? 'Porcentaje *' : 'Monto *' }}</label>
+            <div class="input-group">
+              @if (!esPorcentaje()) {
+                <span class="input-group-text">Q</span>
+              }
+              <input id="promo-valor" type="number" min="0.01" step="0.01" class="form-control" formControlName="valorDescuento" />
+              @if (esPorcentaje()) {
+                <span class="input-group-text">%</span>
+              }
+            </div>
+            @if (formPromocion.controls.valorDescuento.touched && formPromocion.controls.valorDescuento.invalid) {
+              <small class="text-danger">El valor debe ser mayor a cero.</small>
+            } @else if (formPromocion.hasError('porcentajeMayorA100')) {
+              <small class="text-danger">El porcentaje no puede superar 100.</small>
+            }
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label fw-semibold" for="promo-inicio">Vigente desde *</label>
+            <input id="promo-inicio" type="date" class="form-control" formControlName="fechaInicio" />
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label fw-semibold" for="promo-fin">Vigente hasta *</label>
+            <input id="promo-fin" type="date" class="form-control" formControlName="fechaFin" />
+            @if (formPromocion.hasError('rangoFechas')) {
+              <small class="text-danger">La fecha final no puede ser anterior a la inicial.</small>
+            }
+          </div>
+
+          @if (ejemploPlanes().length > 0) {
+            <div class="col-12">
+              <h4 class="fs-6 fw-bold text-muted text-uppercase mb-2">Así quedaría el cobro de cada plan</h4>
+              <div class="table-responsive">
+                <table class="table table-sm align-middle mb-0">
+                  <thead>
+                    <tr>
+                      <th>Plan</th>
+                      <th class="text-end">Precio</th>
+                      <th class="text-end">Descuento</th>
+                      <th class="text-end">Total</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (plan of ejemploPlanes(); track plan.nombre) {
+                      <tr>
+                        <td>{{ plan.nombre }}</td>
+                        <td class="text-end">Q {{ plan.precio | number: '1.2-2' }}</td>
+                        <td class="text-end text-success">- Q {{ plan.descuento | number: '1.2-2' }}</td>
+                        <td class="text-end fw-semibold">Q {{ plan.total | number: '1.2-2' }}</td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+              <small class="text-muted">Sin contar el recargo por pago tardío, que se suma si la membresía ya venció.</small>
+            </div>
+          }
+        </div>
+      </div>
+
+      <div class="modal-footer-custom">
+        <button type="button" class="btn btn-light" [disabled]="guardando()" (click)="cerrarModal()">Cancelar</button>
+        <button type="submit" class="btn btn--primary" [disabled]="formPromocion.invalid || guardando()">
+          @if (guardando()) {
+            <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+            Guardando...
+          } @else {
+            <i class="bi bi-check2-circle me-1"></i>{{ promocionEditando() ? 'Guardar cambios' : 'Crear promoción' }}
+          }
+        </button>
+      </div>
+    </form>
+  </app-modal>
+}
+
+@if (promocionAEliminar(); as promocion) {
+  <app-modal
+    titulo="Eliminar promoción"
+    [subtitulo]="promocion.nombre"
+    icono="bi-trash"
+    tamano="sm"
+    [error]="errorEliminar()"
+    (cerrarError)="errorEliminar.set(null)"
+    [bloqueado]="eliminando()"
+    (cerrar)="cerrarEliminar()"
+  >
+    <div class="modal-body-custom">
+      <p class="mb-0">
+        ¿Eliminar la promoción <strong>{{ promocion.nombre }}</strong>? Si ya se aplicó en algún pago no se podrá eliminar;
+        en ese caso desactívala para que deje de aplicarse.
+      </p>
+    </div>
+    <div class="modal-footer-custom">
+      <button type="button" class="btn btn-light" [disabled]="eliminando()" (click)="cerrarEliminar()">Cancelar</button>
+      @if (errorEliminar() && promocion.activo) {
+        <button type="button" class="btn btn-outline-secondary" [disabled]="eliminando()" (click)="cerrarEliminar(); cambiarEstado(promocion)">
+          <i class="bi bi-pause-circle me-1"></i>Desactivar
+        </button>
+      }
+      <button type="button" class="btn btn-danger" [disabled]="eliminando()" (click)="confirmarEliminar()">
+        @if (eliminando()) {
+          <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+        } @else {
+          <i class="bi bi-trash me-1"></i>
+        }
+        Eliminar
+      </button>
+    </div>
+  </app-modal>
+}

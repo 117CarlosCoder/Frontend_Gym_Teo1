@@ -17,6 +17,8 @@ export const API = {
   asistencias: `${environment.apiUrl}/asistencias`,
   pagos: `${environment.apiUrl}/pagos`,
   reportes: `${environment.apiUrl}/reportes`,
+  promociones: `${environment.apiUrl}/promociones`,
+  configuracion: `${environment.apiUrl}/configuracion`,
 } as const;
 
 /** Llaves usadas en localStorage. */

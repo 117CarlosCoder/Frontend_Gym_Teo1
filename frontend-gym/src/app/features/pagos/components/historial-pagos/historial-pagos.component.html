@@ -38,14 +38,14 @@
             <td>
               <div class="fw-semibold">{{ pago.nombrePlan }}</div>
               <small class="text-muted d-block">{{ pago.duracionPlan }} días</small>
-              @if (tieneBeneficio(pago.observacion)) {
-                <span class="badge bg-success-subtle text-success border border-success-subtle fs-8 me-1 mt-1" title="Beneficio en precio aplicado">
-                  <i class="bi bi-tag-fill me-1"></i>Beneficio
+              @if (pago.descuento > 0) {
+                <span class="badge bg-success-subtle text-success border border-success-subtle fs-8 me-1 mt-1" title="Descuento aplicado">
+                  <i class="bi bi-tag-fill me-1"></i>Descuento{{ pago.nombrePromocion ? ': ' + pago.nombrePromocion : '' }}
                 </span>
               }
-              @if (tieneRecargo(pago.observacion)) {
-                <span class="badge bg-danger-subtle text-danger border border-danger-subtle fs-8 mt-1" title="Recargo por mora / fuera de plazo">
-                  <i class="bi bi-exclamation-triangle-fill me-1"></i>Recargo tardío
+              @if (pago.recargo > 0) {
+                <span class="badge bg-danger-subtle text-danger border border-danger-subtle fs-8 mt-1" title="Recargo por pago tardío">
+                  <i class="bi bi-exclamation-triangle-fill me-1"></i>Recargo por mora
                 </span>
               }
               @if (pago.observacion) {
@@ -58,7 +58,24 @@
                 <small class="text-muted d-block">Ref. {{ pago.referencia }}</small>
               }
             </td>
-            <td class="text-end fw-semibold">Q {{ pago.montoPagado | number: '1.2-2' }}</td>
+            <td class="text-end">
+              <div class="fw-semibold">Q {{ pago.montoPagado | number: '1.2-2' }}</div>
+              @if (pago.descuento > 0 || pago.recargo > 0) {
+                <small class="text-muted d-block">Plan Q {{ pago.montoBase | number: '1.2-2' }}</small>
+              }
+              @if (pago.descuento > 0) {
+                <small class="text-success d-block">- Q {{ pago.descuento | number: '1.2-2' }} descuento</small>
+              }
+              @if (pago.recargo > 0) {
+                <small class="text-danger d-block">+ Q {{ pago.recargo | number: '1.2-2' }} mora</small>
+              }
+              @if (pago.numeroAbono > 1 || pago.saldoPendiente > 0) {
+                <span class="badge bg-warning text-dark mt-1">Abono {{ pago.numeroAbono }}</span>
+                <small class="d-block" [class.text-danger]="pago.saldoPendiente > 0" [class.text-success]="pago.saldoPendiente === 0">
+                  {{ pago.saldoPendiente > 0 ? 'Saldo Q ' + (pago.saldoPendiente | number: '1.2-2') : 'Factura liquidada' }}
+                </small>
+              }
+            </td>
             <td>{{ pago.nuevaFechaVencimiento | date: 'dd/MM/yyyy' }}</td>
             <td>{{ pago.nombreRecepcionista || '-' }}</td>
             <td class="text-end">

@@ -172,6 +172,63 @@
                         <dd class="col-sm-8">{{ datos.membresia.beneficios?.join(' - ') || 'Pesas y Cardio' }}</dd>
                     </dl>
 
+                    <!-- Último pago: descuento o recargo aplicado y comprobante (HU) -->
+                    @if (ultimoPago(); as p) {
+                    <div class="portal__ultimo-pago mt-3">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <strong><i class="bi bi-receipt-cutoff me-1"></i>Último pago</strong>
+                            <small class="text-muted">{{ p.fechaPago | date: 'dd/MM/yyyy HH:mm' }}</small>
+                        </div>
+                        <div class="d-flex justify-content-between small">
+                            <span class="text-muted">Precio del plan</span>
+                            <span>Q {{ p.montoBase | number: '1.2-2' }}</span>
+                        </div>
+                        <div class="d-flex justify-content-between small" [class.text-success]="p.descuento > 0">
+                            <span>
+                                <i class="bi bi-tag-fill me-1"></i>Descuento
+                                {{ p.nombrePromocion ? '(' + p.nombrePromocion + ')' : '' }}
+                            </span>
+                            <span class="fw-semibold">{{ p.descuento > 0 ? '- Q ' + (p.descuento | number: '1.2-2') : 'No aplicó' }}</span>
+                        </div>
+                        <div class="d-flex justify-content-between small" [class.text-danger]="p.recargo > 0">
+                            <span><i class="bi bi-clock-history me-1"></i>Recargo por pago tardío</span>
+                            <span class="fw-semibold">{{ p.recargo > 0 ? '+ Q ' + (p.recargo | number: '1.2-2') : 'No aplicó' }}</span>
+                        </div>
+                        <hr class="my-2">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="fw-bold">Total pagado: Q {{ p.montoPagado | number: '1.2-2' }}</span>
+                            <button
+                                type="button"
+                                class="btn btn-sm btn-outline-primary"
+                                [disabled]="descargandoComprobante()"
+                                (click)="descargarComprobante(p)"
+                            >
+                                @if (descargandoComprobante()) {
+                                <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                                } @else {
+                                <i class="bi bi-file-earmark-pdf me-1"></i>
+                                }
+                                Comprobante
+                            </button>
+                        </div>
+                    </div>
+                    }
+
+                    @if (congelamientoVigente(); as c) {
+                    <div class="alert alert-info portal__alert mt-3 mb-0" role="status">
+                        <i class="bi bi-snow me-2"></i>
+                        @if (c.estado === 'ACTIVO') {
+                        Tu membresía está <strong>congelada</strong> del {{ c.fechaInicio | date: 'dd/MM/yyyy' }}
+                        al {{ c.fechaFin | date: 'dd/MM/yyyy' }}. Durante ese tiempo no podrás registrar tu ingreso.
+                        } @else {
+                        Tienes un congelamiento programado del {{ c.fechaInicio | date: 'dd/MM/yyyy' }}
+                        al {{ c.fechaFin | date: 'dd/MM/yyyy' }}.
+                        }
+                        Esos {{ c.dias }} días no se descuentan: tu membresía vence el
+                        <strong>{{ c.fechaVencimientoMembresia | date: 'dd/MM/yyyy' }}</strong>.
+                    </div>
+                    }
+
                     @if (miMembresia(); as m) {
                     <div
                         class="alert portal__alert mt-3 mb-0"
@@ -201,6 +258,31 @@
                     <h5 class="mb-0"><i class="bi bi-receipt me-2"></i>Mis pagos</h5>
                 </div>
                 <div class="card-body">
+                    <!-- Estado de cuenta: saldo pendiente de pagos en abonos -->
+                    @if (miCuenta(); as cuenta) {
+                    @if (cuenta.saldoPendiente > 0) {
+                    <div class="alert mb-3" [class.alert-danger]="cuenta.saldoVencido > 0" [class.alert-warning]="cuenta.saldoVencido === 0" role="status">
+                        <div class="d-flex flex-wrap justify-content-between gap-2">
+                            <span>
+                                <i class="bi bi-cash-stack me-2"></i>
+                                Saldo pendiente: <strong>Q {{ cuenta.saldoPendiente | number: '1.2-2' }}</strong>
+                                @if (cuenta.proximaFechaLimite) {
+                                (pagar antes del {{ cuenta.proximaFechaLimite | date: 'dd/MM/yyyy' }})
+                                }
+                            </span>
+                            <small>Facturado Q {{ cuenta.totalFacturado | number: '1.2-2' }} · Pagado Q {{ cuenta.totalPagado | number: '1.2-2' }}</small>
+                        </div>
+                        @if (cuenta.saldoVencido > 0) {
+                        <small class="d-block mt-1">El plazo venció: acércate a recepción para abonar y habilitar tu ingreso.</small>
+                        }
+                    </div>
+                    } @else {
+                    <p class="small text-success mb-3">
+                        <i class="bi bi-check-circle-fill me-1"></i>Estás al día: no tienes saldo pendiente
+                        (pagado Q {{ cuenta.totalPagado | number: '1.2-2' }}).
+                    </p>
+                    }
+                    }
                     <app-historial-pagos [idSocio]="idSocio()" [tamanoPagina]="5" />
                 </div>
             </div>
@@ -214,40 +296,53 @@
                     <h5 class="mb-0"><i class="bi bi-clock-history me-2"></i>Historial de Asistencias al Gimnasio</h5>
                 </div>
                 <div class="card-body">
+                    @if (cargandoAsistencias()) {
+                    <div class="text-muted small py-3">
+                        <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Cargando tus asistencias...
+                    </div>
+                    } @else if (errorAsistencias()) {
+                    <div class="alert alert-danger d-flex align-items-center justify-content-between gap-3 mb-0" role="alert">
+                        <span><i class="bi bi-exclamation-octagon-fill me-2"></i>{{ errorAsistencias() }}</span>
+                        <button type="button" class="btn btn-sm btn-outline-danger" (click)="cargarMisAsistencias()">Reintentar</button>
+                    </div>
+                    } @else {
                     <div class="table-responsive">
                         <table class="table table-striped table-hover portal__table">
                             <thead>
                                 <tr>
                                     <th>Fecha</th>
-                                    <th>Hora Entrada</th>
-                                    <th>Hora Salida</th>
-                                    <th>Duración</th>
+                                    <th>Hora de entrada</th>
+                                    <th>Hora de salida</th>
+                                    <th>Permanencia</th>
+                                    <th>Sucursal</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                @for (asistencia of datos.asistencias; track $index) {
+                                @for (asistencia of misAsistencias(); track asistencia.idAsistencia) {
                                 <tr>
-                                    <td>{{ asistencia.fecha }}</td>
-                                    <td>{{ asistencia.horaEntrada }}</td>
-                                    <td>{{ asistencia.horaSalida || 'Aún dentro' }}</td>
+                                    <td>{{ asistencia.fecha | date: 'dd/MM/yyyy' }}</td>
+                                    <td>{{ formatearHora(asistencia.horaEntrada) }}</td>
                                     <td>
                                         @if (asistencia.horaSalida) {
-                                        {{ calcularDuracion(asistencia.horaEntrada, asistencia.horaSalida) }}
+                                        {{ formatearHora(asistencia.horaSalida) }}
                                         } @else {
-                                        <span class="badge bg-warning text-dark">En curso</span>
+                                        <span class="badge bg-warning text-dark">Aún dentro</span>
                                         }
                                     </td>
+                                    <td>{{ formatearPermanencia(asistencia.minutosPermanencia) }}</td>
+                                    <td class="text-muted small">{{ asistencia.sucursal }}</td>
                                 </tr>
                                 } @empty {
                                 <tr>
-                                    <td colspan="4" class="text-center text-muted py-3">
-                                        No hay asistencias registradas recientemente.
+                                    <td colspan="5" class="text-center text-muted py-3">
+                                        Todavía no tienes asistencias registradas.
                                     </td>
                                 </tr>
                                 }
                             </tbody>
                         </table>
                     </div>
+                    }
                 </div>
             </div>
         </div>

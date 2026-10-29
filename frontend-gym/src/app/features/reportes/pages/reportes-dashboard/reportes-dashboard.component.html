@@ -199,6 +199,8 @@
                       ></div>
                       <span class="reportes__bar-label text-muted mt-2 fw-semibold">{{ (mes.nombreMes || obtenerNombreMes(mes.mes)).substring(0, 3) }}</span>
                     </div>
+                  } @empty {
+                    <p class="text-muted small text-center w-100 py-4">No hay ingresos registrados en los últimos meses.</p>
                   }
                 </div>
               </div>
@@ -226,6 +228,8 @@
                       ></div>
                     </div>
                   </div>
+                } @empty {
+                  <p class="text-muted small text-center py-4">No hay planes contratados para mostrar.</p>
                 }
               </div>
             </div>
@@ -290,11 +294,20 @@
             <div>
               <div class="d-flex align-items-center gap-2">
                 <h3 class="fs-5 fw-bold m-0"><i class="bi bi-cash-coin me-2 text-success"></i>Reporte Financiero de Recaudación</h3>
-                <span class="badge bg-primary fs-6">Año: {{ repIng.anio || anioFiltroIngresos() }}</span>
+                <span class="badge bg-primary fs-6">
+                  {{ fechaInicioIngresos() || fechaFinIngresos()
+                    ? (fechaInicioIngresos() || 'Inicio') + ' - ' + (fechaFinIngresos() || 'Hoy')
+                    : 'Año: ' + (repIng.anio || anioFiltroIngresos()) }}
+                </span>
               </div>
-              <p class="text-muted small m-0 mt-1">Ingresos detallados por mes y métodos de pago correspondientes al año <strong>{{ repIng.anio || anioFiltroIngresos() }}</strong></p>
+              <p class="text-muted small m-0 mt-1">
+                Ingresos detallados por mes y métodos de pago correspondientes a
+                <strong>{{ fechaInicioIngresos() || fechaFinIngresos()
+                  ? 'las fechas seleccionadas'
+                  : 'el año ' + (repIng.anio || anioFiltroIngresos()) }}</strong>
+              </p>
             </div>
-            <div class="d-flex align-items-center gap-2 no-print">
+            <div class="d-flex flex-wrap align-items-center gap-2 no-print">
               <label class="form-label m-0 fw-semibold text-muted small">Filtrar por Año:</label>
               <select
                 class="form-select form-select-sm"
@@ -307,6 +320,20 @@
                 }
                 <option [ngValue]="'todos'">Histórico Total</option>
               </select>
+              <label class="form-label m-0 fw-semibold text-muted small">Fecha Inicio:</label>
+              <input
+                type="date"
+                class="form-control form-control-sm"
+                [ngModel]="fechaInicioIngresos()"
+                (ngModelChange)="cambiarFechaIngresos('inicio', $event)"
+              />
+              <label class="form-label m-0 fw-semibold text-muted small">Fecha Fin:</label>
+              <input
+                type="date"
+                class="form-control form-control-sm"
+                [ngModel]="fechaFinIngresos()"
+                (ngModelChange)="cambiarFechaIngresos('fin', $event)"
+              />
             </div>
           </div>
 
@@ -315,7 +342,11 @@
               <div class="p-3 bg-light rounded text-center border">
                 <span class="text-muted small fw-semibold text-uppercase d-block">Ingreso Total Recaudado</span>
                 <span class="fs-3 fw-bold text-success">Q {{ repIng.ingresoTotal | number:'1.2-2' }}</span>
-                <small class="text-muted d-block">Año fiscal {{ repIng.anio || anioFiltroIngresos() }}</small>
+                <small class="text-muted d-block">
+                  {{ fechaInicioIngresos() || fechaFinIngresos()
+                    ? 'Período seleccionado'
+                    : 'Año fiscal ' + (repIng.anio || anioFiltroIngresos()) }}
+                </small>
               </div>
             </div>
             <div class="col-md-4">
@@ -384,7 +415,12 @@
           <div class="col-12 col-lg-7">
             <div class="card border-0 shadow-sm h-100">
               <div class="card-header bg-white py-3 border-0">
-                <h4 class="fs-6 fw-bold m-0"><i class="bi bi-calendar3 me-2 text-primary"></i>Recaudación Mensual (Año {{ repIng.anio || anioFiltroIngresos() }})</h4>
+                <h4 class="fs-6 fw-bold m-0">
+                  <i class="bi bi-calendar3 me-2 text-primary"></i>Recaudación Mensual
+                  {{ fechaInicioIngresos() || fechaFinIngresos()
+                    ? 'del período seleccionado'
+                    : '(Año ' + (repIng.anio || anioFiltroIngresos()) + ')' }}
+                </h4>
               </div>
               <div class="card-body pt-0">
                 <div class="table-responsive">
@@ -746,22 +782,27 @@
             <div>
               <div class="d-flex align-items-center gap-2">
                 <h3 class="fs-5 fw-bold m-0"><i class="bi bi-clock-history me-2 text-primary"></i>Métricas de Afluencia y Horarios Pico</h3>
-                <span class="badge bg-primary fs-6">{{ obtenerNombreMes(mesFiltroAsistencias()) }} {{ anioFiltroAsistencias() }}</span>
+                <span class="badge bg-primary fs-6">{{ periodoAsistencias() }}</span>
               </div>
-              <p class="text-muted small m-0 mt-1">Análisis de concurrencia y flujo de clientes por franja horaria</p>
+              <p class="text-muted small m-0 mt-1">Análisis de concurrencia y flujo de clientes por franja horaria en el período seleccionado</p>
             </div>
-            <div class="d-flex align-items-center gap-2 no-print">
-              <label class="form-label m-0 fw-semibold text-muted small">Mes:</label>
-              <select
-                class="form-select form-select-sm"
-                style="width: 140px;"
-                [ngModel]="mesFiltroAsistencias()"
-                (ngModelChange)="cambiarMesAsistencia($event)"
-              >
-                @for (m of meses; track m.valor) {
-                  <option [ngValue]="m.valor">{{ m.nombre }}</option>
-                }
-              </select>
+            <div class="d-flex flex-wrap align-items-center gap-2 no-print">
+              <label class="form-label m-0 fw-semibold text-muted small" for="asistencias-fecha-inicio">Fecha Inicio:</label>
+              <input
+                id="asistencias-fecha-inicio"
+                type="date"
+                class="form-control form-control-sm"
+                [ngModel]="fechaInicioAsistencias()"
+                (ngModelChange)="cambiarFechaAsistencia('inicio', $event)"
+              />
+              <label class="form-label m-0 fw-semibold text-muted small" for="asistencias-fecha-fin">Fecha Fin:</label>
+              <input
+                id="asistencias-fecha-fin"
+                type="date"
+                class="form-control form-control-sm"
+                [ngModel]="fechaFinAsistencias()"
+                (ngModelChange)="cambiarFechaAsistencia('fin', $event)"
+              />
             </div>
           </div>
 
@@ -776,8 +817,10 @@
             <div class="col-md-3">
               <div class="p-3 bg-light rounded text-center border">
                 <span class="text-muted small fw-semibold text-uppercase d-block">Promedio Diario</span>
-                <span class="fs-3 fw-bold text-dark">{{ repAsis.promedioDiario | number:'1.1-1' }}</span>
-                <small class="text-muted d-block">Visitas por día</small>
+                <span class="fs-3 fw-bold text-dark">{{ porcentajePromedioDiario() | number:'1.1-1' }}%</span>
+                <small class="text-muted d-block">
+                  {{ repAsis.promedioDiario | number:'1.1-1' }} visitas/día respecto a miembros activos
+                </small>
               </div>
             </div>
             <div class="col-md-3">

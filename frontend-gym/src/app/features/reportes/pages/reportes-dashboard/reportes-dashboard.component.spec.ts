@@ -95,6 +95,21 @@ describe('ReportesDashboardComponent', () => {
     expect(component.resumen()?.totalSociosActivos).toBe(90);
   });
 
+  it('debe expresar el promedio diario como porcentaje de miembros activos', () => {
+    component.metricasAsistencia.set({
+      totalAsistenciasPeriodo: 300,
+      promedioDiario: 10,
+      diaMayorAfluencia: 'Lunes',
+      horaPico: '18:00 - 19:00',
+      distribucionHorasPico: [],
+      asistenciasPorDiaSemana: [],
+      topSociosAsistencia: [],
+      asistenciasPorSucursal: [],
+    });
+
+    expect(component.porcentajePromedioDiario()).toBe(11.1);
+  });
+
   it('debe cambiar de tab a ingresos y llamar a reporte de ingresos', () => {
     component.cambiarTab('ingresos');
     expect(component.tabActiva()).toBe('ingresos');

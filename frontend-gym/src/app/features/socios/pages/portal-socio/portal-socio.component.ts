@@ -1,4 +1,4 @@
-import { DatePipe } from '@angular/common';
+import { DatePipe, DecimalPipe } from '@angular/common';
 import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { SociosService } from '../../services/socios.service';
 import { SocioPortalDTO } from '../../models/socio-portal-dto.model';
@@ -9,6 +9,14 @@ import {
   VencimientosService,
 } from '../../../membresias/services/vencimientos.service';
 import { HistorialPagosComponent } from '../../../pagos/components/historial-pagos/historial-pagos.component';
+import { PagosService } from '../../../pagos/services/pagos.service';
+import { EstadoCuenta, Pago } from '../../../pagos/models/pago.model';
+import { Congelamiento } from '../../../membresias/models/congelamiento.model';
+import { CongelamientosService } from '../../../membresias/services/congelamientos.service';
+import { AsistenciaService } from '../../../asistencia/services/asistencia.service';
+import { AsistenciaRegistro } from '../../../asistencia/models/asistencia.model';
+import { formatearHora, formatearPermanencia } from '../../../asistencia/utils/grafico-asistencias';
+import { NotificacionService, mensajeDeError } from '../../../../core/services/notificacion.service';
 
 export interface AvisoVencimiento {
   nivel: 'peligro' | 'aviso';
@@ -46,7 +54,7 @@ export function construirAviso(membresia: MiMembresia | null, diasAviso = DIAS_A
 
 @Component({
   selector: 'app-portal-socio',
-  imports: [DatePipe, HistorialPagosComponent],
+  imports: [DatePipe, DecimalPipe, HistorialPagosComponent],
   templateUrl: './portal-socio.component.html',
   styleUrl: './portal-socio.component.css',
 })
@@ -55,6 +63,29 @@ export class PortalSocioComponent implements OnInit {
   private readonly socioService = inject(SociosService);
   private readonly vencimientosService = inject(VencimientosService);
   private readonly auth = inject(AuthService);
+  private readonly pagosService = inject(PagosService);
+  private readonly asistenciaService = inject(AsistenciaService);
+  private readonly notificacion = inject(NotificacionService);
+  private readonly congelamientosService = inject(CongelamientosService);
+
+  // Ajustes del PO: estado de cuenta (abonos) y congelamiento de la membresía
+  protected readonly miCuenta = signal<EstadoCuenta | null>(null);
+  protected readonly misCongelamientos = signal<Congelamiento[]>([]);
+  protected readonly congelamientoVigente = computed(
+    () => this.misCongelamientos().find((c) => c.estado === 'ACTIVO' || c.estado === 'PROGRAMADO') ?? null,
+  );
+
+  protected readonly formatearHora = formatearHora;
+  protected readonly formatearPermanencia = formatearPermanencia;
+
+  /** Último pago del socio con su desglose (precio, descuento, recargo y total). */
+  protected readonly ultimoPago = signal<Pago | null>(null);
+  protected readonly descargandoComprobante = signal(false);
+
+  /** Entradas y salidas reales del socio (GET /asistencias/me). */
+  protected readonly misAsistencias = signal<AsistenciaRegistro[]>([]);
+  protected readonly cargandoAsistencias = signal(true);
+  protected readonly errorAsistencias = signal<string | null>(null);
 
   protected readonly datosSocio = signal<SocioPortalDTO | null>(null);
   protected readonly cargando = signal<boolean>(true);
@@ -74,6 +105,55 @@ export class PortalSocioComponent implements OnInit {
       // Sin membresía activa el backend responde error; en ese caso simplemente no hay aviso.
       error: () => this.miMembresia.set(null),
     });
+    this.cargarUltimoPago();
+    this.cargarMisAsistencias();
+    this.pagosService.miEstadoCuenta().subscribe({
+      next: (cuenta) => this.miCuenta.set(cuenta),
+      error: () => this.miCuenta.set(null),
+    });
+    this.congelamientosService.misCongelamientos().subscribe({
+      next: (lista) => this.misCongelamientos.set(lista),
+      error: () => this.misCongelamientos.set([]),
+    });
+  }
+
+  protected cargarUltimoPago(): void {
+    const id = this.idSocio();
+    if (!id) return;
+    this.pagosService.historialPorSocio(id, 0, 1).subscribe({
+      next: (pagina) => this.ultimoPago.set(pagina.content[0] ?? null),
+      error: () => this.ultimoPago.set(null),
+    });
+  }
+
+  protected cargarMisAsistencias(): void {
+    this.cargandoAsistencias.set(true);
+    this.errorAsistencias.set(null);
+    this.asistenciaService.getMisAsistencias(20).subscribe({
+      next: (lista) => {
+        this.misAsistencias.set(lista);
+        this.cargandoAsistencias.set(false);
+      },
+      error: (err) => {
+        this.misAsistencias.set([]);
+        this.errorAsistencias.set(mensajeDeError(err, 'No se pudo cargar tu historial de asistencias.'));
+        this.cargandoAsistencias.set(false);
+      },
+    });
+  }
+
+  protected descargarComprobante(pago: Pago): void {
+    this.descargandoComprobante.set(true);
+    this.pagosService.descargarComprobante(pago.idComprobante).subscribe({
+      next: (pdf) => {
+        this.pagosService.guardarPdf(pdf, pago.idComprobante);
+        this.descargandoComprobante.set(false);
+      },
+      error: (err) => {
+        this.descargandoComprobante.set(false);
+        this.notificacion.error(mensajeDeError(err, 'No se pudo descargar el comprobante.'));
+      },
+    });
   }
 
   protected cargarDatos(): void {
@@ -90,17 +170,4 @@ export class PortalSocioComponent implements OnInit {
       },
     });
   }
-
-  protected calcularDuracion(entrada: string, salida: string): string {
-    const [hEntrada, mEntrada] = entrada.split(':').map(Number);
-    const [hSalida, mSalida] = salida.split(':').map(Number);
-    let minutos = (hSalida * 60 + mSalida) - (hEntrada * 60 + mEntrada);
-    if (minutos < 0) {
-      minutos += 24 * 60; // por si cruza medianoche
-    }
-    const horas = Math.floor(minutos / 60);
-    const mins = minutos % 60;
-    return `${horas}h ${mins}min`;
-  }
-
 }

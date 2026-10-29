@@ -43,7 +43,11 @@ export class DashboardLayout {
   );
 
   protected readonly puedeVerAsistencia = computed(() =>
-    this.auth.tieneRol('ADMIN', 'RECEPCION', 'RECEPCIONISTA', 'ENTRENADOR'),
+    this.auth.tieneRol('ADMIN', 'RECEPCION', 'RECEPCIONISTA'),
+  );
+
+  protected readonly puedeVerEspacioEntrenador = computed(() =>
+    this.auth.tieneRol('ENTRENADOR'),
   );
 
   /** Determina si el usuario puede ver el módulo de membresias. */
@@ -54,6 +58,11 @@ export class DashboardLayout {
   /** Registro de pagos y estado de cuenta (M4). */
   protected readonly puedeVerPagos = computed(() =>
     this.auth.tieneRol('ADMIN', 'RECEPCION', 'RECEPCIONISTA'),
+  );
+
+  /** Promociones de descuento y recargo por pago tardío (Solo ADMIN). */
+  protected readonly puedeVerPromociones = computed(() =>
+    this.auth.tieneRol('ADMIN'),
   );
 
   /** Reportes financieros y operativos (Sprint 5). */

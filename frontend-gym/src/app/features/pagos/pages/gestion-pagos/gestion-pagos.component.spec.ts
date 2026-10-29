@@ -5,14 +5,16 @@ import { vi } from 'vitest';
 
 import { GestionPagosComponent } from './gestion-pagos.component';
 import { PagosService } from '../../services/pagos.service';
+import { PromocionesService } from '../../../promociones/services/promociones.service';
 import { SociosService } from '../../../socios/services/socios.service';
 import { NotificacionService } from '../../../../core/services/notificacion.service';
-import { MembresiaPagable, MetodoPago } from '../../models/pago.model';
+import { CotizacionPago, MembresiaPagable, MetodoPago } from '../../models/pago.model';
 
-describe('GestionPagosComponent - Curva del PO (Beneficios y Mora)', () => {
+describe('GestionPagosComponent - Curva del PO (descuento y recargo calculados por el backend)', () => {
   let component: GestionPagosComponent;
   let fixture: ComponentFixture<GestionPagosComponent>;
   let mockPagosService: any;
+  let mockPromocionesService: any;
   let mockSociosService: any;
   let mockNotificacionService: any;
 
@@ -43,6 +45,44 @@ describe('GestionPagosComponent - Curva del PO (Beneficios y Mora)', () => {
     activa: false,
   };
 
+  const cotizacionConDescuento: CotizacionPago = {
+    idMembresia: 10,
+    montoBase: 200,
+    idPromocion: 3,
+    nombrePromocion: 'Promo Estudiantes',
+    descuento: 30,
+    pagoTardio: false,
+    diasAtraso: 0,
+    porcentajeRecargo: 10,
+    recargo: 0,
+    total: 170,
+    fechaCalculo: '2026-10-21',
+  };
+
+  const cotizacionConMora: CotizacionPago = {
+    idMembresia: 11,
+    montoBase: 500,
+    idPromocion: null,
+    nombrePromocion: null,
+    descuento: 0,
+    pagoTardio: true,
+    diasAtraso: 81,
+    porcentajeRecargo: 10,
+    recargo: 50,
+    total: 550,
+    fechaCalculo: '2026-10-21',
+  };
+
+  const cuentaSinSaldo = {
+    idSocio: 1, nombreSocio: 'Mario Bros', totalFacturado: 0, totalPagado: 0,
+    saldoPendiente: 0, saldoVencido: 0, proximaFechaLimite: null, facturas: [],
+  };
+  const facturaConSaldo = {
+    idFactura: 77, idMembresia: 10, nombrePlan: 'Plan Mensual', fechaEmision: '2026-10-20',
+    fechaLimite: '2026-11-04', montoBase: 200, descuento: 0, recargo: 0, total: 200,
+    pagado: 100, saldo: 100, estado: 'PENDIENTE', abonos: [],
+  };
+
   beforeEach(async () => {
     mockPagosService = {
       listarMetodosPago: vi.fn().mockReturnValue(of(mockMetodos)),
@@ -55,8 +95,23 @@ describe('GestionPagosComponent - Curva del PO (Beneficios y Mora)', () => {
           observacion: 'Plan: Plan Trimestral',
         })
       ),
+      cotizar: vi.fn((id: number) => of(id === 11 ? cotizacionConMora : cotizacionConDescuento)),
+      obtenerReglasAbono: vi.fn().mockReturnValue(of({ porcentajeMinimoInicial: 50, plazoDias: 15, fechaActualizacion: null })),
+      estadoCuenta: vi.fn().mockReturnValue(of(cuentaSinSaldo)),
+      registrarAbono: vi.fn().mockReturnValue(
+        of({ idComprobante: 120, montoPagado: 100, saldoPendiente: 0, nuevaFechaVencimiento: '2026-11-20' }),
+      ),
       descargarComprobante: vi.fn().mockReturnValue(of(new Blob())),
       guardarPdf: vi.fn(),
+    };
+
+    mockPromocionesService = {
+      listarVigentes: vi.fn().mockReturnValue(
+        of([
+          { id: 3, nombre: 'Promo Estudiantes', tipoDescuento: 'PORCENTAJE', valorDescuento: 15, activo: true, vigente: true },
+          { id: 4, nombre: 'Promo Familiar', tipoDescuento: 'MONTO_FIJO', valorDescuento: 50, activo: true, vigente: true },
+        ]),
+      ),
     };
 
     mockSociosService = {
@@ -80,6 +135,7 @@ describe('GestionPagosComponent - Curva del PO (Beneficios y Mora)', () => {
       providers: [
         { provide: PagosService, useValue: mockPagosService },
         { provide: SociosService, useValue: mockSociosService },
+        { provide: PromocionesService, useValue: mockPromocionesService },
         { provide: NotificacionService, useValue: mockNotificacionService },
         {
           provide: ActivatedRoute,
@@ -103,64 +159,136 @@ describe('GestionPagosComponent - Curva del PO (Beneficios y Mora)', () => {
     expect(component).toBeTruthy();
   });
 
-  it('debe calcular descuento correctamente según el beneficio de miembro seleccionado', () => {
+  it('muestra el descuento por promoción que calcula el backend y sugiere el total', () => {
     (component as any).membresias.set([mockMembresiaActiva]);
     (component as any).abrirModalPago(mockMembresiaActiva);
 
-    // Sin beneficio (REGULAR): descuento 0, monto 200
-    expect((component as any).descuentoMonto()).toBe(0);
-    expect((component as any).montoSugeridoFinal()).toBe(200);
-
-    // Cambiar a beneficio ESTUDIANTE (-15%)
-    (component as any).formPago.controls.idBeneficio.setValue('ESTUDIANTE');
-    expect((component as any).descuentoMonto()).toBe(30); // 15% de 200 = 30
-    expect((component as any).montoSugeridoFinal()).toBe(170); // 200 - 30 = 170
-
-    // Cambiar a beneficio TERCERA_EDAD (-20%)
-    (component as any).formPago.controls.idBeneficio.setValue('TERCERA_EDAD');
-    expect((component as any).descuentoMonto()).toBe(40); // 20% de 200 = 40
-    expect((component as any).montoSugeridoFinal()).toBe(160); // 200 - 40 = 160
+    expect(mockPagosService.cotizar).toHaveBeenCalledWith(10, null);
+    expect((component as any).cotizacion().descuento).toBe(30);
+    expect((component as any).cotizacion().nombrePromocion).toBe('Promo Estudiantes');
+    expect((component as any).formPago.controls.monto.value).toBe(170);
   });
 
-  it('debe detectar membresía vencida y pre-seleccionar recargo por mora automáticamente', () => {
+  it('aplica el recargo por mora cuando la membresía está vencida', () => {
     (component as any).membresias.set([mockMembresiaVencida]);
     (component as any).abrirModalPago(mockMembresiaVencida);
 
-    // La membresía vencida debe activar MORA_FIJA (+Q25) por defecto
-    expect((component as any).formPago.controls.idRecargo.value).toBe('MORA_FIJA');
-    expect((component as any).recargoMonto()).toBe(25);
-    // Base 500 + Recargo 25 = 525
-    expect((component as any).montoSugeridoFinal()).toBe(525);
+    expect((component as any).cotizacion().pagoTardio).toBe(true);
+    expect((component as any).cotizacion().recargo).toBe(50);
+    expect((component as any).formPago.controls.monto.value).toBe(550);
   });
 
-  it('debe calcular recargo porcentual por pago tardío (MORA_10)', () => {
-    (component as any).membresias.set([mockMembresiaVencida]);
-    (component as any).abrirModalPago(mockMembresiaVencida);
+  it('vuelve a cotizar al cambiar de membresía', () => {
+    (component as any).membresias.set([mockMembresiaActiva, mockMembresiaVencida]);
+    (component as any).abrirModalPago(mockMembresiaActiva);
 
-    (component as any).formPago.controls.idRecargo.setValue('MORA_10');
-    expect((component as any).recargoMonto()).toBe(50); // 10% de 500 = 50
-    expect((component as any).montoSugeridoFinal()).toBe(550); // 500 + 50 = 550
+    (component as any).formPago.controls.idMembresia.setValue(11);
+    (component as any).alCambiarMembresia();
+
+    expect(mockPagosService.cotizar).toHaveBeenLastCalledWith(11, null);
+    expect((component as any).formPago.controls.monto.value).toBe(550);
   });
 
-  it('debe registrar pago incluyendo el desglose de beneficio y recargo en la observación', () => {
+  it('rechaza un monto menor al primer abono mínimo y no llama al backend', () => {
     (component as any).membresias.set([mockMembresiaVencida]);
     (component as any).metodosPago.set(mockMetodos);
     (component as any).abrirModalPago(mockMembresiaVencida);
 
-    // Aplicar descuento estudiante (-15% de 500 = 75) y mora fija (+25)
-    (component as any).formPago.controls.idBeneficio.setValue('ESTUDIANTE');
-    (component as any).formPago.controls.idRecargo.setValue('MORA_FIJA');
-    // Total esperado: 500 - 75 + 25 = 450
-    (component as any).formPago.controls.monto.setValue(450);
+    (component as any).formPago.controls.monto.setValue(200);
+    expect((component as any).montoMinimo()).toBe(275);
+    expect((component as any).montoInsuficiente()).toBe(true);
 
     (component as any).registrarPago();
 
-    expect(mockPagosService.registrar).toHaveBeenCalled();
-    const calls = mockPagosService.registrar.mock.calls;
-    const payload = calls[calls.length - 1][0];
+    expect(mockPagosService.registrar).not.toHaveBeenCalled();
+    expect((component as any).errorModal()).toContain('Q 275.00');
+    expect((component as any).errorModal()).toContain('Q 550.00');
+  });
+
+  it('permite pagar en abonos: un monto entre el mínimo y el total deja saldo pendiente', () => {
+    (component as any).membresias.set([mockMembresiaVencida]);
+    (component as any).metodosPago.set(mockMetodos);
+    (component as any).abrirModalPago(mockMembresiaVencida);
+
+    (component as any).formPago.controls.monto.setValue(300);
+    expect((component as any).montoInsuficiente()).toBe(false);
+    expect((component as any).pagoParcial().saldo).toBe(250);
+
+    (component as any).registrarPago();
+
+    expect(mockPagosService.registrar.mock.calls.at(-1)[0].monto).toBe(300);
+  });
+
+  it('con saldo pendiente no cobra otro periodo: abre el abono', () => {
+    mockPagosService.estadoCuenta.mockReturnValue(
+      of({ ...cuentaSinSaldo, totalFacturado: 200, totalPagado: 100, saldoPendiente: 100, facturas: [facturaConSaldo] }),
+    );
+    (component as any).seleccionarSocio(1);
+    (component as any).membresias.set([mockMembresiaActiva]);
+    (component as any).metodosPago.set(mockMetodos);
+
+    (component as any).abrirModalPago(mockMembresiaActiva);
+
+    expect((component as any).modalPago()).toBe(false);
+    expect((component as any).facturaAAbonar().idFactura).toBe(77);
+    expect((component as any).formAbono.controls.monto.value).toBe(100);
+    expect(mockNotificacionService.aviso).toHaveBeenCalled();
+  });
+
+  it('registra un abono y no permite abonar más que el saldo', () => {
+    (component as any).idSocioSeleccionado.set(1);
+    (component as any).metodosPago.set(mockMetodos);
+    (component as any).abrirModalAbono(facturaConSaldo);
+
+    (component as any).formAbono.controls.monto.setValue(150);
+    (component as any).registrarAbono();
+    expect(mockPagosService.registrarAbono).not.toHaveBeenCalled();
+    expect((component as any).errorAbono()).toContain('Q 100.00');
+
+    (component as any).formAbono.controls.monto.setValue(100);
+    (component as any).registrarAbono();
+    expect(mockPagosService.registrarAbono).toHaveBeenCalledWith(
+      expect.objectContaining({ idFactura: 77, monto: 100 }),
+    );
+    expect((component as any).facturaAAbonar()).toBeNull();
+  });
+
+  it('registra el pago con el total cotizado y solo la nota del usuario como observación', () => {
+    (component as any).membresias.set([mockMembresiaVencida]);
+    (component as any).metodosPago.set(mockMetodos);
+    (component as any).abrirModalPago(mockMembresiaVencida);
+    (component as any).formPago.controls.observacion.setValue('Pagó en caja 2');
+
+    (component as any).registrarPago();
+
+    const payload = mockPagosService.registrar.mock.calls.at(-1)[0];
     expect(payload.idMembresia).toBe(11);
-    expect(payload.monto).toBe(450);
-    expect(payload.observacion).toContain('Beneficio: Estudiante / Universitario (-15%)');
-    expect(payload.observacion).toContain('Recargo tardío: Recargo por mora (+Q25.00)');
+    expect(payload.monto).toBe(550);
+    expect(payload.observacion).toBe('Pagó en caja 2');
+  });
+
+  it('carga las promociones vigentes y cotiza con la promoción elegida', () => {
+    (component as any).membresias.set([mockMembresiaActiva]);
+    (component as any).metodosPago.set(mockMetodos);
+    (component as any).abrirModalPago(mockMembresiaActiva);
+    expect((component as any).promocionesVigentes().length).toBe(2);
+
+    (component as any).formPago.controls.idPromocion.setValue(4);
+    (component as any).alCambiarMembresia();
+    expect(mockPagosService.cotizar).toHaveBeenLastCalledWith(10, 4);
+
+    (component as any).registrarPago();
+    const payload = mockPagosService.registrar.mock.calls.at(-1)[0];
+    expect(payload.idPromocion).toBe(4);
+  });
+
+  it('no envía idPromocion cuando la promoción es automática', () => {
+    (component as any).membresias.set([mockMembresiaActiva]);
+    (component as any).metodosPago.set(mockMetodos);
+    (component as any).abrirModalPago(mockMembresiaActiva);
+
+    (component as any).registrarPago();
+    const payload = mockPagosService.registrar.mock.calls.at(-1)[0];
+    expect(payload.idPromocion).toBeUndefined();
   });
 });

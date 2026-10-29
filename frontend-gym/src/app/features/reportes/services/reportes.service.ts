@@ -6,6 +6,7 @@ import { API } from '../../../core/constants/api.constants';
 import {
   DashboardResumen,
   MetricaAsistencia,
+  MetricasAsistenciaRango,
   ReporteIngresos,
   ReporteMiembrosEstado,
   ReporteRenovaciones,
@@ -21,7 +22,68 @@ export class ReportesService {
    * Resumen ejecutivo tipo dashboard con indicadores clave consolidados.
    */
   getDashboardResumen(): Observable<DashboardResumen> {
-    return this.http.get<DashboardResumen>(`${API.reportes}/dashboard`);
+    return this.http.get<any>(`${API.reportes}/dashboard`).pipe(
+      map((res: any) => {
+        const totalSociosActivos = Number(res.totalSociosActivos ?? res.activos ?? 0);
+        const totalSociosMorosos = Number(res.totalSociosMorosos ?? res.morosos ?? 0);
+        const totalSociosInactivos = Number(res.totalSociosInactivos ?? res.inactivos ?? 0);
+        const totalSocios = Number(
+          res.totalSocios ?? res.totalMiembros ??
+          totalSociosActivos + totalSociosMorosos + totalSociosInactivos
+        );
+        const planes = (
+          res.topPlanes ?? res.planesContratados ?? res.planesMasContratados ?? res.distribucionPlanes ?? []
+        ).map(
+          (plan: any, index: number) => ({
+            planId: Number(plan.planId ?? plan.idPlan ?? plan.id ?? index),
+            nombrePlan: plan.nombrePlan ?? plan.planNombre ?? plan.nombre ?? 'Plan',
+            cantidadSocios: Number(plan.cantidadSocios ?? plan.cantidad ?? plan.totalContratados ?? 0),
+            porcentaje: Number(plan.porcentaje ?? 0),
+          })
+        );
+        const totalPlanes = planes.reduce((total: number, plan: any) => total + plan.cantidadSocios, 0);
+        const ingresosRecientes =
+          res.ingresosUltimos6Meses ??
+          res.ingresosUltimosMeses ??
+          res.ultimosIngresosPorMes ??
+          res.ingresosPorMes ??
+          [];
+
+        return {
+          ...res,
+          totalSocios,
+          totalSociosActivos,
+          totalSociosMorosos,
+          totalSociosInactivos,
+          porcentajeActivos: Number(
+            res.porcentajeActivos ?? (totalSocios ? (totalSociosActivos / totalSocios) * 100 : 0)
+          ),
+          porcentajeMorosos: Number(
+            res.porcentajeMorosos ?? (totalSocios ? (totalSociosMorosos / totalSocios) * 100 : 0)
+          ),
+          ingresosMesActual: Number(res.ingresosMesActual ?? 0),
+          asistenciasHoy: Number(res.asistenciasHoy ?? 0),
+          membresiasPorVencer: res.membresiasPorVencer ?? [],
+          topPlanes: planes.map((plan: any) => ({
+            ...plan,
+            porcentaje: plan.porcentaje || (totalPlanes ? (plan.cantidadSocios / totalPlanes) * 100 : 0),
+          })),
+          asistenciasUltimos7Dias: res.asistenciasUltimos7Dias ?? [],
+          ingresosUltimos6Meses: ingresosRecientes.map(
+            (mes: any, index: number) => ({
+              mes: Number(mes.mes ?? mes.numeroMes ?? index + 1),
+              nombreMes: mes.nombreMes ?? mes.mesNombre ?? mes.nombre,
+              anio: mes.anio ?? mes.anioConsulta,
+              total: Number(
+                mes.total ?? mes.monto ?? mes.montoTotal ?? mes.ingresoTotal ?? mes.totalIngresos ?? 0
+              ),
+              transacciones: Number(mes.transacciones ?? mes.cantidadPagos ?? 0),
+              cantidadPagos: Number(mes.cantidadPagos ?? mes.transacciones ?? 0),
+            })
+          ),
+        };
+      })
+    );
   }
 
   /**
@@ -29,9 +91,15 @@ export class ReportesService {
    * Normaliza los campos para garantizar que 'anio', 'ingresoTotal' y desgloses estén siempre completos.
    * @param anio Año a consultar (opcional, histórico si se omite).
    */
-  getReporteIngresos(anio?: number): Observable<ReporteIngresos> {
+  getReporteIngresos(anio?: number, fechaInicio?: string, fechaFin?: string): Observable<ReporteIngresos> {
     let params = new HttpParams();
-    if (anio !== undefined && anio !== null) {
+    if (fechaInicio) {
+      params = params.set('fechaInicio', fechaInicio);
+    }
+    if (fechaFin) {
+      params = params.set('fechaFin', fechaFin);
+    }
+    if (!fechaInicio && !fechaFin && anio !== undefined && anio !== null) {
       params = params.set('anio', anio.toString());
     }
 
@@ -123,6 +191,12 @@ export class ReportesService {
           morosos: Number(d.morosos ?? 0),
           total: Number(d.total ?? 0),
         })),
+        distribucionPorPlan: (res.distribucionPorPlan || []).map((d: any) => ({
+          planId: d.planId,
+          nombrePlan: d.nombrePlan ?? 'Plan',
+          cantidadSocios: Number(d.cantidad ?? d.cantidadSocios ?? 0),
+          porcentaje: Number(d.porcentaje ?? 0),
+        })),
         miembros: (res.miembros || []).map((m: any) => ({
           socioId: m.socioId,
           nombres: m.nombres ?? '',
@@ -137,6 +211,36 @@ export class ReportesService {
           sucursal: m.sucursalNombre ?? m.sucursal ?? 'Central',
         })),
       }))
+    );
+  }
+
+  /**
+   * Serie de asistencias en un rango de fechas (GET /asistencias/metricas), sin información financiera.
+   * @param desde Fecha inicial (YYYY-MM-DD).
+   * @param hasta Fecha final (YYYY-MM-DD).
+   * @param agrupacion DIA, SEMANA o MES.
+   */
+  getMetricasAsistenciaRango(
+    desde: string,
+    hasta: string,
+    agrupacion: 'DIA' | 'SEMANA' | 'MES' = 'DIA',
+  ): Observable<MetricasAsistenciaRango> {
+    const params = new HttpParams().set('desde', desde).set('hasta', hasta).set('agrupacion', agrupacion);
+    return this.http.get<any>(`${API.asistencias}/metricas`, { params }).pipe(
+      map((res: any) => ({
+        desde: res.desde ?? desde,
+        hasta: res.hasta ?? hasta,
+        agrupacion: res.agrupacion ?? agrupacion,
+        totalAsistencias: Number(res.totalAsistencias ?? 0),
+        sociosUnicos: Number(res.sociosUnicos ?? 0),
+        promedioDiario: Number(res.promedioDiario ?? 0),
+        serie: (res.serie || []).map((p: any) => ({ periodo: String(p.periodo), total: Number(p.total ?? 0) })),
+        porSucursal: (res.porSucursal || []).map((s: any) => ({
+          idSucursal: s.idSucursal ?? null,
+          nombreSucursal: s.nombreSucursal ?? 'Sin sucursal',
+          total: Number(s.total ?? 0),
+        })),
+      })),
     );
   }
 
@@ -207,14 +311,30 @@ export class ReportesService {
    * @param mes Mes (1-12, opcional).
    * @param anio Año (opcional).
    * @param sucursalId ID sucursal (opcional).
+   * @param fechaInicio Fecha de inicio (YYYY-MM-DD, opcional).
+   * @param fechaFin Fecha de fin (YYYY-MM-DD, opcional).
    */
-  getMetricasAsistencia(mes?: number, anio?: number, sucursalId?: number): Observable<MetricaAsistencia> {
+  getMetricasAsistencia(
+    mes?: number,
+    anio?: number,
+    sucursalId?: number,
+    fechaInicio?: string,
+    fechaFin?: string
+  ): Observable<MetricaAsistencia> {
     let params = new HttpParams();
-    if (mes !== undefined && mes !== null) {
-      params = params.set('mes', mes.toString());
+    if (fechaInicio) {
+      params = params.set('fechaInicio', fechaInicio);
     }
-    if (anio !== undefined && anio !== null) {
-      params = params.set('anio', anio.toString());
+    if (fechaFin) {
+      params = params.set('fechaFin', fechaFin);
+    }
+    if (!fechaInicio && !fechaFin) {
+      if (mes !== undefined && mes !== null) {
+        params = params.set('mes', mes.toString());
+      }
+      if (anio !== undefined && anio !== null) {
+        params = params.set('anio', anio.toString());
+      }
     }
     if (sucursalId !== undefined && sucursalId !== null) {
       params = params.set('sucursalId', sucursalId.toString());
@@ -222,7 +342,7 @@ export class ReportesService {
 
     return this.http.get<any>(`${API.reportes}/asistencias`, { params }).pipe(
       map((res: any) => {
-        const total = res.asistenciasMesActual ?? res.totalAsistenciasPeriodo ?? res.asistenciasHoy ?? 0;
+        const total = res.totalAsistenciasPeriodo ?? res.asistenciasMesActual ?? res.asistenciasHoy ?? 0;
         const listaHoras = res.horasPico || res.distribucionHorasPico || [];
 
         // Calcular horario pico en base a la cantidad de clientes

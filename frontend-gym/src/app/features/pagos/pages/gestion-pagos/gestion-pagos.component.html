@@ -131,7 +131,17 @@
                           <span class="fw-semibold">{{ m.nombrePlan }}</span>
                           <small class="text-muted d-block">{{ m.duracionDias }} días</small>
                         </td>
-                        <td><span class="badge bg-light text-dark border">{{ m.estado }}</span></td>
+                        <td>
+                          <span class="badge" [ngClass]="m.estado === 'CONGELADA' ? 'bg-info text-dark' : 'bg-light text-dark border'">
+                            @if (m.estado === 'CONGELADA') {
+                              <i class="bi bi-snow me-1"></i>
+                            }
+                            {{ m.estado }}
+                          </span>
+                          @if (saldoPorMembresia().get(m.id); as f) {
+                            <small class="d-block text-danger mt-1">Saldo Q {{ f.saldo | number: '1.2-2' }}</small>
+                          }
+                        </td>
                         <td>{{ m.fechaInicio | date: 'dd/MM/yyyy' }}</td>
                         <td>
                           {{ m.fechaVencimiento ? (m.fechaVencimiento | date: 'dd/MM/yyyy') : '-' }}
@@ -144,16 +154,136 @@
                           }
                         </td>
                         <td class="text-end">Q {{ m.precio | number: '1.2-2' }}</td>
-                        <td class="text-end">
-                          <button type="button" class="btn btn-sm btn-outline-primary" (click)="abrirModalPago(m)">
-                            <i class="bi bi-cash-coin me-1"></i>Cobrar
-                          </button>
+                        <td class="text-end text-nowrap">
+                          @if (saldoPorMembresia().get(m.id); as f) {
+                            <button type="button" class="btn btn-sm btn-warning me-1" (click)="abrirModalAbono(f)">
+                              <i class="bi bi-cash-stack me-1"></i>Abonar
+                            </button>
+                          } @else {
+                            <button type="button" class="btn btn-sm btn-outline-primary me-1" (click)="abrirModalPago(m)">
+                              <i class="bi bi-cash-coin me-1"></i>Cobrar
+                            </button>
+                          }
+                          @if (m.estado === 'ACTIVA' || m.estado === 'CONGELADA') {
+                            <button
+                              type="button"
+                              class="btn btn-sm btn-outline-info"
+                              [title]="m.estado === 'CONGELADA' ? 'Ver o descongelar' : 'Congelar membresía'"
+                              (click)="abrirCongelamiento(m)"
+                            >
+                              <i class="bi bi-snow"></i>
+                              <span class="visually-hidden">Congelar</span>
+                            </button>
+                          }
                         </td>
                       </tr>
                     }
                   </tbody>
                 </table>
               </div>
+            }
+          </div>
+        </div>
+
+        <!-- Ajuste del PO: estado de cuenta con saldo pendiente (pagos en cuotas / abonos) -->
+        <div class="card border-0 shadow-sm mb-4">
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <h3 class="fs-6 fw-bold m-0"><i class="bi bi-journal-text me-2"></i>Estado de cuenta</h3>
+              @if (reglasAbono(); as r) {
+                @if (r.porcentajeMinimoInicial < 100) {
+                  <small class="text-muted">
+                    Abonos: mínimo {{ r.porcentajeMinimoInicial }} % al inicio, saldo en {{ r.plazoDias }} días
+                  </small>
+                }
+              }
+            </div>
+            @if (cargandoCuenta()) {
+              <div class="text-muted small"><span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Cargando estado de cuenta...</div>
+            } @else if (errorCuenta()) {
+              <div class="alert alert-danger d-flex align-items-center justify-content-between gap-3 mb-0" role="alert">
+                <span><i class="bi bi-exclamation-octagon-fill me-2"></i>{{ errorCuenta() }}</span>
+                <button type="button" class="btn btn-sm btn-outline-danger" (click)="cargarEstadoCuenta()">
+                  <i class="bi bi-arrow-clockwise me-1"></i>Reintentar
+                </button>
+              </div>
+            } @else if (estadoCuenta(); as cuenta) {
+              <div class="row g-2 mb-3 text-center">
+                <div class="col-6 col-md-3">
+                  <div class="pagos__cifra">
+                    <small class="text-muted d-block">Facturado</small>
+                    <strong>Q {{ cuenta.totalFacturado | number: '1.2-2' }}</strong>
+                  </div>
+                </div>
+                <div class="col-6 col-md-3">
+                  <div class="pagos__cifra">
+                    <small class="text-muted d-block">Pagado</small>
+                    <strong class="text-success">Q {{ cuenta.totalPagado | number: '1.2-2' }}</strong>
+                  </div>
+                </div>
+                <div class="col-6 col-md-3">
+                  <div class="pagos__cifra">
+                    <small class="text-muted d-block">Saldo pendiente</small>
+                    <strong [class.text-danger]="cuenta.saldoPendiente > 0">Q {{ cuenta.saldoPendiente | number: '1.2-2' }}</strong>
+                  </div>
+                </div>
+                <div class="col-6 col-md-3">
+                  <div class="pagos__cifra">
+                    <small class="text-muted d-block">Saldo vencido</small>
+                    <strong [class.text-danger]="cuenta.saldoVencido > 0">Q {{ cuenta.saldoVencido | number: '1.2-2' }}</strong>
+                  </div>
+                </div>
+              </div>
+
+              @if (cuenta.saldoVencido > 0) {
+                <div class="alert alert-danger small py-2" role="alert">
+                  <i class="bi bi-door-closed-fill me-2"></i>
+                  El plazo para pagar el saldo ya venció: el socio no puede registrar su ingreso hasta abonarlo.
+                </div>
+              }
+
+              @if (facturasConSaldo().length > 0) {
+                <div class="table-responsive">
+                  <table class="table table-sm align-middle mb-0">
+                    <thead>
+                      <tr>
+                        <th>Factura</th>
+                        <th class="text-end">Total</th>
+                        <th class="text-end">Pagado</th>
+                        <th class="text-end">Saldo</th>
+                        <th>Fecha límite</th>
+                        <th></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (f of facturasConSaldo(); track f.idFactura) {
+                        <tr>
+                          <td>
+                            <span class="fw-semibold">#{{ f.idFactura }}</span> · {{ f.nombrePlan }}
+                            <small class="text-muted d-block">{{ f.abonos.length }} {{ f.abonos.length === 1 ? 'pago' : 'pagos' }} registrados</small>
+                          </td>
+                          <td class="text-end">Q {{ f.total | number: '1.2-2' }}</td>
+                          <td class="text-end text-success">Q {{ f.pagado | number: '1.2-2' }}</td>
+                          <td class="text-end fw-bold text-danger">Q {{ f.saldo | number: '1.2-2' }}</td>
+                          <td>
+                            {{ f.fechaLimite ? (f.fechaLimite | date: 'dd/MM/yyyy') : '-' }}
+                            @if (f.estado === 'VENCIDA') {
+                              <span class="badge bg-danger ms-1">Vencido</span>
+                            }
+                          </td>
+                          <td class="text-end">
+                            <button type="button" class="btn btn-sm btn-warning" (click)="abrirModalAbono(f)">
+                              <i class="bi bi-cash-stack me-1"></i>Abonar
+                            </button>
+                          </td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+              } @else {
+                <p class="text-success small mb-0"><i class="bi bi-check-circle-fill me-1"></i>El socio no tiene saldo pendiente.</p>
+              }
             }
           </div>
         </div>
@@ -206,74 +336,92 @@
             }
           </div>
 
-          <!-- CURVA DEL PO (1): BENEFICIO EN EL PRECIO A CIERTOS TIPOS DE MIEMBROS -->
           <div class="col-md-6">
-            <label class="form-label fw-semibold" for="pago-beneficio">
-              <i class="bi bi-tag-fill me-1 text-success"></i>Beneficio / Tipo de Miembro
-            </label>
-            <select id="pago-beneficio" class="form-select" formControlName="idBeneficio" (change)="alCambiarBeneficio()">
-              @for (b of catalogoBeneficios; track b.id) {
-                <option [value]="b.id">{{ b.nombre }}</option>
+            <label class="form-label fw-semibold" for="pago-promocion">Promoción</label>
+            <select id="pago-promocion" class="form-select" formControlName="idPromocion" (change)="alCambiarMembresia()">
+              <option [ngValue]="0">Automática (mayor descuento vigente)</option>
+              @for (promo of promocionesVigentes(); track promo.id) {
+                <option [ngValue]="promo.id">{{ promo.nombre }} · {{ describirDescuento(promo) }}</option>
               }
             </select>
-            <small class="text-muted d-block mt-1">{{ beneficioEnFormulario().descripcion }}</small>
           </div>
 
-          <!-- CURVA DEL PO (2): RECARGO POR PAGO FUERA DE PLAZO / TARDÍO -->
-          <div class="col-md-6">
-            <label class="form-label fw-semibold" for="pago-recargo">
-              <i class="bi bi-exclamation-triangle-fill me-1 text-warning"></i>Recargo por Pago Tardío / Fuera de Plazo
-            </label>
-            <select id="pago-recargo" class="form-select" formControlName="idRecargo" (change)="alCambiarRecargo()">
-              @for (r of catalogoRecargos; track r.id) {
-                <option [value]="r.id">{{ r.nombre }}</option>
+          <!-- CURVA DEL PO: descuento por promoción vigente y recargo por pago tardío, calculados por el backend -->
+          <div class="col-12">
+            <div class="p-3 rounded bg-light border">
+              @if (cargandoCotizacion()) {
+                <div class="text-muted small">
+                  <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Calculando el total del cobro...
+                </div>
+              } @else if (errorCotizacion()) {
+                <div class="d-flex justify-content-between align-items-center gap-2 text-danger small">
+                  <span><i class="bi bi-exclamation-octagon-fill me-1"></i>{{ errorCotizacion() }}</span>
+                  <button type="button" class="btn btn-sm btn-outline-danger" (click)="alCambiarMembresia()">Reintentar</button>
+                </div>
+              } @else if (cotizacion(); as c) {
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                  <span class="text-muted small">Precio del plan:</span>
+                  <span class="fw-semibold">Q {{ c.montoBase | number: '1.2-2' }}</span>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mb-1" [class.text-success]="c.descuento > 0">
+                  <span class="small">
+                    <i class="bi bi-tag-fill me-1"></i>Descuento
+                    {{ c.nombrePromocion ? '(' + c.nombrePromocion + ')' : '' }}:
+                  </span>
+                  <span class="fw-bold">{{ c.descuento > 0 ? '- Q ' + (c.descuento | number: '1.2-2') : 'No aplica' }}</span>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mb-1" [class.text-danger]="c.recargo > 0">
+                  <span class="small">
+                    <i class="bi bi-clock-history me-1"></i>Recargo por pago tardío
+                    @if (c.pagoTardio) {
+                      ({{ c.porcentajeRecargo | number: '1.0-2' }}%, {{ c.diasAtraso }} {{ c.diasAtraso === 1 ? 'día' : 'días' }} de atraso):
+                    } @else {
+                      :
+                    }
+                  </span>
+                  <span class="fw-bold">{{ c.recargo > 0 ? '+ Q ' + (c.recargo | number: '1.2-2') : 'No aplica' }}</span>
+                </div>
+                <hr class="my-2">
+                <div class="d-flex justify-content-between align-items-center">
+                  <strong class="fs-6">Total a cobrar:</strong>
+                  <strong class="fs-5 text-primary">Q {{ c.total | number: '1.2-2' }}</strong>
+                </div>
               }
-            </select>
-            @if (esFueraDePlazo()) {
-              <small class="text-danger fw-semibold d-block mt-1">
-                <i class="bi bi-clock-history me-1"></i>Membresía vencida hace {{ diasAtraso() }} días (pago fuera de plazo).
-              </small>
-            } @else {
-              <small class="text-muted d-block mt-1">{{ recargoEnFormulario().descripcion }}</small>
-            }
+            </div>
+            <small class="text-muted d-block mt-1">
+              El descuento sale de las promociones vigentes y el recargo se aplica cuando la membresía ya venció.
+              Queda registrado en el historial y en el comprobante PDF.
+            </small>
           </div>
 
           <div class="col-md-6">
-            <label class="form-label fw-semibold" for="pago-monto">Monto a Cobrar (Q) *</label>
+            <label class="form-label fw-semibold" for="pago-monto">Monto recibido (Q) *</label>
             <input id="pago-monto" type="number" min="0.01" step="0.01" class="form-control" formControlName="monto" />
             @if (formPago.controls.monto.touched && formPago.controls.monto.invalid) {
               <small class="text-danger">El monto debe ser mayor a cero.</small>
             } @else if (montoInsuficiente()) {
-              <small class="text-danger">El monto debe cubrir el total calculado del cobro (Q {{ montoSugeridoFinal() | number: '1.2-2' }}).</small>
+              @if (montoMinimo() < (cotizacion()?.total ?? 0)) {
+                <small class="text-danger">El primer abono debe ser de al menos Q {{ montoMinimo() | number: '1.2-2' }}.</small>
+              } @else {
+                <small class="text-danger">Debe cubrir el total a cobrar (Q {{ cotizacion()?.total | number: '1.2-2' }}).</small>
+              }
+            } @else if (montoMinimo() < (cotizacion()?.total ?? 0)) {
+              <small class="text-muted">Puede pagar en abonos desde Q {{ montoMinimo() | number: '1.2-2' }}.</small>
             }
           </div>
 
-          <!-- DESGLOSE EN VIVO DEL COBRO (CURVA PO) -->
-          <div class="col-12">
-            <div class="p-3 rounded bg-light border">
-              <div class="d-flex justify-content-between align-items-center mb-1">
-                <span class="text-muted small">Precio base del plan:</span>
-                <span class="fw-semibold">Q {{ (membresiaEnFormulario()?.precio || 0) | number: '1.2-2' }}</span>
-              </div>
-              @if (descuentoMonto() > 0) {
-                <div class="d-flex justify-content-between align-items-center text-success mb-1">
-                  <span class="small"><i class="bi bi-dash-circle me-1"></i>Beneficio aplicado ({{ beneficioEnFormulario().nombre }}):</span>
-                  <span class="fw-bold">- Q {{ descuentoMonto() | number: '1.2-2' }}</span>
+          @if (pagoParcial(); as parcial) {
+            <div class="col-12">
+              <div class="alert alert-warning small mb-0 d-flex gap-2" role="status">
+                <i class="bi bi-cash-stack mt-1"></i>
+                <div>
+                  <strong>Pago en abonos.</strong> Quedará un saldo de <strong>Q {{ parcial.saldo | number: '1.2-2' }}</strong>
+                  que debe liquidarse antes del <strong>{{ parcial.fechaLimite | date: 'dd/MM/yyyy' }}</strong>.
+                  Si el plazo vence sin pagarlo, el socio no podrá registrar su ingreso.
                 </div>
-              }
-              @if (recargoMonto() > 0) {
-                <div class="d-flex justify-content-between align-items-center text-danger mb-1">
-                  <span class="small"><i class="bi bi-plus-circle me-1"></i>Recargo tardío ({{ recargoEnFormulario().nombre }}):</span>
-                  <span class="fw-bold">+ Q {{ recargoMonto() | number: '1.2-2' }}</span>
-                </div>
-              }
-              <hr class="my-2">
-              <div class="d-flex justify-content-between align-items-center">
-                <strong class="fs-6">Total Calculado:</strong>
-                <strong class="fs-5 text-primary">Q {{ montoSugeridoFinal() | number: '1.2-2' }}</strong>
               </div>
             </div>
-          </div>
+          }
 
           <div class="col-md-6">
             <label class="form-label fw-semibold" for="pago-referencia">Referencia</label>
@@ -314,15 +462,86 @@
 
       <div class="modal-footer-custom">
         <button type="button" class="btn btn-light" [disabled]="guardando()" (click)="cerrarModalPago()">Cancelar</button>
-        <button type="submit" class="btn btn--primary" [disabled]="formPago.invalid || montoInsuficiente() || guardando()">
+        <button type="submit" class="btn btn--primary" [disabled]="formPago.invalid || !cotizacion() || montoInsuficiente() || guardando()">
           @if (guardando()) {
             <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
             Registrando...
           } @else {
-            <i class="bi bi-check2-circle me-1"></i>Confirmar pago
+            <i class="bi bi-check2-circle me-1"></i>{{ pagoParcial() ? 'Registrar abono inicial' : 'Confirmar pago' }}
           }
         </button>
       </div>
     </form>
   </app-modal>
+}
+
+@if (facturaAAbonar(); as factura) {
+  <app-modal
+    titulo="Registrar abono"
+    [subtitulo]="'Factura #' + factura.idFactura + ' · ' + factura.nombrePlan"
+    icono="bi-cash-stack"
+    tamano="sm"
+    [error]="errorAbono()"
+    (cerrarError)="errorAbono.set(null)"
+    [bloqueado]="guardandoAbono()"
+    (cerrar)="cerrarModalAbono()"
+  >
+    <form [formGroup]="formAbono" (ngSubmit)="registrarAbono()">
+      <div class="modal-body-custom">
+        <div class="p-3 rounded bg-light border mb-3 small">
+          <div class="d-flex justify-content-between"><span class="text-muted">Total de la factura:</span><span>Q {{ factura.total | number: '1.2-2' }}</span></div>
+          <div class="d-flex justify-content-between"><span class="text-muted">Pagado:</span><span class="text-success">Q {{ factura.pagado | number: '1.2-2' }}</span></div>
+          <div class="d-flex justify-content-between fw-bold"><span>Saldo pendiente:</span><span class="text-danger">Q {{ factura.saldo | number: '1.2-2' }}</span></div>
+          @if (factura.fechaLimite) {
+            <div class="d-flex justify-content-between">
+              <span class="text-muted">Fecha límite:</span>
+              <span [class.text-danger]="factura.estado === 'VENCIDA'">{{ factura.fechaLimite | date: 'dd/MM/yyyy' }}</span>
+            </div>
+          }
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label fw-semibold" for="abono-metodo">Método de pago *</label>
+          <select id="abono-metodo" class="form-select" formControlName="idMetodoPago">
+            <option [ngValue]="0" disabled>Seleccione...</option>
+            @for (metodo of metodosPago(); track metodo.id) {
+              <option [ngValue]="metodo.id">{{ metodo.nombre }}</option>
+            }
+          </select>
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-semibold" for="abono-monto">Monto del abono (Q) *</label>
+          <input id="abono-monto" type="number" min="0.01" [max]="factura.saldo" step="0.01" class="form-control" formControlName="monto" />
+          @if (abonoExcedeSaldo()) {
+            <small class="text-danger">No puede superar el saldo pendiente.</small>
+          } @else if (formAbono.controls.monto.touched && formAbono.controls.monto.invalid) {
+            <small class="text-danger">El monto debe ser mayor a cero.</small>
+          }
+        </div>
+        <div>
+          <label class="form-label fw-semibold" for="abono-referencia">Referencia</label>
+          <input id="abono-referencia" type="text" class="form-control" formControlName="referencia" placeholder="Opcional" />
+        </div>
+      </div>
+      <div class="modal-footer-custom">
+        <button type="button" class="btn btn-light" [disabled]="guardandoAbono()" (click)="cerrarModalAbono()">Cancelar</button>
+        <button type="submit" class="btn btn--primary" [disabled]="formAbono.invalid || abonoExcedeSaldo() || guardandoAbono()">
+          @if (guardandoAbono()) {
+            <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>Registrando...
+          } @else {
+            <i class="bi bi-check2-circle me-1"></i>Registrar abono
+          }
+        </button>
+      </div>
+    </form>
+  </app-modal>
+}
+
+@if (membresiaACongelar(); as membresia) {
+  <app-congelar-membresia
+    [membresia]="membresia"
+    [nombreSocio]="(socioSeleccionado()?.usuario?.nombre ?? '') + ' ' + (socioSeleccionado()?.usuario?.apellido ?? '')"
+    (actualizado)="recargarSocio()"
+    (cerrar)="membresiaACongelar.set(null)"
+  />
 }
