@@ -34,12 +34,30 @@ export const routes: Routes = [
     children: [
       {
         path: '',
-        canMatch: [() => inject(AuthService).tieneRol('ADMIN', 'RECEPCION', 'RECEPCIONISTA', 'ENTRENADOR')],
+        canMatch: [() => inject(AuthService).tieneRol('ENTRENADOR')],
+        loadComponent: () =>
+          import('./features/entrenador/pages/espacio-entrenador/espacio-entrenador.component').then(
+            (m) => m.EspacioEntrenadorComponent,
+          ),
+        title: 'Espacio del Entrenador | Claude Lovers Gym',
+      },
+      {
+        path: '',
+        canMatch: [() => inject(AuthService).tieneRol('ADMIN', 'RECEPCION', 'RECEPCIONISTA')],
         loadComponent: () =>
           import('./features/dashboard/pages/dashboard-home/dashboard-home').then(
             (m) => m.DashboardHome,
           ),
         title: 'Panel | Claude Lovers Gym',
+      },
+      {
+        path: 'entrenador',
+        canActivate: [rolGuard('ENTRENADOR')],
+        loadComponent: () =>
+          import('./features/entrenador/pages/espacio-entrenador/espacio-entrenador.component').then(
+            (m) => m.EspacioEntrenadorComponent,
+          ),
+        title: 'Espacio del Entrenador | Claude Lovers Gym',
       },
       {
         path: '',
@@ -79,7 +97,7 @@ export const routes: Routes = [
       },
       {
         path: 'asistencia',
-        canActivate: [rolGuard('ADMIN', 'RECEPCION', 'RECEPCIONISTA', 'ENTRENADOR')],
+        canActivate: [rolGuard('ADMIN', 'RECEPCION', 'RECEPCIONISTA')],
         loadComponent: () =>
           import('./features/asistencia/pages/registro-asistencia/registro-asistencia.component').then(
             (m) => m.RegistroAsistenciaComponent,
@@ -146,4 +164,3 @@ export const routes: Routes = [
   },
   { path: '**', redirectTo: '' },
 ];
-
