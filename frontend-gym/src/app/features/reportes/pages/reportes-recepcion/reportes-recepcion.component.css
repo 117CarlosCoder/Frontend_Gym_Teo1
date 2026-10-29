@@ -1,0 +1,55 @@
+.reportes-recepcion {
+  padding-top: var(--sp-4);
+}
+
+.reportes-recepcion__titulo {
+  font-size: var(--fs-xl);
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+.indicador {
+  height: 100%;
+  padding: 1rem 1.1rem;
+  border-radius: var(--radius-md);
+  background: #ffffff;
+  box-shadow: var(--shadow-sm);
+  border-left: 4px solid var(--color-accent);
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.indicador__etiqueta {
+  font-size: var(--fs-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-muted);
+  font-weight: 600;
+}
+
+.indicador__valor {
+  font-size: var(--fs-2xl);
+  color: var(--color-primary);
+  line-height: 1.1;
+}
+
+.estado {
+  padding: 2rem 1rem;
+  text-align: center;
+  color: var(--color-text-muted);
+}
+
+thead th {
+  font-size: var(--fs-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-muted);
+  background: var(--color-surface);
+}
+
+@media print {
+  .no-imprimir {
+    display: none !important;
+  }
+}

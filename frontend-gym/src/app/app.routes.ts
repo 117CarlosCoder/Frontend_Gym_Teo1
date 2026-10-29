@@ -105,13 +105,24 @@ export const routes: Routes = [
         title: 'Pagos | Claude Lovers Gym',
       },
       {
+        // Administración: reportes completos, incluidos los ingresos
         path: 'reportes',
-        canActivate: [rolGuard('ADMIN', 'RECEPCION', 'RECEPCIONISTA')],
+        canMatch: [() => inject(AuthService).tieneRol('ADMIN')],
         loadComponent: () =>
           import('./features/reportes/pages/reportes-dashboard/reportes-dashboard.component').then(
             (m) => m.ReportesDashboardComponent,
           ),
         title: 'Reportes y Métricas | Claude Lovers Gym',
+      },
+      {
+        // Recepción: reportes operativos sin información financiera
+        path: 'reportes',
+        canMatch: [() => inject(AuthService).tieneRol('RECEPCION', 'RECEPCIONISTA')],
+        loadComponent: () =>
+          import('./features/reportes/pages/reportes-recepcion/reportes-recepcion.component').then(
+            (m) => m.ReportesRecepcionComponent,
+          ),
+        title: 'Reportes de Recepción | Claude Lovers Gym',
       },
       {
         path: 'usuarios',

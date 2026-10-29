@@ -3,7 +3,7 @@ import { Injectable, inject } from '@angular/core';
 import { Observable, map } from 'rxjs';
 
 import { API } from '../../../core/constants/api.constants';
-import { MembresiaPagable, MetodoPago, Pagina, Pago, RegistrarPagoRequest } from '../models/pago.model';
+import { CotizacionPago, MembresiaPagable, MetodoPago, Pagina, Pago, RegistrarPagoRequest } from '../models/pago.model';
 
 @Injectable({ providedIn: 'root' })
 export class PagosService {
@@ -11,6 +11,28 @@ export class PagosService {
 
   listarMetodosPago(): Observable<MetodoPago[]> {
     return this.http.get<MetodoPago[]>(`${API.pagos}/metodos-pago`);
+  }
+
+  /**
+   * Cotización del cobro de una membresía: precio del plan, descuento por promoción vigente,
+   * recargo por pago tardío y total a cobrar. Es el mismo cálculo que el backend usa al registrar el pago.
+   */
+  cotizar(idMembresia: number): Observable<CotizacionPago> {
+    return this.http.get<any>(`${API.pagos}/cotizacion/${idMembresia}`).pipe(
+      map((dto) => ({
+        idMembresia: dto.idMembresia,
+        montoBase: Number(dto.montoBase ?? 0),
+        idPromocion: dto.idPromocion ?? null,
+        nombrePromocion: dto.nombrePromocion ?? null,
+        descuento: Number(dto.descuento ?? 0),
+        pagoTardio: !!dto.pagoTardio,
+        diasAtraso: Number(dto.diasAtraso ?? 0),
+        porcentajeRecargo: Number(dto.porcentajeRecargo ?? 0),
+        recargo: Number(dto.recargo ?? 0),
+        total: Number(dto.total ?? 0),
+        fechaCalculo: dto.fechaCalculo,
+      })),
+    );
   }
 
   /** Registra el pago; el backend recalcula la fecha de vencimiento según la duración del plan. */
@@ -63,6 +85,17 @@ export class PagosService {
   }
 
   private normalizar(dto: Pago): Pago {
-    return { ...dto, montoPagado: Number(dto.montoPagado ?? 0) };
+    const montoPagado = Number(dto.montoPagado ?? 0);
+    const descuento = Number(dto.descuento ?? 0);
+    const recargo = Number(dto.recargo ?? 0);
+    return {
+      ...dto,
+      montoPagado,
+      descuento,
+      recargo,
+      montoBase: dto.montoBase != null ? Number(dto.montoBase) : montoPagado + descuento - recargo,
+      idPromocion: dto.idPromocion ?? null,
+      nombrePromocion: dto.nombrePromocion ?? null,
+    };
   }
 }

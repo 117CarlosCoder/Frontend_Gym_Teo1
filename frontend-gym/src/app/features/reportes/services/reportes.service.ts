@@ -6,6 +6,7 @@ import { API } from '../../../core/constants/api.constants';
 import {
   DashboardResumen,
   MetricaAsistencia,
+  MetricasAsistenciaRango,
   ReporteIngresos,
   ReporteMiembrosEstado,
   ReporteRenovaciones,
@@ -190,6 +191,12 @@ export class ReportesService {
           morosos: Number(d.morosos ?? 0),
           total: Number(d.total ?? 0),
         })),
+        distribucionPorPlan: (res.distribucionPorPlan || []).map((d: any) => ({
+          planId: d.planId,
+          nombrePlan: d.nombrePlan ?? 'Plan',
+          cantidadSocios: Number(d.cantidad ?? d.cantidadSocios ?? 0),
+          porcentaje: Number(d.porcentaje ?? 0),
+        })),
         miembros: (res.miembros || []).map((m: any) => ({
           socioId: m.socioId,
           nombres: m.nombres ?? '',
@@ -204,6 +211,36 @@ export class ReportesService {
           sucursal: m.sucursalNombre ?? m.sucursal ?? 'Central',
         })),
       }))
+    );
+  }
+
+  /**
+   * Serie de asistencias en un rango de fechas (GET /asistencias/metricas), sin información financiera.
+   * @param desde Fecha inicial (YYYY-MM-DD).
+   * @param hasta Fecha final (YYYY-MM-DD).
+   * @param agrupacion DIA, SEMANA o MES.
+   */
+  getMetricasAsistenciaRango(
+    desde: string,
+    hasta: string,
+    agrupacion: 'DIA' | 'SEMANA' | 'MES' = 'DIA',
+  ): Observable<MetricasAsistenciaRango> {
+    const params = new HttpParams().set('desde', desde).set('hasta', hasta).set('agrupacion', agrupacion);
+    return this.http.get<any>(`${API.asistencias}/metricas`, { params }).pipe(
+      map((res: any) => ({
+        desde: res.desde ?? desde,
+        hasta: res.hasta ?? hasta,
+        agrupacion: res.agrupacion ?? agrupacion,
+        totalAsistencias: Number(res.totalAsistencias ?? 0),
+        sociosUnicos: Number(res.sociosUnicos ?? 0),
+        promedioDiario: Number(res.promedioDiario ?? 0),
+        serie: (res.serie || []).map((p: any) => ({ periodo: String(p.periodo), total: Number(p.total ?? 0) })),
+        porSucursal: (res.porSucursal || []).map((s: any) => ({
+          idSucursal: s.idSucursal ?? null,
+          nombreSucursal: s.nombreSucursal ?? 'Sin sucursal',
+          total: Number(s.total ?? 0),
+        })),
+      })),
     );
   }
 

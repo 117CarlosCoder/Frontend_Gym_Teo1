@@ -19,7 +19,7 @@
             <i class="bi bi-shield-x fs-2 text-danger flex-shrink-0"></i>
             <div class="flex-grow-1">
                 <div class="d-flex justify-content-between align-items-center">
-                    <h5 class="alert-heading fw-bold text-danger mb-1">⛔ ACCESO BLOQUEADO — MEMBRESÍA VENCIDA O INACTIVA</h5>
+                    <h5 class="alert-heading fw-bold text-danger mb-1">ACCESO BLOQUEADO</h5>
                     <button type="button" class="btn-close" (click)="accesoBloqueado.set(null)" aria-label="Cerrar"></button>
                 </div>
                 <p class="mb-1 text-dark">
@@ -48,7 +48,7 @@
             <div class="d-flex align-items-center gap-3">
                 <i class="bi bi-shield-check fs-2 text-success flex-shrink-0"></i>
                 <div>
-                    <h5 class="alert-heading fw-bold text-success mb-0">✅ INGRESO AUTORIZADO</h5>
+                    <h5 class="alert-heading fw-bold text-success mb-0">INGRESO AUTORIZADO</h5>
                     <span class="d-block text-dark">
                         Bienvenido(a) <strong>{{ a.socio }}</strong> (ID: {{ a.idSocio }}). Ingreso registrado exitosamente a las <strong>{{ a.hora }}</strong> en <strong>{{ a.sucursal }}</strong>.
                     </span>
@@ -105,9 +105,9 @@
     <div class="row mb-4 g-3 align-items-center">
         <div class="col-md-4">
             <label class="form-label fw-bold asistencia__text-primary text-mini mb-1">Sucursal</label>
-            <select class="form-select asistencia__select shadow-sm" (change)="alCambiarSucursal($event)" [value]="idSucursal()">
+            <select class="form-select asistencia__select shadow-sm" (change)="alCambiarSucursal($event)">
                 @for (sucursal of sucursalesSignal(); track sucursal.idSucursal) {
-                    <option [value]="sucursal.idSucursal">{{ sucursal.nombre }}</option>
+                    <option [value]="sucursal.idSucursal" [selected]="sucursal.idSucursal === idSucursal()">{{ sucursal.nombre }}</option>
                 }
             </select>
         </div>
@@ -171,7 +171,6 @@
                                 </div>
                                 <div>
                                     <div class="fw-bold asistencia__text-primary">{{ socio.nombre }} {{ socio.apellido }}</div>
-                                    <div class="asistencia__text-secondary small mb-1">socio_{{ socio.idSocio }}@gym.com</div>
                                     <span class="badge bg-light text-secondary border fs-8">ID: {{ socio.idSocio }}</span>
                                 </div>
                             </div>
@@ -185,20 +184,36 @@
                             </div>
                         </td>
                         <td>
-                            @if (esSocioDentro(socio.idSocio)) {
+                            @if (obtenerAsistenciaActiva(socio.idSocio); as activa) {
                                 <span class="badge rounded-pill asistencia__badge--activo">Dentro</span>
+                                <div class="asistencia__text-secondary small mt-1">
+                                    desde las {{ formatearHora(activa.horaEntrada) }} · {{ activa.sucursal }}
+                                </div>
                             } @else {
                                 <span class="badge rounded-pill bg-secondary">Fuera</span>
                             }
                         </td>
                         <td>
-                            @if (esSocioDentro(socio.idSocio)) {
-                                <button class="btn btn-sm btn-outline-warning fw-bold shadow-sm" (click)="registrarSalida(obtenerAsistenciaActiva(socio.idSocio).idAsistencia)">
+                            @if (obtenerAsistenciaActiva(socio.idSocio); as activa) {
+                                <button
+                                    class="btn btn-sm btn-outline-warning fw-bold shadow-sm"
+                                    [disabled]="procesandoSalida() === activa.idAsistencia"
+                                    (click)="registrarSalida(activa)"
+                                >
+                                    @if (procesandoSalida() === activa.idAsistencia) {
+                                        <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                                    } @else {
+                                        <i class="bi bi-box-arrow-right me-1"></i>
+                                    }
                                     Registrar Salida
                                 </button>
                             } @else {
-                                <button class="btn btn-sm btn-primary asistencia__btn-entrada fw-bold shadow-sm" (click)="registrarEntrada(socio.idSocio)">
-                                    Registrar Entrada
+                                <button
+                                    class="btn btn-sm btn-primary asistencia__btn-entrada fw-bold shadow-sm"
+                                    [disabled]="procesandoAcceso() || asistenciasDelDia() === undefined"
+                                    (click)="registrarEntrada(socio.idSocio)"
+                                >
+                                    <i class="bi bi-box-arrow-in-right me-1"></i>Registrar Entrada
                                 </button>
                             }
                         </td>
@@ -216,13 +231,38 @@
     </div>
     }
 
-    <h3 class="asistencia__text-primary fw-bold mb-3 h5">Asistencias de hoy</h3>
-    
-    @if (loadingAsistencias() || asistencias() === undefined) {
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h3 class="asistencia__text-primary fw-bold m-0 h5">Asistencias de hoy</h3>
+        <button type="button" class="btn btn-sm btn-outline-secondary" [disabled]="loadingAsistencias()" (click)="cargarAsistencias()">
+            <i class="bi bi-arrow-clockwise me-1"></i>Actualizar
+        </button>
+    </div>
+
+    @if (errorAsistencias()) {
+        <div class="alert alert-danger d-flex align-items-center justify-content-between gap-3" role="alert">
+            <span><i class="bi bi-exclamation-octagon-fill me-2"></i>{{ errorAsistencias() }}</span>
+            <button type="button" class="btn btn-sm btn-outline-danger" (click)="cargarAsistencias()">Reintentar</button>
+        </div>
+    } @else if (loadingAsistencias() || asistencias() === undefined) {
         <div class="d-flex justify-content-center my-4">
             <div class="spinner-border asistencia__spinner" role="status"></div>
         </div>
     } @else {
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-body">
+                <h4 class="fs-6 fw-bold mb-1"><i class="bi bi-bar-chart me-2 text-primary"></i>Entradas por hora</h4>
+                <p class="text-muted small mb-2">Socios que ingresaron hoy a esta sucursal, separados entre quienes siguen dentro y quienes ya salieron.</p>
+                @if (totalEntradas() > 0) {
+                    <app-grafico [opciones]="graficoEntradas()" [alto]="260" descripcion="Entradas de hoy por hora en la sucursal seleccionada" />
+                } @else {
+                    <div class="text-center text-muted py-4">
+                        <i class="bi bi-calendar-x fs-3 d-block mb-2"></i>
+                        Todavía no hay entradas registradas hoy en esta sucursal.
+                    </div>
+                }
+            </div>
+        </div>
+
         <div class="card shadow-sm border-0 overflow-hidden mb-4">
             <div class="table-responsive">
                 <table class="table table-hover align-middle mb-0 asistencia__table">
@@ -231,7 +271,9 @@
                             <th class="ps-4">Socio</th>
                             <th>Hora Entrada</th>
                             <th>Hora Salida</th>
-                            <th>Sucursal</th>
+                            <th>Permanencia</th>
+                            <th>Registró</th>
+                            <th class="text-end pe-4">Acción</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -239,20 +281,36 @@
                         <tr>
                             <td class="ps-4 py-3 fw-bold asistencia__text-primary">
                                 {{ asistencia.nombreSocio }} {{ asistencia.apellidoSocio }}
+                                <span class="badge bg-light text-secondary border ms-1">ID {{ asistencia.idSocio }}</span>
                             </td>
-                            <td>{{ asistencia.horaEntrada }}</td>
+                            <td>{{ formatearHora(asistencia.horaEntrada) }}</td>
                             <td>
                                 @if (asistencia.horaSalida) {
-                                    {{ asistencia.horaSalida }}
+                                    {{ formatearHora(asistencia.horaSalida) }}
                                 } @else {
                                     <span class="badge rounded-pill asistencia__badge--activo px-2 py-1">Dentro</span>
                                 }
                             </td>
-                            <td class="asistencia__text-secondary small">{{ asistencia.sucursal }}</td>
+                            <td class="asistencia__text-secondary small">
+                                {{ asistencia.minutosPermanencia !== null ? asistencia.minutosPermanencia + ' min' : '-' }}
+                            </td>
+                            <td class="asistencia__text-secondary small">{{ asistencia.registradoPor }}</td>
+                            <td class="text-end pe-4">
+                                @if (asistencia.dentro) {
+                                    <button
+                                        type="button"
+                                        class="btn btn-sm btn-outline-warning fw-bold"
+                                        [disabled]="procesandoSalida() === asistencia.idAsistencia"
+                                        (click)="registrarSalida(asistencia)"
+                                    >
+                                        <i class="bi bi-box-arrow-right me-1"></i>Salida
+                                    </button>
+                                }
+                            </td>
                         </tr>
                         } @empty {
                         <tr>
-                            <td colspan="4" class="text-center py-4 asistencia__text-secondary">
+                            <td colspan="6" class="text-center py-4 asistencia__text-secondary">
                                 No hay asistencias registradas hoy en esta sucursal.
                             </td>
                         </tr>

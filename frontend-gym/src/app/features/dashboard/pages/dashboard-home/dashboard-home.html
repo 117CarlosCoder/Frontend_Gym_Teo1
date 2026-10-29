@@ -169,13 +169,13 @@
                 <td class="text-muted small">{{ item.fecha | date:'dd/MM/yyyy' }}</td>
                 <td>
                   <span class="badge bg-success-subtle text-success border border-success-subtle">
-                    {{ item.horaEntrada }}
+                    {{ formatearHora(item.horaEntrada) }}
                   </span>
                 </td>
                 <td>
                   @if (item.horaSalida) {
                     <span class="badge bg-secondary-subtle text-secondary border">
-                      {{ item.horaSalida }}
+                      {{ formatearHora(item.horaSalida) }}
                     </span>
                   } @else {
                     <span class="badge bg-warning-subtle text-warning border border-warning-subtle">
