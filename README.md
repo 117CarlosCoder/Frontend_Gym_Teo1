@@ -3,6 +3,8 @@
 
 Aplicación web desarrollada en **Angular 21** para el sistema de administración y control de membresías de gimnasio, integrada con backend Spring Boot 4 y base de datos MariaDB 11.
 
+Consulta el [manual de usuario del frontend](./docs/MANUAL_USUARIO.md) para el stack, rutas, permisos, formularios y capturas de las vistas.
+
 ---
 
 ## Stack Tecnológico
