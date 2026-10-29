@@ -10,7 +10,9 @@ import {
 } from '../../../membresias/services/vencimientos.service';
 import { HistorialPagosComponent } from '../../../pagos/components/historial-pagos/historial-pagos.component';
 import { PagosService } from '../../../pagos/services/pagos.service';
-import { Pago } from '../../../pagos/models/pago.model';
+import { EstadoCuenta, Pago } from '../../../pagos/models/pago.model';
+import { Congelamiento } from '../../../membresias/models/congelamiento.model';
+import { CongelamientosService } from '../../../membresias/services/congelamientos.service';
 import { AsistenciaService } from '../../../asistencia/services/asistencia.service';
 import { AsistenciaRegistro } from '../../../asistencia/models/asistencia.model';
 import { formatearHora, formatearPermanencia } from '../../../asistencia/utils/grafico-asistencias';
@@ -64,6 +66,14 @@ export class PortalSocioComponent implements OnInit {
   private readonly pagosService = inject(PagosService);
   private readonly asistenciaService = inject(AsistenciaService);
   private readonly notificacion = inject(NotificacionService);
+  private readonly congelamientosService = inject(CongelamientosService);
+
+  // Ajustes del PO: estado de cuenta (abonos) y congelamiento de la membresía
+  protected readonly miCuenta = signal<EstadoCuenta | null>(null);
+  protected readonly misCongelamientos = signal<Congelamiento[]>([]);
+  protected readonly congelamientoVigente = computed(
+    () => this.misCongelamientos().find((c) => c.estado === 'ACTIVO' || c.estado === 'PROGRAMADO') ?? null,
+  );
 
   protected readonly formatearHora = formatearHora;
   protected readonly formatearPermanencia = formatearPermanencia;
@@ -97,6 +107,14 @@ export class PortalSocioComponent implements OnInit {
     });
     this.cargarUltimoPago();
     this.cargarMisAsistencias();
+    this.pagosService.miEstadoCuenta().subscribe({
+      next: (cuenta) => this.miCuenta.set(cuenta),
+      error: () => this.miCuenta.set(null),
+    });
+    this.congelamientosService.misCongelamientos().subscribe({
+      next: (lista) => this.misCongelamientos.set(lista),
+      error: () => this.misCongelamientos.set([]),
+    });
   }
 
   protected cargarUltimoPago(): void {

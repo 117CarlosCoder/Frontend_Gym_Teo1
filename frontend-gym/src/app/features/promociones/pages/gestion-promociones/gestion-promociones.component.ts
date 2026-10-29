@@ -6,6 +6,8 @@ import { AbstractControl, FormBuilder, ReactiveFormsModule, ValidationErrors, Va
 import { PlanMembresia } from '../../../../core/models/plan-membresia.model';
 import { NotificacionService, mensajeDeError } from '../../../../core/services/notificacion.service';
 import { ModalComponent } from '../../../../shared/components/modal/modal.component';
+import { CongelamientosService } from '../../../membresias/services/congelamientos.service';
+import { PagosService } from '../../../pagos/services/pagos.service';
 import { PlanesService } from '../../../planes/services/planes.service';
 import {
   GuardarPromocionRequest,
@@ -39,6 +41,7 @@ function hoyIso(): string {
 /**
  * Administración de descuentos (solo ADMIN): promociones por porcentaje o monto fijo con su vigencia,
  * y el porcentaje de recargo por pago tardío. El backend los aplica al cotizar y registrar cada pago.
+ * También define las reglas de los ajustes del PO: congelamiento de membresías y pagos en abonos.
  */
 @Component({
   selector: 'app-gestion-promociones',
@@ -50,6 +53,8 @@ export class GestionPromocionesComponent implements OnInit {
   private readonly promocionesService = inject(PromocionesService);
   private readonly planesService = inject(PlanesService);
   private readonly notificacion = inject(NotificacionService);
+  private readonly congelamientosService = inject(CongelamientosService);
+  private readonly pagosService = inject(PagosService);
   private readonly fb = inject(FormBuilder);
 
   protected readonly describirDescuento = describirDescuento;
@@ -92,6 +97,21 @@ export class GestionPromocionesComponent implements OnInit {
     { validators: validarPromocion },
   );
 
+  // Reglas de congelamiento y de pagos en abonos
+  protected readonly guardandoReglas = signal<'congelamiento' | 'abonos' | null>(null);
+  protected readonly errorReglas = signal<string | null>(null);
+
+  protected readonly formCongelamiento = this.fb.nonNullable.group({
+    diasMinimo: [7, [Validators.required, Validators.min(1), Validators.max(365)]],
+    diasMaximo: [30, [Validators.required, Validators.min(1), Validators.max(365)]],
+    maximoPorAnio: [2, [Validators.required, Validators.min(1), Validators.max(12)]],
+  });
+
+  protected readonly formAbonos = this.fb.nonNullable.group({
+    porcentajeMinimoInicial: [50, [Validators.required, Validators.min(1), Validators.max(100)]],
+    plazoDias: [15, [Validators.required, Validators.min(1), Validators.max(90)]],
+  });
+
   protected readonly formRecargo = this.fb.nonNullable.group({
     porcentaje: [0, [Validators.required, Validators.min(0), Validators.max(100)]],
   });
@@ -133,7 +153,60 @@ export class GestionPromocionesComponent implements OnInit {
   ngOnInit(): void {
     this.cargarPromociones();
     this.cargarRecargo();
+    this.cargarReglas();
     this.planesService.getPlanes().subscribe({ error: () => {} });
+  }
+
+  protected cargarReglas(): void {
+    this.congelamientosService.obtenerReglas().subscribe({
+      next: (r) => this.formCongelamiento.reset({ diasMinimo: r.diasMinimo, diasMaximo: r.diasMaximo, maximoPorAnio: r.maximoPorAnio }),
+      error: (err) => this.errorReglas.set(mensajeDeError(err, 'No se pudieron cargar las reglas de congelamiento.')),
+    });
+    this.pagosService.obtenerReglasAbono().subscribe({
+      next: (r) => this.formAbonos.reset({ porcentajeMinimoInicial: r.porcentajeMinimoInicial, plazoDias: r.plazoDias }),
+      error: (err) => this.errorReglas.set(mensajeDeError(err, 'No se pudieron cargar las reglas de abonos.')),
+    });
+  }
+
+  protected guardarCongelamiento(): void {
+    const valor = this.formCongelamiento.getRawValue();
+    if (this.formCongelamiento.invalid || valor.diasMinimo > valor.diasMaximo) {
+      this.formCongelamiento.markAllAsTouched();
+      return;
+    }
+    this.guardandoReglas.set('congelamiento');
+    this.errorReglas.set(null);
+    this.congelamientosService.actualizarReglas(valor).subscribe({
+      next: (r) => {
+        this.guardandoReglas.set(null);
+        this.formCongelamiento.reset({ diasMinimo: r.diasMinimo, diasMaximo: r.diasMaximo, maximoPorAnio: r.maximoPorAnio });
+        this.notificacion.exito('Reglas de congelamiento actualizadas.');
+      },
+      error: (err) => {
+        this.guardandoReglas.set(null);
+        this.errorReglas.set(mensajeDeError(err, 'No se pudieron guardar las reglas de congelamiento.'));
+      },
+    });
+  }
+
+  protected guardarAbonos(): void {
+    if (this.formAbonos.invalid) {
+      this.formAbonos.markAllAsTouched();
+      return;
+    }
+    this.guardandoReglas.set('abonos');
+    this.errorReglas.set(null);
+    this.pagosService.actualizarReglasAbono(this.formAbonos.getRawValue()).subscribe({
+      next: (r) => {
+        this.guardandoReglas.set(null);
+        this.formAbonos.reset({ porcentajeMinimoInicial: r.porcentajeMinimoInicial, plazoDias: r.plazoDias });
+        this.notificacion.exito('Reglas de pagos en abonos actualizadas.');
+      },
+      error: (err) => {
+        this.guardandoReglas.set(null);
+        this.errorReglas.set(mensajeDeError(err, 'No se pudieron guardar las reglas de abonos.'));
+      },
+    });
   }
 
   protected cargarPromociones(): void {

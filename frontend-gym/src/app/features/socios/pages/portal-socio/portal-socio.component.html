@@ -214,6 +214,21 @@
                     </div>
                     }
 
+                    @if (congelamientoVigente(); as c) {
+                    <div class="alert alert-info portal__alert mt-3 mb-0" role="status">
+                        <i class="bi bi-snow me-2"></i>
+                        @if (c.estado === 'ACTIVO') {
+                        Tu membresía está <strong>congelada</strong> del {{ c.fechaInicio | date: 'dd/MM/yyyy' }}
+                        al {{ c.fechaFin | date: 'dd/MM/yyyy' }}. Durante ese tiempo no podrás registrar tu ingreso.
+                        } @else {
+                        Tienes un congelamiento programado del {{ c.fechaInicio | date: 'dd/MM/yyyy' }}
+                        al {{ c.fechaFin | date: 'dd/MM/yyyy' }}.
+                        }
+                        Esos {{ c.dias }} días no se descuentan: tu membresía vence el
+                        <strong>{{ c.fechaVencimientoMembresia | date: 'dd/MM/yyyy' }}</strong>.
+                    </div>
+                    }
+
                     @if (miMembresia(); as m) {
                     <div
                         class="alert portal__alert mt-3 mb-0"
@@ -243,6 +258,31 @@
                     <h5 class="mb-0"><i class="bi bi-receipt me-2"></i>Mis pagos</h5>
                 </div>
                 <div class="card-body">
+                    <!-- Estado de cuenta: saldo pendiente de pagos en abonos -->
+                    @if (miCuenta(); as cuenta) {
+                    @if (cuenta.saldoPendiente > 0) {
+                    <div class="alert mb-3" [class.alert-danger]="cuenta.saldoVencido > 0" [class.alert-warning]="cuenta.saldoVencido === 0" role="status">
+                        <div class="d-flex flex-wrap justify-content-between gap-2">
+                            <span>
+                                <i class="bi bi-cash-stack me-2"></i>
+                                Saldo pendiente: <strong>Q {{ cuenta.saldoPendiente | number: '1.2-2' }}</strong>
+                                @if (cuenta.proximaFechaLimite) {
+                                (pagar antes del {{ cuenta.proximaFechaLimite | date: 'dd/MM/yyyy' }})
+                                }
+                            </span>
+                            <small>Facturado Q {{ cuenta.totalFacturado | number: '1.2-2' }} · Pagado Q {{ cuenta.totalPagado | number: '1.2-2' }}</small>
+                        </div>
+                        @if (cuenta.saldoVencido > 0) {
+                        <small class="d-block mt-1">El plazo venció: acércate a recepción para abonar y habilitar tu ingreso.</small>
+                        }
+                    </div>
+                    } @else {
+                    <p class="small text-success mb-3">
+                        <i class="bi bi-check-circle-fill me-1"></i>Estás al día: no tienes saldo pendiente
+                        (pagado Q {{ cuenta.totalPagado | number: '1.2-2' }}).
+                    </p>
+                    }
+                    }
                     <app-historial-pagos [idSocio]="idSocio()" [tamanoPagina]="5" />
                 </div>
             </div>
