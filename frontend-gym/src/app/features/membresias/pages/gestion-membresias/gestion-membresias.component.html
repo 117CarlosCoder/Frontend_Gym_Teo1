@@ -81,6 +81,11 @@
               title="Ver historial de pagos de este socio">
               <i class="bi bi-cash-coin"></i> Pagos
             </a>
+            @if (item.estado === 'ACTIVA' || item.estado === 'CONGELADA') {
+              <button type="button" class="btn btn-outline-info p-2" title="Congelar o descongelar la membresía" (click)="abrirCongelamiento(item)">
+                <i class="bi bi-snow"></i> {{ item.estado === 'CONGELADA' ? 'Congelada' : 'Congelar' }}
+              </button>
+            }
           </td>
         </tr> }
         @empty { <tr>
@@ -288,4 +293,13 @@
     </div>
   </form>
 </app-modal>
+}
+
+@if (membresiaACongelar(); as membresia) {
+<app-congelar-membresia
+  [membresia]="membresia"
+  [nombreSocio]="nombreACongelar()"
+  (actualizado)="cargar()"
+  (cerrar)="membresiaACongelar.set(null)"
+/>
 }

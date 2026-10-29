@@ -11,10 +11,11 @@ import { AuditoriaMembresia, EstadoMembresia, EstadoMembresiaCatalogo, ESTADOS_M
 import { Sucursal } from '../../../../core/models/sucursal.model';
 import { NotificacionService, mensajeDeError } from '../../../../core/services/notificacion.service';
 import { ModalComponent } from '../../../../shared/components/modal/modal.component';
+import { CongelarMembresiaComponent, MembresiaCongelable } from '../../components/congelar-membresia/congelar-membresia.component';
 
 @Component({
   selector: 'app-gestion-membresias',
-  imports: [FormsModule, NgClass, DatePipe, DecimalPipe, ModalComponent, RouterLink],
+  imports: [FormsModule, NgClass, DatePipe, DecimalPipe, ModalComponent, RouterLink, CongelarMembresiaComponent],
   templateUrl: './gestion-membresias.component.html',
   styleUrl: './gestion-membresias.component.css',
 })
@@ -40,6 +41,10 @@ export class GestionMembresiasComponent implements OnInit {
   protected readonly guardando = signal(false);
 
   protected formulario: MembresiaFormulario = this.formularioVacio();
+
+  // Ajuste del PO: congelamiento de membresía
+  protected readonly membresiaACongelar = signal<MembresiaCongelable | null>(null);
+  protected readonly nombreACongelar = signal('');
 
   protected readonly esNuevaMembresia = computed(() => this.editando() === null);
 
@@ -190,6 +195,16 @@ export class GestionMembresiasComponent implements OnInit {
     this.membresiasService.reactivarSucursal(sucursal.idSucursal).subscribe({
       next: () => { this.notificacion.exito('Sucursal reactivada.'); this.cargar(); },
       error: (err) => this.notificacion.error(mensajeDeError(err, 'No se pudo reactivar la sucursal.')),
+    });
+  }
+
+  protected abrirCongelamiento(item: Membresia): void {
+    this.nombreACongelar.set(item.nombreSocio);
+    this.membresiaACongelar.set({
+      id: item.idMembresia,
+      nombrePlan: item.plan.tipo,
+      fechaVencimiento: item.fechaFin,
+      estado: item.estado,
     });
   }
 

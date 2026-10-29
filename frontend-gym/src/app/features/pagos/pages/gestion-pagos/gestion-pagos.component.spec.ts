@@ -73,6 +73,16 @@ describe('GestionPagosComponent - Curva del PO (descuento y recargo calculados p
     fechaCalculo: '2026-10-21',
   };
 
+  const cuentaSinSaldo = {
+    idSocio: 1, nombreSocio: 'Mario Bros', totalFacturado: 0, totalPagado: 0,
+    saldoPendiente: 0, saldoVencido: 0, proximaFechaLimite: null, facturas: [],
+  };
+  const facturaConSaldo = {
+    idFactura: 77, idMembresia: 10, nombrePlan: 'Plan Mensual', fechaEmision: '2026-10-20',
+    fechaLimite: '2026-11-04', montoBase: 200, descuento: 0, recargo: 0, total: 200,
+    pagado: 100, saldo: 100, estado: 'PENDIENTE', abonos: [],
+  };
+
   beforeEach(async () => {
     mockPagosService = {
       listarMetodosPago: vi.fn().mockReturnValue(of(mockMetodos)),
@@ -86,6 +96,11 @@ describe('GestionPagosComponent - Curva del PO (descuento y recargo calculados p
         })
       ),
       cotizar: vi.fn((id: number) => of(id === 11 ? cotizacionConMora : cotizacionConDescuento)),
+      obtenerReglasAbono: vi.fn().mockReturnValue(of({ porcentajeMinimoInicial: 50, plazoDias: 15, fechaActualizacion: null })),
+      estadoCuenta: vi.fn().mockReturnValue(of(cuentaSinSaldo)),
+      registrarAbono: vi.fn().mockReturnValue(
+        of({ idComprobante: 120, montoPagado: 100, saldoPendiente: 0, nuevaFechaVencimiento: '2026-11-20' }),
+      ),
       descargarComprobante: vi.fn().mockReturnValue(of(new Blob())),
       guardarPdf: vi.fn(),
     };
@@ -174,18 +189,68 @@ describe('GestionPagosComponent - Curva del PO (descuento y recargo calculados p
     expect((component as any).formPago.controls.monto.value).toBe(550);
   });
 
-  it('rechaza un monto menor al total y no llama al backend', () => {
+  it('rechaza un monto menor al primer abono mínimo y no llama al backend', () => {
     (component as any).membresias.set([mockMembresiaVencida]);
     (component as any).metodosPago.set(mockMetodos);
     (component as any).abrirModalPago(mockMembresiaVencida);
 
-    (component as any).formPago.controls.monto.setValue(500);
+    (component as any).formPago.controls.monto.setValue(200);
+    expect((component as any).montoMinimo()).toBe(275);
     expect((component as any).montoInsuficiente()).toBe(true);
 
     (component as any).registrarPago();
 
     expect(mockPagosService.registrar).not.toHaveBeenCalled();
+    expect((component as any).errorModal()).toContain('Q 275.00');
     expect((component as any).errorModal()).toContain('Q 550.00');
+  });
+
+  it('permite pagar en abonos: un monto entre el mínimo y el total deja saldo pendiente', () => {
+    (component as any).membresias.set([mockMembresiaVencida]);
+    (component as any).metodosPago.set(mockMetodos);
+    (component as any).abrirModalPago(mockMembresiaVencida);
+
+    (component as any).formPago.controls.monto.setValue(300);
+    expect((component as any).montoInsuficiente()).toBe(false);
+    expect((component as any).pagoParcial().saldo).toBe(250);
+
+    (component as any).registrarPago();
+
+    expect(mockPagosService.registrar.mock.calls.at(-1)[0].monto).toBe(300);
+  });
+
+  it('con saldo pendiente no cobra otro periodo: abre el abono', () => {
+    mockPagosService.estadoCuenta.mockReturnValue(
+      of({ ...cuentaSinSaldo, totalFacturado: 200, totalPagado: 100, saldoPendiente: 100, facturas: [facturaConSaldo] }),
+    );
+    (component as any).seleccionarSocio(1);
+    (component as any).membresias.set([mockMembresiaActiva]);
+    (component as any).metodosPago.set(mockMetodos);
+
+    (component as any).abrirModalPago(mockMembresiaActiva);
+
+    expect((component as any).modalPago()).toBe(false);
+    expect((component as any).facturaAAbonar().idFactura).toBe(77);
+    expect((component as any).formAbono.controls.monto.value).toBe(100);
+    expect(mockNotificacionService.aviso).toHaveBeenCalled();
+  });
+
+  it('registra un abono y no permite abonar más que el saldo', () => {
+    (component as any).idSocioSeleccionado.set(1);
+    (component as any).metodosPago.set(mockMetodos);
+    (component as any).abrirModalAbono(facturaConSaldo);
+
+    (component as any).formAbono.controls.monto.setValue(150);
+    (component as any).registrarAbono();
+    expect(mockPagosService.registrarAbono).not.toHaveBeenCalled();
+    expect((component as any).errorAbono()).toContain('Q 100.00');
+
+    (component as any).formAbono.controls.monto.setValue(100);
+    (component as any).registrarAbono();
+    expect(mockPagosService.registrarAbono).toHaveBeenCalledWith(
+      expect.objectContaining({ idFactura: 77, monto: 100 }),
+    );
+    expect((component as any).facturaAAbonar()).toBeNull();
   });
 
   it('registra el pago con el total cotizado y solo la nota del usuario como observación', () => {

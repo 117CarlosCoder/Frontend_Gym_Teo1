@@ -129,7 +129,7 @@ export const routes: Routes = [
           import('./features/promociones/pages/gestion-promociones/gestion-promociones.component').then(
             (m) => m.GestionPromocionesComponent,
           ),
-        title: 'Descuentos | Claude Lovers Gym',
+        title: 'Reglas y descuentos | Claude Lovers Gym',
       },
       {
         // Administración: reportes completos, incluidos los ingresos

@@ -3,6 +3,8 @@ import { of, throwError } from 'rxjs';
 import { vi } from 'vitest';
 
 import { NotificacionService } from '../../../../core/services/notificacion.service';
+import { CongelamientosService } from '../../../membresias/services/congelamientos.service';
+import { PagosService } from '../../../pagos/services/pagos.service';
 import { PlanesService } from '../../../planes/services/planes.service';
 import { Promocion } from '../../models/promocion.model';
 import { PromocionesService } from '../../services/promociones.service';
@@ -13,6 +15,8 @@ describe('GestionPromocionesComponent', () => {
   let fixture: ComponentFixture<GestionPromocionesComponent>;
   let mockPromociones: any;
   let mockNotificacion: any;
+  let mockCongelamientos: any;
+  let mockPagos: any;
 
   const vigente: Promocion = {
     id: 1,
@@ -37,12 +41,22 @@ describe('GestionPromocionesComponent', () => {
       eliminar: vi.fn().mockReturnValue(of(undefined)),
     };
     mockNotificacion = { exito: vi.fn(), error: vi.fn(), aviso: vi.fn() };
+    mockCongelamientos = {
+      obtenerReglas: vi.fn().mockReturnValue(of({ diasMinimo: 7, diasMaximo: 30, maximoPorAnio: 2, fechaActualizacion: null })),
+      actualizarReglas: vi.fn((r: any) => of({ ...r, fechaActualizacion: null })),
+    };
+    mockPagos = {
+      obtenerReglasAbono: vi.fn().mockReturnValue(of({ porcentajeMinimoInicial: 50, plazoDias: 15, fechaActualizacion: null })),
+      actualizarReglasAbono: vi.fn((r: any) => of({ ...r, fechaActualizacion: null })),
+    };
 
     await TestBed.configureTestingModule({
       imports: [GestionPromocionesComponent],
       providers: [
         { provide: PromocionesService, useValue: mockPromociones },
         { provide: NotificacionService, useValue: mockNotificacion },
+        { provide: CongelamientosService, useValue: mockCongelamientos },
+        { provide: PagosService, useValue: mockPagos },
         {
           provide: PlanesService,
           useValue: {
@@ -140,5 +154,24 @@ describe('GestionPromocionesComponent', () => {
 
     expect(mockPromociones.actualizarRecargoTardio).toHaveBeenCalledWith(12.5);
     expect((component as any).recargoActual()).toBe(12.5);
+  });
+
+  it('carga y guarda las reglas de congelamiento y de abonos', () => {
+    expect((component as any).formCongelamiento.getRawValue()).toEqual({ diasMinimo: 7, diasMaximo: 30, maximoPorAnio: 2 });
+    expect((component as any).formAbonos.getRawValue()).toEqual({ porcentajeMinimoInicial: 50, plazoDias: 15 });
+
+    (component as any).formCongelamiento.patchValue({ diasMaximo: 45 });
+    (component as any).guardarCongelamiento();
+    expect(mockCongelamientos.actualizarReglas).toHaveBeenCalledWith({ diasMinimo: 7, diasMaximo: 45, maximoPorAnio: 2 });
+
+    (component as any).formAbonos.patchValue({ porcentajeMinimoInicial: 40 });
+    (component as any).guardarAbonos();
+    expect(mockPagos.actualizarReglasAbono).toHaveBeenCalledWith({ porcentajeMinimoInicial: 40, plazoDias: 15 });
+  });
+
+  it('no guarda reglas de congelamiento con mínimo mayor que máximo', () => {
+    (component as any).formCongelamiento.patchValue({ diasMinimo: 40, diasMaximo: 30 });
+    (component as any).guardarCongelamiento();
+    expect(mockCongelamientos.actualizarReglas).not.toHaveBeenCalled();
   });
 });

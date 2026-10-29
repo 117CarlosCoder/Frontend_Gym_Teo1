@@ -1,0 +1,134 @@
+<app-modal
+  titulo="Congelar membresía"
+  [subtitulo]="(nombreSocio() ? nombreSocio() + ' · ' : '') + membresia().nombrePlan"
+  icono="bi-snow"
+  tamano="lg"
+  [error]="error()"
+  (cerrarError)="error.set(null)"
+  [bloqueado]="guardando() || finalizandoId() !== null"
+  (cerrar)="cerrar.emit()"
+>
+  <form [formGroup]="form" (ngSubmit)="congelar()">
+    <div class="modal-body-custom">
+      @if (reglas(); as r) {
+        <div class="alert alert-info small d-flex gap-2 align-items-start">
+          <i class="bi bi-info-circle-fill mt-1"></i>
+          <div>
+            <strong>Reglas del gimnasio:</strong> cada congelamiento dura entre {{ r.diasMinimo }} y {{ r.diasMaximo }} días,
+            máximo {{ r.maximoPorAnio }} por año ({{ usadosEsteAnio() }} usados).
+            Los días congelados se suman al vencimiento y, mientras dure, el socio no puede registrar su ingreso.
+          </div>
+        </div>
+      }
+
+      @if (!puedeCongelar()) {
+        <div class="alert alert-warning small mb-3">
+          <i class="bi bi-exclamation-triangle-fill me-2"></i>
+          @if (membresia().estado === 'CONGELADA') {
+            La membresía ya está congelada. Puedes descongelarla desde el historial.
+          } @else {
+            Solo se pueden congelar membresías activas y vigentes (estado actual: {{ membresia().estado }}).
+          }
+        </div>
+      } @else {
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label fw-semibold" for="congelar-inicio">Desde *</label>
+            <input id="congelar-inicio" type="date" class="form-control" formControlName="fechaInicio" [min]="hoy" />
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-semibold" for="congelar-fin">Hasta (incluido) *</label>
+            <input id="congelar-fin" type="date" class="form-control" formControlName="fechaFin" [min]="form.controls.fechaInicio.value" />
+          </div>
+          <div class="col-12">
+            <label class="form-label fw-semibold" for="congelar-motivo">Motivo</label>
+            <input id="congelar-motivo" type="text" class="form-control" formControlName="motivo" placeholder="Ej. viaje, lesión, motivos laborales" />
+          </div>
+          <div class="col-12">
+            <div class="d-flex flex-wrap justify-content-around align-items-center gap-3 p-3 border rounded bg-light">
+              <div class="text-center">
+                <small class="text-muted d-block">Vence actualmente</small>
+                <strong>{{ membresia().fechaVencimiento ? (membresia().fechaVencimiento | date: 'dd/MM/yyyy') : '-' }}</strong>
+              </div>
+              <div class="text-center">
+                <small class="text-muted d-block">Días congelados</small>
+                <strong>{{ dias() }}</strong>
+              </div>
+              <i class="bi bi-arrow-right fs-4 text-muted"></i>
+              <div class="text-center">
+                <small class="text-muted d-block">Nuevo vencimiento</small>
+                <strong class="text-success">{{ nuevoVencimiento() ? (nuevoVencimiento() | date: 'dd/MM/yyyy') : '-' }}</strong>
+              </div>
+            </div>
+            @if (problema()) {
+              <small class="text-danger d-block mt-1"><i class="bi bi-exclamation-circle me-1"></i>{{ problema() }}</small>
+            }
+          </div>
+        </div>
+      }
+
+      <h4 class="fs-6 fw-bold text-muted text-uppercase mt-4 mb-2">Historial de congelamientos</h4>
+      @if (cargando()) {
+        <div class="text-muted small"><span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Cargando...</div>
+      } @else {
+        <div class="table-responsive">
+          <table class="table table-sm align-middle mb-0">
+            <thead>
+              <tr>
+                <th>Periodo</th>
+                <th>Días</th>
+                <th>Motivo</th>
+                <th>Estado</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (c of historial(); track c.id) {
+                <tr>
+                  <td class="text-nowrap small">{{ c.fechaInicio | date: 'dd/MM/yyyy' }} - {{ c.fechaFin | date: 'dd/MM/yyyy' }}</td>
+                  <td>{{ c.dias }}</td>
+                  <td class="small">{{ c.motivo || '-' }}</td>
+                  <td><span class="badge {{ estiloEstado[c.estado] }}">{{ c.estado }}</span></td>
+                  <td class="text-end">
+                    @if (c.estado === 'ACTIVO' || c.estado === 'PROGRAMADO') {
+                      <button
+                        type="button"
+                        class="btn btn-sm btn-outline-primary"
+                        [disabled]="finalizandoId() !== null"
+                        (click)="finalizar(c)"
+                      >
+                        @if (finalizandoId() === c.id) {
+                          <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                        } @else {
+                          <i class="bi bi-sun me-1"></i>{{ c.estado === 'ACTIVO' ? 'Descongelar' : 'Cancelar' }}
+                        }
+                      </button>
+                    }
+                  </td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="5" class="text-center text-muted small py-3">Esta membresía no se ha congelado.</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+        <small class="text-muted">Al descongelar antes de tiempo se descuentan del vencimiento los días que no se usaron.</small>
+      }
+    </div>
+
+    <div class="modal-footer-custom">
+      <button type="button" class="btn btn-light" [disabled]="guardando()" (click)="cerrar.emit()">Cerrar</button>
+      @if (puedeCongelar()) {
+        <button type="submit" class="btn btn--primary" [disabled]="form.invalid || !!problema() || guardando()">
+          @if (guardando()) {
+            <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>Congelando...
+          } @else {
+            <i class="bi bi-snow me-1"></i>Congelar
+          }
+        </button>
+      }
+    </div>
+  </form>
+</app-modal>
