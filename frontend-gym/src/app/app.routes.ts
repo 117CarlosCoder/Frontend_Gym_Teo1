@@ -123,6 +123,15 @@ export const routes: Routes = [
         title: 'Pagos | Claude Lovers Gym',
       },
       {
+        path: 'promociones',
+        canActivate: [rolGuard('ADMIN')],
+        loadComponent: () =>
+          import('./features/promociones/pages/gestion-promociones/gestion-promociones.component').then(
+            (m) => m.GestionPromocionesComponent,
+          ),
+        title: 'Descuentos | Claude Lovers Gym',
+      },
+      {
         // Administración: reportes completos, incluidos los ingresos
         path: 'reportes',
         canMatch: [() => inject(AuthService).tieneRol('ADMIN')],

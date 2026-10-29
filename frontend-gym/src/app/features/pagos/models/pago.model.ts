@@ -37,6 +37,8 @@ export interface RegistrarPagoRequest {
   idMembresia: number;
   idMetodoPago: number;
   monto: number;
+  /** Promoción elegida al cobrar; si se omite el backend aplica la vigente con mayor descuento. */
+  idPromocion?: number;
   referencia?: string;
   observacion?: string;
 }

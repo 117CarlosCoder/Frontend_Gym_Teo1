@@ -5,6 +5,7 @@ import { vi } from 'vitest';
 
 import { GestionPagosComponent } from './gestion-pagos.component';
 import { PagosService } from '../../services/pagos.service';
+import { PromocionesService } from '../../../promociones/services/promociones.service';
 import { SociosService } from '../../../socios/services/socios.service';
 import { NotificacionService } from '../../../../core/services/notificacion.service';
 import { CotizacionPago, MembresiaPagable, MetodoPago } from '../../models/pago.model';
@@ -13,6 +14,7 @@ describe('GestionPagosComponent - Curva del PO (descuento y recargo calculados p
   let component: GestionPagosComponent;
   let fixture: ComponentFixture<GestionPagosComponent>;
   let mockPagosService: any;
+  let mockPromocionesService: any;
   let mockSociosService: any;
   let mockNotificacionService: any;
 
@@ -88,6 +90,15 @@ describe('GestionPagosComponent - Curva del PO (descuento y recargo calculados p
       guardarPdf: vi.fn(),
     };
 
+    mockPromocionesService = {
+      listarVigentes: vi.fn().mockReturnValue(
+        of([
+          { id: 3, nombre: 'Promo Estudiantes', tipoDescuento: 'PORCENTAJE', valorDescuento: 15, activo: true, vigente: true },
+          { id: 4, nombre: 'Promo Familiar', tipoDescuento: 'MONTO_FIJO', valorDescuento: 50, activo: true, vigente: true },
+        ]),
+      ),
+    };
+
     mockSociosService = {
       socios$: of([
         {
@@ -109,6 +120,7 @@ describe('GestionPagosComponent - Curva del PO (descuento y recargo calculados p
       providers: [
         { provide: PagosService, useValue: mockPagosService },
         { provide: SociosService, useValue: mockSociosService },
+        { provide: PromocionesService, useValue: mockPromocionesService },
         { provide: NotificacionService, useValue: mockNotificacionService },
         {
           provide: ActivatedRoute,
@@ -136,7 +148,7 @@ describe('GestionPagosComponent - Curva del PO (descuento y recargo calculados p
     (component as any).membresias.set([mockMembresiaActiva]);
     (component as any).abrirModalPago(mockMembresiaActiva);
 
-    expect(mockPagosService.cotizar).toHaveBeenCalledWith(10);
+    expect(mockPagosService.cotizar).toHaveBeenCalledWith(10, null);
     expect((component as any).cotizacion().descuento).toBe(30);
     expect((component as any).cotizacion().nombrePromocion).toBe('Promo Estudiantes');
     expect((component as any).formPago.controls.monto.value).toBe(170);
@@ -158,7 +170,7 @@ describe('GestionPagosComponent - Curva del PO (descuento y recargo calculados p
     (component as any).formPago.controls.idMembresia.setValue(11);
     (component as any).alCambiarMembresia();
 
-    expect(mockPagosService.cotizar).toHaveBeenLastCalledWith(11);
+    expect(mockPagosService.cotizar).toHaveBeenLastCalledWith(11, null);
     expect((component as any).formPago.controls.monto.value).toBe(550);
   });
 
@@ -188,5 +200,30 @@ describe('GestionPagosComponent - Curva del PO (descuento y recargo calculados p
     expect(payload.idMembresia).toBe(11);
     expect(payload.monto).toBe(550);
     expect(payload.observacion).toBe('Pagó en caja 2');
+  });
+
+  it('carga las promociones vigentes y cotiza con la promoción elegida', () => {
+    (component as any).membresias.set([mockMembresiaActiva]);
+    (component as any).metodosPago.set(mockMetodos);
+    (component as any).abrirModalPago(mockMembresiaActiva);
+    expect((component as any).promocionesVigentes().length).toBe(2);
+
+    (component as any).formPago.controls.idPromocion.setValue(4);
+    (component as any).alCambiarMembresia();
+    expect(mockPagosService.cotizar).toHaveBeenLastCalledWith(10, 4);
+
+    (component as any).registrarPago();
+    const payload = mockPagosService.registrar.mock.calls.at(-1)[0];
+    expect(payload.idPromocion).toBe(4);
+  });
+
+  it('no envía idPromocion cuando la promoción es automática', () => {
+    (component as any).membresias.set([mockMembresiaActiva]);
+    (component as any).metodosPago.set(mockMetodos);
+    (component as any).abrirModalPago(mockMembresiaActiva);
+
+    (component as any).registrarPago();
+    const payload = mockPagosService.registrar.mock.calls.at(-1)[0];
+    expect(payload.idPromocion).toBeUndefined();
   });
 });
