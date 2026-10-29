@@ -206,6 +206,16 @@
             }
           </div>
 
+          <div class="col-md-6">
+            <label class="form-label fw-semibold" for="pago-promocion">Promoción</label>
+            <select id="pago-promocion" class="form-select" formControlName="idPromocion" (change)="alCambiarMembresia()">
+              <option [ngValue]="0">Automática (mayor descuento vigente)</option>
+              @for (promo of promocionesVigentes(); track promo.id) {
+                <option [ngValue]="promo.id">{{ promo.nombre }} · {{ describirDescuento(promo) }}</option>
+              }
+            </select>
+          </div>
+
           <!-- CURVA DEL PO: descuento por promoción vigente y recargo por pago tardío, calculados por el backend -->
           <div class="col-12">
             <div class="p-3 rounded bg-light border">

@@ -9,6 +9,7 @@ export const RUTAS = {
     planes: '/dashboard/planes',
     membresias: '/dashboard/membresias',
     pagos: '/dashboard/pagos',
+    promociones: '/dashboard/promociones',
     reportes: '/dashboard/reportes',
     usuarios: '/dashboard/usuarios',
     perfil: '/dashboard/perfil',

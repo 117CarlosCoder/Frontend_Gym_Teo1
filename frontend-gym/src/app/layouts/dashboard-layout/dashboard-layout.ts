@@ -60,6 +60,11 @@ export class DashboardLayout {
     this.auth.tieneRol('ADMIN', 'RECEPCION', 'RECEPCIONISTA'),
   );
 
+  /** Promociones de descuento y recargo por pago tardío (Solo ADMIN). */
+  protected readonly puedeVerPromociones = computed(() =>
+    this.auth.tieneRol('ADMIN'),
+  );
+
   /** Reportes financieros y operativos (Sprint 5). */
   protected readonly puedeVerReportes = computed(() =>
     this.auth.tieneRol('ADMIN', 'RECEPCION', 'RECEPCIONISTA'),

@@ -16,9 +16,11 @@ export class PagosService {
   /**
    * Cotización del cobro de una membresía: precio del plan, descuento por promoción vigente,
    * recargo por pago tardío y total a cobrar. Es el mismo cálculo que el backend usa al registrar el pago.
+   * Sin idPromocion el backend aplica la promoción vigente con mayor descuento.
    */
-  cotizar(idMembresia: number): Observable<CotizacionPago> {
-    return this.http.get<any>(`${API.pagos}/cotizacion/${idMembresia}`).pipe(
+  cotizar(idMembresia: number, idPromocion?: number | null): Observable<CotizacionPago> {
+    const params = idPromocion ? new HttpParams().set('idPromocion', idPromocion) : undefined;
+    return this.http.get<any>(`${API.pagos}/cotizacion/${idMembresia}`, { params }).pipe(
       map((dto) => ({
         idMembresia: dto.idMembresia,
         montoBase: Number(dto.montoBase ?? 0),

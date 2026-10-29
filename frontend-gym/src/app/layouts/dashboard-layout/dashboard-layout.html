@@ -36,6 +36,11 @@
           Pagos
         </a>
       }
+      @if (puedeVerPromociones()) {
+        <a class="panel-nav__link" routerLink="/dashboard/promociones" routerLinkActive="panel-nav__link--activo">
+          Descuentos
+        </a>
+      }
       @if (puedeVerReportes()) {
         <a class="panel-nav__link" routerLink="/dashboard/reportes" routerLinkActive="panel-nav__link--activo">
           Reportes

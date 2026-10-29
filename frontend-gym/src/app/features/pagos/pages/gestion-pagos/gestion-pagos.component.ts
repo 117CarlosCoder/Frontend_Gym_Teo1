@@ -7,6 +7,8 @@ import { ActivatedRoute } from '@angular/router';
 import { NotificacionService, mensajeDeError } from '../../../../core/services/notificacion.service';
 import { calcularNuevoVencimiento, diasHasta } from '../../../../core/utils/fechas';
 import { ModalComponent } from '../../../../shared/components/modal/modal.component';
+import { Promocion, describirDescuento } from '../../../promociones/models/promocion.model';
+import { PromocionesService } from '../../../promociones/services/promociones.service';
 import { SocioTablaDTO } from '../../../socios/models/socio-tabla-dto.model';
 import { SociosService } from '../../../socios/services/socios.service';
 import { HistorialPagosComponent } from '../../components/historial-pagos/historial-pagos.component';
@@ -27,6 +29,7 @@ import { PagosService } from '../../services/pagos.service';
 export class GestionPagosComponent implements OnInit {
   private readonly pagosService = inject(PagosService);
   private readonly sociosService = inject(SociosService);
+  private readonly promocionesService = inject(PromocionesService);
   private readonly notificacion = inject(NotificacionService);
   private readonly route = inject(ActivatedRoute);
   private readonly fb = inject(FormBuilder);
@@ -36,6 +39,9 @@ export class GestionPagosComponent implements OnInit {
   protected readonly idSocioSeleccionado = signal<number | null>(null);
 
   protected readonly metodosPago = signal<MetodoPago[]>([]);
+  /** Promociones vigentes que el administrador configuró; recepción puede elegir cuál aplicar. */
+  protected readonly promocionesVigentes = signal<Promocion[]>([]);
+  protected readonly describirDescuento = describirDescuento;
   protected readonly membresias = signal<MembresiaPagable[]>([]);
   protected readonly cargandoMembresias = signal(false);
   protected readonly errorMembresias = signal<string | null>(null);
@@ -58,6 +64,8 @@ export class GestionPagosComponent implements OnInit {
   protected readonly formPago = this.fb.nonNullable.group({
     idMembresia: [0, [Validators.required, Validators.min(1)]],
     idMetodoPago: [0, [Validators.required, Validators.min(1)]],
+    /** 0 = automática (la vigente con mayor descuento). */
+    idPromocion: [0],
     monto: [0, [Validators.required, Validators.min(0.01)]],
     referencia: ['', [Validators.maxLength(100)]],
     observacion: ['', [Validators.maxLength(255)]],
@@ -117,11 +125,20 @@ export class GestionPagosComponent implements OnInit {
       next: (metodos) => this.metodosPago.set(metodos),
       error: (err) => this.notificacion.error(mensajeDeError(err, 'No se pudieron cargar los métodos de pago.')),
     });
+    this.cargarPromocionesVigentes();
 
     const socioEnUrl = Number(this.route.snapshot.queryParamMap.get('socio'));
     if (socioEnUrl > 0) {
       this.seleccionarSocio(socioEnUrl);
     }
+  }
+
+  private cargarPromocionesVigentes(): void {
+    this.promocionesService.listarVigentes().subscribe({
+      next: (lista) => this.promocionesVigentes.set(lista),
+      // Sin la lista se cobra con la promoción automática del backend
+      error: () => this.promocionesVigentes.set([]),
+    });
   }
 
   protected alBuscar(evento: Event): void {
@@ -175,10 +192,12 @@ export class GestionPagosComponent implements OnInit {
     this.formPago.reset({
       idMembresia: elegida.id,
       idMetodoPago: efectivo?.id ?? 0,
+      idPromocion: 0,
       monto: elegida.precio,
       referencia: '',
       observacion: '',
     });
+    this.cargarPromocionesVigentes();
     this.cargarCotizacion(elegida.id);
     this.errorModal.set(null);
     this.guardando.set(false);
@@ -192,7 +211,7 @@ export class GestionPagosComponent implements OnInit {
     this.cotizacion.set(null);
   }
 
-  /** Al cambiar de membresía se vuelve a cotizar el cobro. */
+  /** Al cambiar de membresía o de promoción se vuelve a cotizar el cobro. */
   protected alCambiarMembresia(): void {
     const id = Number(this.formPago.controls.idMembresia.value);
     if (id) this.cargarCotizacion(id);
@@ -203,7 +222,8 @@ export class GestionPagosComponent implements OnInit {
     this.cotizacion.set(null);
     this.errorCotizacion.set(null);
     this.cargandoCotizacion.set(true);
-    this.pagosService.cotizar(idMembresia).subscribe({
+    const idPromocion = Number(this.formPago.controls.idPromocion.value) || null;
+    this.pagosService.cotizar(idMembresia, idPromocion).subscribe({
       next: (c) => {
         this.cotizacion.set(c);
         this.formPago.controls.monto.setValue(c.total);
@@ -241,6 +261,7 @@ export class GestionPagosComponent implements OnInit {
         idMembresia: Number(valor.idMembresia),
         idMetodoPago: Number(valor.idMetodoPago),
         monto: Number(valor.monto),
+        idPromocion: Number(valor.idPromocion) || undefined,
         referencia: valor.referencia.trim() || undefined,
         observacion: valor.observacion.trim() || undefined,
       })

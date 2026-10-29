@@ -1,0 +1,20 @@
+.promos {
+  padding-top: var(--sp-4);
+}
+
+.promos__titulo {
+  font-size: var(--fs-xl);
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+.promos__subtitulo {
+  color: var(--color-text-muted);
+  font-size: var(--fs-sm);
+}
+
+.btn-group .btn.active {
+  background-color: var(--color-primary);
+  border-color: var(--color-primary);
+  color: #ffffff;
+}
